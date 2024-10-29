@@ -280,16 +280,12 @@ def rename_img_opt3(img, target_year):
     yearTwo = str(target_year - 2)
     yearfive = str(target_year - 5)
     yearNine = str(target_year - 9)
-    
+    print(img.bandNames().getInfo())
     return img.select(img.bandNames(), [
-        'yr_9_nbr_ltsd', 'yr_5_nbr_ltsd', 'yr_2_nbr_ltsd', 'yr_1_nbr_ltsd', 'yr_0_nbr_ltsd',
-        'yr_9_tcb_ltsd', 'yr_5_tcb_ltsd', 'yr_2_tcb_ltsd', 'yr_1_tcb_ltsd', 'yr_0_tcb_ltsd',
-        'yr_9_tcg_ltsd', 'yr_5_tcg_ltsd', 'yr_2_tcg_ltsd', 'yr_1_tcg_ltsd', 'yr_0_tcg_ltsd',
-        'yr_9_tcw_ltsd', 'yr_5_tcw_ltsd', 'yr_2_tcw_ltsd', 'yr_1_tcw_ltsd', 'yr_0_tcw_ltsd',
-        "yr_9_nbr", "yr_5_nbr", "yr_2_nbr", "yr_1_nbr", "yr_0_nbr",
-        "yr_9_tcb", "yr_5_tcb", "yr_2_tcb", "yr_1_tcb", "yr_0_tcb",
-        "yr_9_tcg", "yr_5_tcg", "yr_2_tcg", "yr_1_tcg", "yr_0_tcg",
-        "yr_9_tcw", "yr_5_tcw", "yr_2_tcw", "yr_1_tcw", "yr_0_tcw",
+        'yr_11_nbr','yr_10_nbr','yr_9_nbr','yr_8_nbr','yr_7_nbr','yr_6_nbr', 'yr_5_nbr','yr_4_nbr', 'yr_3_nbr','yr_2_nbr', 'yr_1_nbr', 'yr_0_nbr',
+        'yr_11_tcb','yr_10_tcb','yr_9_tcb','yr_8_tcb','yr_7_tcb','yr_6_tcb', 'yr_5_tcb','yr_4_tcb', 'yr_3_tcb','yr_2_tcb', 'yr_1_tcb', 'yr_0_tcb',
+        'yr_11_tcg','yr_10_tcg','yr_9_tcg','yr_8_tcg','yr_7_tcg','yr_6_tcg', 'yr_5_tcg','yr_4_tcg', 'yr_3_tcg','yr_2_tcg', 'yr_1_tcg', 'yr_0_tcg',
+        'yr_11_tcw','yr_10_tcw','yr_9_tcw','yr_8_tcw','yr_7_tcw','yr_6_tcw', 'yr_5_tcw','yr_4_tcw', 'yr_3_tcw','yr_2_tcw', 'yr_1_tcw', 'yr_0_tcw',
         "yod", "mag", "dur", "preval", "rate", "dsnr"
     ])
 

@@ -471,10 +471,11 @@ def proportionCalc():
 	feat_label = add_k_proportions.aggregate_array("label")
 	feat_bnet = add_k_proportions.aggregate_array("bnet")
 	feat_zip = feat_label.zip(feat_bnet).distinct().unzip()
-
-	corrected_label = ee.List(feat_zip.get(0)).map(lambda e: ee.String(e))
+	print(feat_zip.getInfo())
+	#corrected_label = ee.List(feat_zip.get(0)).map(lambda e: ee.String(ee.Number(e).int()))
+	corrected_label = [str(int(num)) for num in feat_zip.get(0).getInfo()] 
 	corrected_bnet = feat_zip.get(1)
-	diclist = ee.Dictionary.fromLists(corrected_label, corrected_bnet)
+	diclist = ee.Dictionary.fromLists(corrected_label, corrected_bnet) # <<<<<< here 
 
 	kmeans = ee.Image(bnet_config.param['assetDir'] + bnet_config.param['kmeansName']).rename(['kmeans_clusters'])
 
