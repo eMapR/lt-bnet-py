@@ -12,7 +12,7 @@ param = {}
 param['configName'] = 'option3'
 
 # AOI
-param['aoi'] = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/bugnet_North_Cascades")
+param['aoi'] = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
 
 # image type 
 param["platform"] = 'lS'
@@ -21,8 +21,8 @@ param["platform"] = 'lS'
 param['start_date'] = '06-01'
 param['end_date'] = '09-01'
 param['ltstartYear'] = 2000
-param['ltendYear'] = 2024
-param['target'] = 2024
+param['ltendYear'] = 2023
+param['target'] = 2023
 param['trainingYear'] = 2023
 targetPlus5 = param['target']+5
 param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 1000)
@@ -56,7 +56,7 @@ param['assetDir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<
 param['LTSDdir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # LTSD name
-param['LTSDname'] = f"predictor_img_{param['ltstartYear']}_{param['target']}"
+param['LTSDname'] = f"predictor_img_{param['target']}"
 
 # SNIC parameters
 param['snicName'] = f"SNIC_{param['configName']}_{param['target']}"
@@ -66,8 +66,8 @@ param['declineName'] = f"Decline_{param['configName']}_{param['target']}"
 param['kmeansNameSample'] =  f"KMeans_{param['configName']}_{param['target']}_sample" #KMean$
 param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}"
 param['KmeansVector'] = f"KMeans_{param['configName']}_{param['target']}_vector"
-param['kmeans_num_sample'] = 50 # from 5000
-param['num_of_clusters'] = 30
+param['kmeans_num_sample'] = 5000
+param['num_of_clusters'] = 3
 
 # Proportion of Intersection
 if param['trainingYear'] == param['target']:
@@ -84,7 +84,7 @@ param['forestMaskName'] = f"bugnet_forest_mask_{param['target']}"
 param['maskThese'] = ['cloud', 'shadow']
 param['Mask'] = ee.Image(f"{param['assetDir']}{param['forestMaskName']}")
 param['buffer'] = 50
-param['ltchange'] = ee.Image(f"{param['assetDir']}classed_img")
+param['ltchange'] = ee.Image(f"{param['assetDir']}classed_img_{param['target']}")
 
 # Agent labeling parameters
 param['agent_lookback'] = 5
@@ -93,7 +93,7 @@ param['bugnet_polygons'] = f"bugnet_polygons_unlabeled_{param['region']}_{param[
 param['bugnet_distance_img'] = f"bugnet_distance_image_{param['region']}_{param['target']}_{param['version']}"
 param['bugnet_polygons_labeled'] = f"bugnet_polygons_distance_labeled_{param['region']}_{param['target']}_{param['version']}"
 
-param['proportion_strat_sample_size'] = 1000  # three classes to be sampled
+param['proportion_strat_sample_size'] = 5000  # three classes to be sampled
 
 if param["platform"] == 'HlS':
 

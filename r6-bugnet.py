@@ -35,8 +35,8 @@ from ltgee import LandTrendr, LandsatComposite, LtCollection
 
 #import north_cascades_config_opt2_2023 as bnet_config
 #import north_cascades_config_opt2_2024 as bnet_config
-import params.north_cascades_config_opt3_2023 as bnet_config
-#import params.north_cascades_config_opt3_2024 as bnet_config
+#import params.north_cascades_config_opt3_2023 as bnet_config
+import params.north_cascades_config_opt3_2024 as bnet_config
 
 #import northern_rockies_config_opt2_2023 as bnet_config
 #import northern_rockies_config_opt2_2024 as bnet_config
@@ -451,31 +451,28 @@ def proportionCalc():
 	proportion_attri = ee.FeatureCollection(bnet_config.param['assetDir'] + bnet_config.param['KmeansVector'] )
 
 	intersect_std = proportion_attri.filter(ee.Filter.eq('touch', 1)).aggregate_stats('label').get('total_sd')
-
+	clusters_that_touch_0 = ee.Number(proportion_attri.filter(ee.Filter.And(ee.Filter.eq('label', 0), ee.Filter.eq('touch', 1))).size())
+	clusters_that_touch_1 = ee.Number(proportion_attri.filter(ee.Filter.And(ee.Filter.eq('label', 1), ee.Filter.eq('touch', 1))).size())
+	clusters_that_touch_2 = ee.Number(proportion_attri.filter(ee.Filter.And(ee.Filter.eq('label', 2), ee.Filter.eq('touch', 1))).size())
+	median_value = ee.Array([ee.Number(clusters_that_touch_0),ee.Number(clusters_that_touch_1),ee.Number(clusters_that_touch_2)]).reduce(ee.Reducer.median(),[0]).get([0])
+	print(intersect_std.getInfo())
 	# Add proportions to clusters
 	def add_proportions(f):
 		cluster = f.get('label')
-		clusters_that_touch = ee.Number(
-			proportion_attri.filter(
-				ee.Filter.And(
-					ee.Filter.eq('label', cluster), 
-					ee.Filter.eq('touch', 1)
-				)
-			).size()
-		)
-		bnet_value = ee.Algorithms.If(clusters_that_touch.gte(ee.Number(intersect_std).multiply(3)), 3, ee.Algorithms.If(clusters_that_touch.gte(ee.Number(intersect_std).multiply(2)), 2, 1))
+		clusters_that_touch = ee.Number(proportion_attri.filter(ee.Filter.And(ee.Filter.eq('label', cluster), ee.Filter.eq('touch', 1))).size())
+		#bnet_value = ee.Algorithms.If(clusters_that_touch.gte(ee.Number(intersect_std).multiply(3)), 3, ee.Algorithms.If(clusters_that_touch.gte(ee.Number(intersect_std).multiply(2)), 2, 1))
+		bnet_value = ee.Algorithms.If(clusters_that_touch.gte(ee.Number(median_value)), 3, ee.Algorithms.If(clusters_that_touch.eq(ee.Number(median_value)), 2, 1))
 		return f.set("prop_count", clusters_that_touch).set("bnet", bnet_value)
 
 	add_k_proportions = proportion_attri.map(add_proportions)
-
+	print(add_k_proportions.first().getInfo())
 	feat_label = add_k_proportions.aggregate_array("label")
 	feat_bnet = add_k_proportions.aggregate_array("bnet")
 	feat_zip = feat_label.zip(feat_bnet).distinct().unzip()
-	print(feat_zip.getInfo())
 	#corrected_label = ee.List(feat_zip.get(0)).map(lambda e: ee.String(ee.Number(e).int()))
 	corrected_label = [str(int(num)) for num in feat_zip.get(0).getInfo()] 
 	corrected_bnet = feat_zip.get(1)
-	diclist = ee.Dictionary.fromLists(corrected_label, corrected_bnet) # <<<<<< here 
+	diclist = ee.Dictionary.fromLists(corrected_label, corrected_bnet) 
 
 	kmeans = ee.Image(bnet_config.param['assetDir'] + bnet_config.param['kmeansName']).rename(['kmeans_clusters'])
 

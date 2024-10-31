@@ -21,8 +21,8 @@ param["platform"] = 'lS'
 param['start_date'] = '06-01'
 param['end_date'] = '09-01'
 param['ltstartYear'] = 2000
-param['ltendYear'] = 2023
-param['target'] = 2023
+param['ltendYear'] = 2024
+param['target'] = 2024
 param['trainingYear'] = 2023
 targetPlus5 = param['target']+5
 param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 1000)
@@ -67,7 +67,7 @@ param['kmeansNameSample'] =  f"KMeans_{param['configName']}_{param['target']}_sa
 param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}"
 param['KmeansVector'] = f"KMeans_{param['configName']}_{param['target']}_vector"
 param['kmeans_num_sample'] = 5000
-param['num_of_clusters'] = 30
+param['num_of_clusters'] = 3
 
 # Proportion of Intersection
 if param['trainingYear'] == param['target']:
@@ -93,7 +93,7 @@ param['bugnet_polygons'] = f"bugnet_polygons_unlabeled_{param['region']}_{param[
 param['bugnet_distance_img'] = f"bugnet_distance_image_{param['region']}_{param['target']}_{param['version']}"
 param['bugnet_polygons_labeled'] = f"bugnet_polygons_distance_labeled_{param['region']}_{param['target']}_{param['version']}"
 
-param['proportion_strat_sample_size'] = 1000  # three classes to be sampled
+param['proportion_strat_sample_size'] = 5000  # three classes to be sampled
 
 if param["platform"] == 'HlS':
 
