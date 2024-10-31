@@ -25,7 +25,7 @@ ee.Initialize(project="r6-bugnet")
 #asset_path = "projects/r6-bugnet/assets/north_cascades/"
 ROI = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
 asset_path = "projects/r6-bugnet/assets/north_cascades/"
-mode = 'attribute'
+mode = 'remove'
 #-------------------------------------------------------------------
 # Parameter Setup---------------------------------------------------
 # Instantiate the ParameterHandler class
@@ -55,7 +55,7 @@ if mode == 'generate' or mode == 'all':
     tasks1and2 = main.generate_training_reference_imagery_and_polygons(lt,image_processor,polygon_generator)
     #---------------------------------------------------------------
     # Update change detection parameters
-    params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2018, 'end': 2023}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
+    params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2019, 'end': 2024}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
     image_processor = bnet.ImageProcessor(lt, composite_params, start_year=composite_params['start_date'].year, end_year=composite_params['end_date'].year, change_params=change_params, ROI=ROI, asset_path=asset_path,prefix="predictor")
     polygon_generator = bnet.PolygonGenerator(lt, composite_params, change_params,asset_path,"disturbance")
     tasks3and4 = main.generate_current_imagery_and_polygons(lt,image_processor,polygon_generator)
@@ -72,7 +72,7 @@ if mode == 'attribute' or mode == 'all':
     main.attribute_training_disturbance_polygons(poly_attr,change_params,asset_path)
     #-------------------------------------------------------------------
     # attribute polygons two with refeance data
-    params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2018, 'end': 2023}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
+    params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2019, 'end': 2024}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
     poly_attr = bnet.PolygonAttributor(composite_params,change_params,asset_path,"disturbance_attributed",'predictor') 
     main.attribute_current_disturbance_polygons(poly_attr,change_params,asset_path,composite_params)
 #---------------------------------------------------------------
@@ -83,12 +83,13 @@ if mode == 'predict' or mode == 'all':
 #---------------------------------------------------------------
 #-------------------------------------------------------------------
 if mode == 'post' or mode == 'all':
-    fc1 = bnet.filter_by_mode_value(ee.FeatureCollection(asset_path + 'classified_polgyons'), 19, 41, 60, 90)
+    fc1 = bnet.filter_by_mode_value(ee.FeatureCollection(asset_path + 'classified_polgyons_'+str(composite_params['end_date'].year)), 19, 41, 60, 90)
     fc2 = bnet.buffer_features(fc1, 100)
-    img = bnet.rasterize_polygons(fc2, 'classification', 30, region=ROI)
-    bnet.export_featurecollection_to_asset(fc1, asset_path,'classed_filtered')
-    bnet.export_featurecollection_to_asset(fc2, asset_path,'classed_buffer')
-    bnet.export_image_to_asset(img, asset_path,"classed_img", 30, ROI)
+    #img = bnet.rasterize_polygons(fc2, 'classification', 30, region=ROI)
+    img = bnet.rasterize_polygons(ee.FeatureCollection('projects/r6-bugnet/assets/north_cascades/classed_buffer_2024'), 'classification', 30, region=ROI)
+    bnet.export_featurecollection_to_asset(fc1, asset_path,'classed_filtered_'+str(composite_params['end_date'].year))
+    bnet.export_featurecollection_to_asset(fc2, asset_path,'classed_buffer_'+str(composite_params['end_date'].year))
+    bnet.export_image_to_asset(img, asset_path,"classed_img_"+str(composite_params['end_date'].year), 30, ROI)
 #---------------------------------------------------------------
 #-------------------------------------------------------------------
 if mode == 'remove':

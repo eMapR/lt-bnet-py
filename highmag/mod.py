@@ -34,7 +34,7 @@ class ParameterHandler:
         """Initialize composite parameters."""
         return {
             "start_date": date(2000, 6, 1),
-            "end_date": date(2023, 9, 1),
+            "end_date": date(2024, 9, 1),
             "area_of_interest": self.ROI.geometry(),
             "mask_labels": ['cloud', 'shadow', 'snow', 'water'],
             "debug": True
@@ -348,7 +348,7 @@ class PolygonAttributor:
         self.in_img = ee.Image(self.asset_path + self.img_type + "_img_"+str(change_params['years']['start'])+'_'+str(change_params['years']['end'])) # HARDCODE -6
         self.in_fc = ee.FeatureCollection(self.asset_path+"disturbance_polygons_"+str(change_params['years']['start'])+'_'+str(change_params['years']['end']))
         self.asset_id = prefix + "_polygons_"+str(change_params['years']['start'])+'_'+str(change_params['years']['end'])
-        self.cmonster = "/vol/v1/aggregated_attributions.tif" 
+        self.cmonster = "/vol/v1/lt-bnet-py/assets/aggregated_attributions.tif" 
         self.exists = 0
         try:
             ee.data.getAsset(self.asset_path+self.asset_id)
