@@ -34,7 +34,7 @@ param['composite_params'] = {
     "start_date": date(param['ltstartYear'], 6,1),
     "end_date": date(param['ltendYear'], 9,1),
     "area_of_interest": param['aoi'],
-    "mask_labels": [],
+    "mask_labels": ['cloud', 'shadow', 'snow', 'water'],
     "debug": True
 }
 
@@ -49,7 +49,7 @@ param['disturbance_polygons_predictor']= f"predictor_disturbance_polygons_{param
 param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
-                    'years': {'start': param['composite_params']["start_date"].year + 1, 'end': param['composite_params']["end_date"].year},
+                    'years': {'start': param['composite_params']["start_date"].year, 'end': param['composite_params']["end_date"].year},
                     'mag': {'value': 200, 'operator': '>' },
                     'dur': {'value': 4, 'operator': '<'},
                     'preval': {'value': 300, 'operator': '>'},

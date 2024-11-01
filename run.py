@@ -77,10 +77,10 @@ def get_fitted_stack(lt,prefix,parameters):
 	if prefix == "fitted_training":
 
 		# Extract fitted data for each index 8 9 10 11 12
-		nbr = rename_bands_by_year(lt.get_fitted_data("nbr", start_date=start_date, end_date=end_date),'nbr',start_year, end_year).select([2,3,4,5,6,7,8,9,10,11,12])
-		tcb = rename_bands_by_year(lt.get_fitted_data("tcb", start_date=start_date, end_date=end_date),'tcb',start_year, end_year).select([2,3,4,5,6,7,8,9,10,11,12])
-		tcg = rename_bands_by_year(lt.get_fitted_data("tcg", start_date=start_date, end_date=end_date),'tcg',start_year, end_year).select([2,3,4,5,6,7,8,9,10,11,12])
-		tcw = rename_bands_by_year(lt.get_fitted_data("tcw", start_date=start_date, end_date=end_date),'tcw',start_year, end_year).select([2,3,4,5,6,7,8,9,10,11,12])
+		nbr = rename_bands_by_year(lt.get_fitted_data("nbr", start_date=start_date, end_date=end_date),'nbr',start_year, end_year).select([10,11,12])
+		tcb = rename_bands_by_year(lt.get_fitted_data("tcb", start_date=start_date, end_date=end_date),'tcb',start_year, end_year).select([10,11,12])
+		tcg = rename_bands_by_year(lt.get_fitted_data("tcg", start_date=start_date, end_date=end_date),'tcg',start_year, end_year).select([10,11,12])
+		tcw = rename_bands_by_year(lt.get_fitted_data("tcw", start_date=start_date, end_date=end_date),'tcw',start_year, end_year).select([10,11,12])
 
 		# Merge all predictor data into a final stack
 		stack = nbr.addBands(tcb).addBands(tcg).addBands(tcw)

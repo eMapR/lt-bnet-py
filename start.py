@@ -31,28 +31,27 @@ mode = 'generate'
 # Parameter Setup---------------------------------------------------
 #---------------------------------------------------------------
 if mode == 'generate' or mode == 'all':
-
     lt = LandTrendr(**access.param['lt_params'])
 
-    access.param['change_params']['years'] = {'start': 2008, 'end': 2012}
-    change_img_t = lt.get_change_map(access.param['change_params'])
-    run.export_image(change_img_t, access.param, access.param['training_change_img'])
+    #access.param['change_params']['years'] = {'start': 2008, 'end': 2012}
+    #change_img_t = lt.get_change_map(access.param['change_params'])
+    #run.export_image(change_img_t, access.param, access.param['training_change_img'])
 
-    disturbance_polygons_t = run.vectorize_disturbance(change_img_t,access.param)
-    run.export_polygons(disturbance_polygons_t,access.param,access.param['disturbance_polygons_training'])
+    #disturbance_polygons_t = run.vectorize_disturbance(change_img_t,access.param)
+    #run.export_polygons(disturbance_polygons_t,access.param,access.param['disturbance_polygons_training'])
 
-    access.param['change_params']['years'] = {'start': access.param['composite_params']['start_date'].year, 'end': access.param['composite_params']['start_date'].year-5}
-    change_img_p = lt.get_change_map(access.param['change_params'])
-    run.export_image(change_img_p,access.param, access.param['predictor_change_img'])
+    #access.param['change_params']['years'] = {'start': access.param['composite_params']['start_date'].year, 'end': access.param['composite_params']['start_date'].year-5}
+    #change_img_p = lt.get_change_map(access.param['change_params'])
+    #run.export_image(change_img_p,access.param, access.param['predictor_change_img'])
 
-    disturbance_polygons_p = run.vectorize_disturbance(change_img_p,access.param)
-    run.export_polygons(disturbance_polygons_p,access.param,access.param['disturbance_polygons_predictor'])
+    #disturbance_polygons_p = run.vectorize_disturbance(change_img_p,access.param)
+    #run.export_polygons(disturbance_polygons_p,access.param,access.param['disturbance_polygons_predictor'])
 
     fitted_img_t = run.get_fitted_stack(lt,'fitted_training',access.param)
     run.export_image(fitted_img_t,access.param, access.param['fitted_img_t'])
 
-    fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',access.param)
-    run.export_image(fitted_img_p,access.param, access.param['fitted_img_p'])
+    #fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',access.param)
+    #run.export_image(fitted_img_p,access.param, access.param['fitted_img_p'])
 
 
 
