@@ -145,14 +145,14 @@ else:
     param['lt_params'] = {
         "lt_collection": param['lt_collection_params'], # - you may also just pass in your own collection or the params directly. Note: in the former, some methods in the class may not work.
         "run_params": {
-            'maxSegments': 10,
-            'spikeThreshold': 0.9,
-            'vertexCountOvershoot': 3,
-            'preventOneYearRecovery': True,
-            'recoveryThreshold': 0.95,
-            'pvalThreshold': 0.05,
-            'bestModelProportion': 0.95,
-            'minObservationsNeeded': 10
+                "maxSegments": 6,
+                "spikeThreshold": 0.9,
+                "vertexCountOvershoot": 3,
+                "preventOneYearRecovery": True,
+                "recoveryThreshold": 0.25,
+                "pvalThreshold": 0.05,
+                "bestModelProportion": 0.75,
+                "minObservationsNeeded": 6,
         }
     }
 print(param)
