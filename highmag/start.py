@@ -25,7 +25,7 @@ ee.Initialize(project="r6-bugnet")
 #asset_path = "projects/r6-bugnet/assets/north_cascades/"
 ROI = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
 asset_path = "projects/r6-bugnet/assets/north_cascades/"
-mode = 'remove'
+mode = 'generate'
 #-------------------------------------------------------------------
 # Parameter Setup---------------------------------------------------
 # Instantiate the ParameterHandler class
