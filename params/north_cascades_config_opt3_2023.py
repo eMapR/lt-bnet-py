@@ -39,13 +39,30 @@ param['composite_params'] = {
 }
 
 
+param['fitted_img_t'] = f"training_fitted_img_2008_2012"
+param['fitted_img_p'] = f"predictor_fitted_img_{param['composite_params']['end_date'].year-5}_{param['composite_params']['end_date'].year}"
+param['training_change_img'] = f"training_change_img_2012"
+param['predictor_change_img'] = f"predictor_change_img_{param['composite_params']['end_date'].year}"
+param['disturbance_polygons_training']= f"training_disturbance_polygons_2012"
+param['disturbance_polygons_predictor']= f"predictor_disturbance_polygons_{param['composite_params']['end_date'].year}"
+
+param['change_params'] = {
+                    'delta': 'loss',
+                    'sort': 'greatest',
+                    'years': {'start': param['composite_params']["start_date"].year + 1, 'end': param['composite_params']["end_date"].year},
+                    'mag': {'value': 200, 'operator': '>' },
+                    'dur': {'value': 4, 'operator': '<'},
+                    'preval': {'value': 300, 'operator': '>'},
+                    'mmu': {'value': 5}
+                }
+
 # Transformation parameters
 param['index'] = "NBR"
 param['fit'] = ["NBR", "TCG", "TCW", "TCB"]
 
 # ADS parameters
 param['ads'] = ee.FeatureCollection('projects/r6-bugnet/assets/ads-r6-2023')  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-param['ads_damage'] = 30
+#param['ads_damage'] = 30
 
 # File naming parameters
 param['version'] = 'v1'

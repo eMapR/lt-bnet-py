@@ -1,6 +1,6 @@
 # import 
 #import mod as bnet
-import main
+import run
 from ltgee import LandTrendr, LandsatComposite, LtCollection
 from datetime import date
 import json
@@ -24,27 +24,45 @@ ee.Initialize(project="r6-bugnet")
 #-------------------------------------------------------------------
 #ROI = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/bugnet_North_Cascades")
 #asset_path = "projects/r6-bugnet/assets/north_cascades/"
-ROI = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
-asset_path = "projects/r6-bugnet/assets/north_cascades/"
+#ROI = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
+#asset_path = "projects/r6-bugnet/assets/north_cascades/"
 mode = 'generate'
 #-------------------------------------------------------------------
 # Parameter Setup---------------------------------------------------
 #---------------------------------------------------------------
 if mode == 'generate' or mode == 'all':
-    asset_id = prefix + "_img_"+str(change_params['years']['start'])+"_"+str(change_params['years']['end'])
-    # generate training datasets
+
     lt = LandTrendr(**access.param['lt_params'])
-    #stack---------------------------------------------------------------
-    change_img = lt.get_change_map(access.param['change_params']).unmask()
-    fitted_img = main.get_fitted_stack(lt,'training',access.param)
-    stack_img = fitted_img.addBands(change_img)
-    export_image(stack_img,ROI, asset_path, asset_id)
+
+    access.param['change_params']['years'] = {'start': 2008, 'end': 2012}
+    change_img_t = lt.get_change_map(access.param['change_params'])
+    run.export_image(change_img_t, access.param, access.param['training_change_img'])
+
+    disturbance_polygons_t = run.vectorize_disturbance(change_img_t,access.param)
+    run.export_polygons(disturbance_polygons_t,access.param,access.param['disturbance_polygons_training'])
+
+    access.param['change_params']['years'] = {'start': access.param['composite_params']['start_date'].year, 'end': access.param['composite_params']['start_date'].year-5}
+    change_img_p = lt.get_change_map(access.param['change_params'])
+    run.export_image(change_img_p,access.param, access.param['predictor_change_img'])
+
+    disturbance_polygons_p = run.vectorize_disturbance(change_img_p,access.param)
+    run.export_polygons(disturbance_polygons_p,access.param,access.param['disturbance_polygons_predictor'])
+
+    fitted_img_t = run.get_fitted_stack(lt,'fitted_training',access.param)
+    run.export_image(fitted_img_t,access.param, access.param['fitted_img_t'])
+
+    fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',access.param)
+    run.export_image(fitted_img_p,access.param, access.param['fitted_img_p'])
+
+
+
+    sys.exit()
+
+
+    #lt = LandTrendr(**access.param['lt_params'])
+    #fitted_img = run.get_fitted_stack(lt,'predictor',access.param)
     #export image 
     #change polygons ---------------------------------------------------------------
-    #polygon_generator = bnet.PolygonGenerator(lt, composite_params, change_params,asset_path,"disturbance")
-    #tasks1and2 = main.generate_training_reference_imagery_and_polygons(lt,image_processor,polygon_generator)
-    #main.extract_fitted_data()
-    sys.exit()
 
 
 

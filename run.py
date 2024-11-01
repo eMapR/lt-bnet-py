@@ -1,6 +1,6 @@
 # import 
 #import mod as bnet
-import main
+#import main
 from ltgee import LandTrendr, LandsatComposite, LtCollection
 from datetime import date
 import json
@@ -71,10 +71,10 @@ def get_fitted_stack(lt,prefix,parameters):
 
 	start_year = parameters['composite_params']['start_date'].year
 	end_year = parameters['composite_params']['end_date'].year
-	selection = 12
+	selection = 5
 	start_date = parameters['composite_params']['start_date']
 	end_date = parameters['composite_params']['end_date']
-	if prefix == "training":
+	if prefix == "fitted_training":
 
 		# Extract fitted data for each index 8 9 10 11 12
 		nbr = rename_bands_by_year(lt.get_fitted_data("nbr", start_date=start_date, end_date=end_date),'nbr',start_year, end_year).select([2,3,4,5,6,7,8,9,10,11,12])
@@ -102,14 +102,14 @@ def get_fitted_stack(lt,prefix,parameters):
 		return stack
 
 
-def export_image(stack, roi, asset_path, asset_id, scale=30, max_pixels=1e13):
+def export_image(stack, params, asset,scale=30, max_pixels=1e13):
 	"""Export the image to Google Earth Engine Assets."""
 	# Define export parameters
 	img_task = ee.batch.Export.image.toAsset(
-		image=stack.clip(roi),
-		description=asset_id,  # Task name
-		assetId=asset_path + asset_id,  # Path in your GEE assets
-		region=roi.geometry(),  # The area to export
+		image=stack.clip(params['aoi']),
+		description=asset,  # Task name
+		assetId=params['assetDir'] + asset,  # Path in your GEE assets
+		region=params['aoi'].geometry(),  # The area to export
 		scale=scale,  # Resolution in meters per pixel
 		maxPixels=max_pixels  # Maximum number of pixels allowed to export
 	)
@@ -135,15 +135,10 @@ def polygons(self, lt, composite_params, change_params,asset_path,prefix):
 		self.exists = 0
 		print("Asset Does not Exist: "+self.asset_id+" Creating")
 
-def _find_disturbances(self):
-	"""Find disturbances based on the change map."""
-	change_image = self.lt.get_change_map(self.change_params)
-	return change_image
-
-def _vectorize_disturbance(self, change_image):
+def vectorize_disturbance(change_image,params):
 	disturbance_polygons = change_image.select('yod').reduceToVectors(
 		reducer=ee.Reducer.countEvery(),
-		geometry=self.composite_params['area_of_interest'],
+		geometry=params['aoi'],
 		scale=30,
 		geometryType="polygon",
 		labelProperty='yod',
@@ -152,26 +147,16 @@ def _vectorize_disturbance(self, change_image):
 	)
 	return disturbance_polygons
 
-def export_polygons(self):
-	if self.exists:
-		return 0
-	else:
-		"""Find disturbances, vectorize them, and export the polygons."""
-		# Step 1: Find disturbances
-		change_image = self._find_disturbances()
+def export_polygons(polygons,params,asset):
+	"""Export the disturbance polygons as a FeatureCollection to Google Earth Engine assets."""
+	fc_task = ee.batch.Export.table.toAsset(
+		collection=polygons,
+		description=asset,  # Description for the task
+		assetId=params['assetDir'] + asset  # The destination asset path
+	)
 
-		# Step 2: Vectorize the disturbance image
-		disturbance_polygons = self._vectorize_disturbance(change_image)
-
-		"""Export the disturbance polygons as a FeatureCollection to Google Earth Engine assets."""
-		fc_task = ee.batch.Export.table.toAsset(
-			collection=disturbance_polygons,
-			description=self.asset_id,  # Description for the task
-			assetId=self.asset_path + self.asset_id  # The destination asset path
-		)
-
-		fc_task.start()
-		return fc_task
+	fc_task.start()
+	return fc_task
 
 
 #------------------------------------------------------------------------------------------
