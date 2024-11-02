@@ -33,61 +33,51 @@ mode = 'generate'
 if mode == 'generate' or mode == 'all':
     lt = LandTrendr(**access.param['lt_params'])
 
-    #access.param['change_params']['years'] = {'start': 2008, 'end': 2012}
-    #change_img_t = lt.get_change_map(access.param['change_params'])
-    #run.export_image(change_img_t, access.param, access.param['training_change_img'])
-
-    #disturbance_polygons_t = run.vectorize_disturbance(change_img_t,access.param)
-    #run.export_polygons(disturbance_polygons_t,access.param,access.param['disturbance_polygons_training'])
-
-    #access.param['change_params']['years'] = {'start': access.param['composite_params']['start_date'].year, 'end': access.param['composite_params']['start_date'].year-5}
-    #change_img_p = lt.get_change_map(access.param['change_params'])
-    #run.export_image(change_img_p,access.param, access.param['predictor_change_img'])
-
-    #disturbance_polygons_p = run.vectorize_disturbance(change_img_p,access.param)
-    #run.export_polygons(disturbance_polygons_p,access.param,access.param['disturbance_polygons_predictor'])
-
     fitted_img_t = run.get_fitted_stack(lt,'fitted_training',access.param)
     run.export_image(fitted_img_t,access.param, access.param['fitted_img_t'])
 
-    #fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',access.param)
-    #run.export_image(fitted_img_p,access.param, access.param['fitted_img_p'])
+    fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',access.param)
+    run.export_image(fitted_img_p,access.param, access.param['fitted_img_p'])
 
+    access.param['change_params']['years'] = {'start': 2007, 'end': 2012}
+    change_img_t = lt.get_change_map(access.param['change_params'])
+    run.export_image(change_img_t, access.param, access.param['training_change_img'])
 
+    access.param['change_params']['years'] = {'start': access.param['composite_params']['end_date'].year-6, 'end': access.param['composite_params']['end_date'].year}
+    change_img_p = lt.get_change_map(access.param['change_params'])
+    run.export_image(change_img_p,access.param, access.param['predictor_change_img'])
 
-    sys.exit()
+    disturbance_polygons_t = run.vectorize_disturbance(change_img_t,access.param)
+    run.export_polygons(disturbance_polygons_t,access.param,access.param['disturbance_polygons_training'])
 
+    disturbance_polygons_p = run.vectorize_disturbance(change_img_p,access.param)
+    run.export_polygons(disturbance_polygons_p,access.param,access.param['disturbance_polygons_predictor'])
 
-    #lt = LandTrendr(**access.param['lt_params'])
-    #fitted_img = run.get_fitted_stack(lt,'predictor',access.param)
-    #export image 
-    #change polygons ---------------------------------------------------------------
-
-
-
-
-    #---------------------------------------------------------------
-    #---------------------------------------------------------------
-    # Update change detection parameters
-    image_processor = bnet.ImageProcessor(lt, composite_params, start_year=composite_params['start_date'].year, end_year=composite_params['end_date'].year, change_params=change_params, ROI=ROI, asset_path=asset_path,prefix="predictor")
-    polygon_generator = bnet.PolygonGenerator(lt, composite_params, change_params,asset_path,"disturbance")
-    tasks3and4 = main.generate_current_imagery_and_polygons(lt,image_processor,polygon_generator)
-    #---------------------------------------------------------------
-    tasks = [item for sublist in [tasks1and2,tasks3and4] for item in sublist]
-    #---------------------------------------------------------------
-    bnet.monitor_tasks(tasks)
 #---------------------------------------------------------------
 #---------------------------------------------------------------
 if mode == 'attribute' or mode == 'all':
+
     # attribute polygons two with refeance data
-    params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2008, 'end': 2012}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
-    poly_attr = bnet.PolygonAttributor(composite_params,change_params,asset_path,"disturbance_attributed",'training') 
-    main.attribute_training_disturbance_polygons(poly_attr,change_params,asset_path)
+    #params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2008, 'end': 2012}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
+    #poly_attr = run.PolygonAttributor(composite_params,change_params,asset_path,"disturbance_attributed",'training') 
+    #run.attribute_training_disturbance_polygons(poly_attr,change_params,asset_path)
+
+    # attribute with gee methods
+    run.attribute_with_reference_data()
+    # reproject and change feature collecton to json
+    run.feature_collection_to_geojson()
+    # attribute with Cmonster
+    run.attribute_with_cmonster_data()
+    # reproject and convert to featrue collection
+    reprojected_geojson = bnet.geojson_to_ee_feature(event_polygons_attri1, reprojector, target_epsg, src_epsg)           # apply re-reprojection and geojson to feature collection>
+    # export 
+
     #-------------------------------------------------------------------
     # attribute polygons two with refeance data
-    params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2019, 'end': 2024}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
-    poly_attr = bnet.PolygonAttributor(composite_params,change_params,asset_path,"disturbance_attributed",'predictor') 
-    main.attribute_current_disturbance_polygons(poly_attr,change_params,asset_path,composite_params)
+#    params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2019, 'end': 2024}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
+#    poly_attr = bnet.PolygonAttributor(composite_params,change_params,asset_path,"disturbance_attributed",'predictor') 
+#    main.attribute_current_disturbance_polygons(poly_attr,change_params,asset_path,composite_params)
+
 #---------------------------------------------------------------
 #-------------------------------------------------------------------
 if mode == 'predict' or mode == 'all':

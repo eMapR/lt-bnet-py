@@ -22,40 +22,6 @@ import sys
 ee.Initialize(project="r6-bugnet")
 #-------------------------------------------------------------------
 # Image processing-------------------------------------------------------------------
-def image1(self, lt, composite_params, start_year, end_year, change_params, ROI, asset_path,prefix):
-	self.lt = lt  # LandTrendr object
-	self.composite_params = composite_params
-	self.start_year = start_year
-	self.end_year = end_year
-	self.change_params = change_params
-	self.ROI = ROI
-	self.asset_path = asset_path
-	self.prefix = prefix
-	self.selection = 12
-	if self.prefix == 'training':
-		self.asset_id = prefix + "_img_"+str(change_params['years']['start'])+"_"+str(change_params['years']['end'])
-	else:
-		self.asset_id = prefix + "_img_"+str(change_params['years']['start'])+"_"+str(change_params['years']['end'])
-		self.exists = 0
-		self.stack_img = ee.Image([0])
-
-	try:
-		ee.data.getAsset(self.asset_path+self.asset_id)
-		self.exists = 1
-		print("Asset Exists: "+self.asset_id)
-	except ee.ee_exception.EEException:
-		self.exists = 0
-		print("Asset Does not Exist: "+self.asset_id+" Creating")
-
-	if self.exists == 0:
-		self.change_img = self._change_stack()
-		#self.dlta_img = 
-		self.fitted_img = self._fitted_stack()
-		self.stack_img = self.fitted_img.addBands(self.change_img)
-
-
-
-
 def rename_bands_by_year(image, index, start_year, end_year):
 	"""Rename bands in the image by year."""
 	num_years = end_year - start_year+1
@@ -71,16 +37,16 @@ def get_fitted_stack(lt,prefix,parameters):
 
 	start_year = parameters['composite_params']['start_date'].year
 	end_year = parameters['composite_params']['end_date'].year
-	selection = 5
+	selection = 10
 	start_date = parameters['composite_params']['start_date']
 	end_date = parameters['composite_params']['end_date']
 	if prefix == "fitted_training":
 
 		# Extract fitted data for each index 8 9 10 11 12
-		nbr = rename_bands_by_year(lt.get_fitted_data("nbr", start_date=start_date, end_date=end_date),'nbr',start_year, end_year).select([10,11,12])
-		tcb = rename_bands_by_year(lt.get_fitted_data("tcb", start_date=start_date, end_date=end_date),'tcb',start_year, end_year).select([10,11,12])
-		tcg = rename_bands_by_year(lt.get_fitted_data("tcg", start_date=start_date, end_date=end_date),'tcg',start_year, end_year).select([10,11,12])
-		tcw = rename_bands_by_year(lt.get_fitted_data("tcw", start_date=start_date, end_date=end_date),'tcw',start_year, end_year).select([10,11,12])
+		nbr = rename_bands_by_year(lt.get_fitted_data("nbr", start_date=start_date, end_date=end_date),'nbr',start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		tcb = rename_bands_by_year(lt.get_fitted_data("tcb", start_date=start_date, end_date=end_date),'tcb',start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		tcg = rename_bands_by_year(lt.get_fitted_data("tcg", start_date=start_date, end_date=end_date),'tcg',start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		tcw = rename_bands_by_year(lt.get_fitted_data("tcw", start_date=start_date, end_date=end_date),'tcw',start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
 
 		# Merge all predictor data into a final stack
 		stack = nbr.addBands(tcb).addBands(tcg).addBands(tcw)
@@ -186,8 +152,6 @@ def attribute_with_reference_data(self):
 	"""
 	Attribute the polygons with reference data from the raster stack.
 	"""
-	#if self.exists:
-	#        return
 	def process_polygon(polygon):
 		yod = ee.Number(polygon.get('yod'))
 		years = ee.List.sequence(yod.subtract(5), yod)
@@ -264,32 +228,6 @@ def export_attributed_polygons(self, attributed_polygons, asset_path, asset_id):
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
-def reproject_geojson(self, ft_geojson, src_epsg, target_epsg):
-	"""
-	Reproject the coordinates of a GeoJSON feature from the source EPSG to the target EPSG.
-
-	Parameters:
-	- ft_geojson: The input GeoJSON feature.
-	- src_epsg: The EPSG code of the source CRS (e.g., 'EPSG:4326').
-	- target_epsg: The EPSG code of the target CRS (e.g., 'EPSG:5070').
-	"""
-	# Initialize the Transformer from the source CRS to the target CRS
-	transformer = Transformer.from_crs(src_epsg, target_epsg, always_xy=True)
-	
-	# Function to reproject coordinates based on the geometry type
-	def reproject_coords(geometry):
-		if geometry['type'] == 'Polygon':
-			return [[list(transformer.transform(x, y)) for x, y in ring] for ring in geometry['coordinates']]
-		elif geometry['type'] == 'MultiPolygon':
-			return [[[list(transformer.transform(x, y)) for x, y in ring] for ring in poly] for poly in geometry['coordinates']]
-		return geometry
-
-	# Extract the geometry from the feature and reproject it
-	geom = ft_geojson['geometry']
-	ft_geojson['geometry']['coordinates'] = reproject_coords(geom)
-
-	return ft_geojson
-
 
 
 #------------------------------------------------------------------------------------------
@@ -395,6 +333,33 @@ def print_classified_features(self, classified_fc, limit=5):
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
+def reproject_geojson(self, ft_geojson, src_epsg, target_epsg):
+	"""
+	Reproject the coordinates of a GeoJSON feature from the source EPSG to the target EPSG.
+
+	Parameters:
+	- ft_geojson: The input GeoJSON feature.
+	- src_epsg: The EPSG code of the source CRS (e.g., 'EPSG:4326').
+	- target_epsg: The EPSG code of the target CRS (e.g., 'EPSG:5070').
+	"""
+	# Initialize the Transformer from the source CRS to the target CRS
+	transformer = Transformer.from_crs(src_epsg, target_epsg, always_xy=True)
+	
+	# Function to reproject coordinates based on the geometry type
+	def reproject_coords(geometry):
+		if geometry['type'] == 'Polygon':
+			return [[list(transformer.transform(x, y)) for x, y in ring] for ring in geometry['coordinates']]
+		elif geometry['type'] == 'MultiPolygon':
+			return [[[list(transformer.transform(x, y)) for x, y in ring] for ring in poly] for poly in geometry['coordinates']]
+		return geometry
+
+	# Extract the geometry from the feature and reproject it
+	geom = ft_geojson['geometry']
+	ft_geojson['geometry']['coordinates'] = reproject_coords(geom)
+
+	return ft_geojson
+
+
 #### Function to convert GeoJSON features to EE Features
 def geojson_to_ee_feature(geojson,reprojector,s_crs,t_crs):
 	features = []
