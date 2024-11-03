@@ -216,12 +216,12 @@ def attribute_with_cmonster_data(polygon_list,raster_path):
 	"""
 	Attribute polygons with cMonster data using a local raster (virtual raster).
 	"""
-	def parallel_processing(polygon_list, raster_path):
-		with multiprocessing.Pool(processes=20) as pool:
-			results = pool.starmap(process_polygon, [(polygon, raster_path) for polygon in polygon_list])
-			return [x for x in results if x is not None]
+	#def parallel_processing(polygon_list, raster_path):
+	with multiprocessing.Pool(processes=20) as pool:
+		results = pool.starmap(process_polygon, [(polygon, raster_path) for polygon in polygon_list])
+		return [x for x in results if x is not None]
 
-	return parallel_processing(polygon_list, raster_path)
+	#return parallel_processing(polygon_list, raster_path)
 
 
 def export_fearture_collection(fc,asset_id,asset_path):
