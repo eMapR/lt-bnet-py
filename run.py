@@ -124,7 +124,7 @@ def attribute_with_reference_data(params,who):
 	"""
 	Attribute the polygons with reference data from the raster stack.
 	"""
-	def process_polygon(polygon):
+	def _process_polygon(polygon):
 		yod = ee.Number(polygon.get('yod'))
 		years = ee.List.sequence(yod.subtract(4), yod)
 		yrs_int = ee.List.sequence(1,5)
@@ -158,11 +158,11 @@ def attribute_with_reference_data(params,who):
 	if who == 'training':
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_training'])
-                return in_fc.filter(ee.Filter.gt('count',75)).map(process_polygon)
+                return in_fc.filter(ee.Filter.gt('count',75)).map(_process_polygon)
 	else:
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor'])
-                return in_fc.map(process_polygon)
+                return in_fc.map(_process_polygon)
 
 # Move the `process_polygon` function to the global scope for multiprocessing compatibility
 def process_polygon(polygon, raster_path):
@@ -217,11 +217,11 @@ def attribute_with_cmonster_data(polygon_list,raster_path):
 	Attribute polygons with cMonster data using a local raster (virtual raster).
 	"""
 	def parallel_processing(polygon_list, raster_path):
-		with multiprocessing.Pool(processes=30) as pool:
+		with multiprocessing.Pool(processes=20) as pool:
 			results = pool.starmap(process_polygon, [(polygon, raster_path) for polygon in polygon_list])
 			return [x for x in results if x is not None]
 
-	return parallel_processing(polygon_list, self.cmonster)
+	return parallel_processing(polygon_list, raster_path)
 
 
 def export_fearture_collection(fc,asset_id,asset_path):
@@ -321,6 +321,23 @@ def print_classified_features(self, classified_fc, limit=5):
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
+
+
+#### Function to convert GeoJSON features to EE Features
+def geojson_to_ee_feature(geojson,s_crs,t_crs):
+	features = []
+	for feature in geojson:
+		feature = reproject_geojson(feature, s_crs, t_crs)
+		geometry = feature['geometry']
+		properties = feature['properties']
+
+	# Create an Earth Engine feature from GeoJSON geometry and properties
+	ee_feature = ee.Feature(ee.Geometry(geometry), properties)
+	features.append(ee_feature)
+
+	# Return a FeatureCollection from the list of EE Features
+	return ee.FeatureCollection(features)
+
 def reproject_geojson(ft_geojson, src_epsg, target_epsg):
 	"""
 	Reproject the coordinates of a GeoJSON feature from the source EPSG to the target EPSG.
@@ -347,23 +364,6 @@ def reproject_geojson(ft_geojson, src_epsg, target_epsg):
 
 	return ft_geojson
 
-
-#### Function to convert GeoJSON features to EE Features
-def geojson_to_ee_feature(geojson,s_crs,t_crs):
-	features = []
-	for feature in geojson:
-		feature = reproject_geojson(feature, s_crs, t_crs)
-		geometry = feature['geometry']
-		properties = feature['properties']
-
-	# Create an Earth Engine feature from GeoJSON geometry and properties
-	ee_feature = ee.Feature(ee.Geometry(geometry), properties)
-	features.append(ee_feature)
-
-	# Return a FeatureCollection from the list of EE Features
-	return ee.FeatureCollection(features)
-
-
 def process_feature(index, f_list, src_epsg, target_epsg):
 	# Convert the feature from GEE to a Python dict
 	feature = ee.Feature(f_list.get(index)).getInfo()  # Get feature and convert to Python dict
@@ -389,13 +389,12 @@ def feature_collection_to_geojson(fc, src_epsg, target_epsg):
 	# Create an empty GeoJSON structure
 	geojson = []
 
-
 	# Get the total number of features
 	num_features = f_list.size().getInfo()  # Convert size() from GEE object to Python int
-	#print([(i, f_list, reprojector, src_epsg, target_epsg) for i in range(num_features)])
 
 	# Create a pool of worker processes
 	with multiprocessing.Pool(processes=30) as pool:
+
 		# Map the process_feature function to each feature index in parallel
 		results = pool.starmap(process_feature, [(i, f_list, src_epsg, target_epsg) for i in range(num_features)])
 
