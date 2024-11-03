@@ -26,7 +26,7 @@ ee.Initialize(project="r6-bugnet")
 #asset_path = "projects/r6-bugnet/assets/north_cascades/"
 #ROI = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
 #asset_path = "projects/r6-bugnet/assets/north_cascades/"
-mode = 'generate'
+mode = 'attribute'
 #-------------------------------------------------------------------
 # Parameter Setup---------------------------------------------------
 #---------------------------------------------------------------
@@ -57,26 +57,29 @@ if mode == 'generate' or mode == 'all':
 #---------------------------------------------------------------
 if mode == 'attribute' or mode == 'all':
 
-    # attribute polygons two with refeance data
-    #params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2008, 'end': 2012}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
-    #poly_attr = run.PolygonAttributor(composite_params,change_params,asset_path,"disturbance_attributed",'training') 
-    #run.attribute_training_disturbance_polygons(poly_attr,change_params,asset_path)
-
     # attribute with gee methods
-    run.attribute_with_reference_data()
-    # reproject and change feature collecton to json
-    run.feature_collection_to_geojson()
-    # attribute with Cmonster
-    run.attribute_with_cmonster_data()
-    # reproject and convert to featrue collection
-    reprojected_geojson = bnet.geojson_to_ee_feature(event_polygons_attri1, reprojector, target_epsg, src_epsg)           # apply re-reprojection and geojson to feature collection>
-    # export 
+    gee_attributed_fc = run.attribute_with_reference_data(access.param,'training')
 
+    # reproject and change feature collecton to json
+    reprojected_geojson = run.feature_collection_to_geojson(gee_attributed_fc, access.param['source_epsg'], access.param['target_epsg'])    # apply reprojections and feature collection to geojson t>
+    print(reprojected_geojson) # <<<<<<   look in to fc_list in run.py passing a whole list of features could we just pass a single feature?
+
+    # attribute with Cmonster
+    event_polygons_attri1 = run.attribute_with_cmonster_data(reprojected_geojson,access.param['cMonster_img_path'])                   # apply attribution (cMonster)
+    print(event_polygons_attri1) # <<<<<<<< Look into vrt creation. It looks like  it reading in an image everytime it does somthing. try to read the image in once into memeory.
+
+    # reproject and convert to featrue collection
+    reprojected_geojson = run.geojson_to_ee_feature(event_polygons_attri1, access.param['target_epsg'], access.param['source_epsg'])           # apply re-reprojection and geojson to feature collection>
+
+    # export 
+    export_fearture_collection(reprojected_geojson,access.param['attributed_polygons_training'],access.param['assetDir'] )
     #-------------------------------------------------------------------
     # attribute polygons two with refeance data
-#    params_handler.update_change_params(delta='loss',sort='greatest', years={'start': 2019, 'end': 2024}, mag={'value': 200, 'operator': '>'}, dur={'value': 4, 'operator': '<'}, preval={'value': 300, 'operator': '>'}, mmu={'value': 15})
-#    poly_attr = bnet.PolygonAttributor(composite_params,change_params,asset_path,"disturbance_attributed",'predictor') 
-#    main.attribute_current_disturbance_polygons(poly_attr,change_params,asset_path,composite_params)
+    # attribute with gee methods
+    gee_attributed_fc = run.attribute_with_reference_data(access.param,'predictor')
+    # export 
+    export_fearture_collection(reprojected_geojson,access.param['attributed_polygons_predictor'],access.param['assetDir'] )
+    
 
 #---------------------------------------------------------------
 #-------------------------------------------------------------------

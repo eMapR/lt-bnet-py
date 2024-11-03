@@ -3,7 +3,7 @@ from ltgee import LandTrendr, LandsatComposite, LtCollection
 from datetime import date
 import datetime 
 import bnet as bnet
-
+import pprint
 ee.Initialize(project='r6-bugnet')
 
 param = {}
@@ -38,7 +38,7 @@ param['composite_params'] = {
     "debug": True
 }
 
-
+# HIGH MAG STUFF 
 param['fitted_img_t'] = f"training_fitted_img_2008_2012"
 param['fitted_img_p'] = f"predictor_fitted_img_{param['composite_params']['end_date'].year-5}_{param['composite_params']['end_date'].year}"
 param['training_change_img'] = f"training_change_img_2012"
@@ -46,6 +46,13 @@ param['predictor_change_img'] = f"predictor_change_img_{param['composite_params'
 param['disturbance_polygons_training']= f"training_disturbance_polygons_2012"
 param['disturbance_polygons_predictor']= f"predictor_disturbance_polygons_{param['composite_params']['end_date'].year}"
 
+param['attributed_polygons_training']= f"attributed_training_polygons_2012"
+param['attributed_polygons_predictor']= f"attributed_predictor_polygons_{param['composite_params']['end_date'].year}"
+
+param['source_epsg'] = 'EPSG:4326'
+param['target_epsg'] = 'EPSG:5070'
+
+param['cMonster_img_path']= "/vol/v1/lt-bnet-py/assets/aggregated_attributions.tif" 
 param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
@@ -155,4 +162,5 @@ else:
                 "minObservationsNeeded": 6,
         }
     }
-print(param)
+
+pprint.pprint(param)

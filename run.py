@@ -113,49 +113,21 @@ def vectorize_disturbance(change_image,params):
 	)
 	return disturbance_polygons
 
-def export_polygons(polygons,params,asset):
-	"""Export the disturbance polygons as a FeatureCollection to Google Earth Engine assets."""
-	fc_task = ee.batch.Export.table.toAsset(
-		collection=polygons,
-		description=asset,  # Description for the task
-		assetId=params['assetDir'] + asset  # The destination asset path
-	)
-
-	fc_task.start()
-	return fc_task
 
 
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
-def attribute(self,composite_params,change_params,asset_path,prefix, img_type):
-	self.composite_params = composite_params
-	self.change_params = change_params
-	self.asset_path = asset_path
-	self.prefix = prefix
-	self.img_type = img_type
-	self.in_img = ee.Image(self.asset_path + self.img_type + "_img_"+str(change_params['years']['start'])+'_'+str(change_params['years']['end'])) # HARDCODE -6
-	self.in_fc = ee.FeatureCollection(self.asset_path+"disturbance_polygons_"+str(change_params['years']['start'])+'_'+str(change_params['years']['end']))
-	self.asset_id = prefix + "_polygons_"+str(change_params['years']['start'])+'_'+str(change_params['years']['end'])
-	self.cmonster = "/vol/v1/lt-bnet-py/assets/aggregated_attributions.tif" 
-	self.exists = 0
-	try:
-		ee.data.getAsset(self.asset_path+self.asset_id)
-		self.exists = 1
-		print("Asset Exists: "+self.asset_id)
-	except ee.ee_exception.EEException:
-		self.exists = 0
-		print("Asset Does not Exist: "+self.asset_id+" Creating")
 
 
-def attribute_with_reference_data(self):
+def attribute_with_reference_data(params,who):
 	"""
 	Attribute the polygons with reference data from the raster stack.
 	"""
 	def process_polygon(polygon):
 		yod = ee.Number(polygon.get('yod'))
-		years = ee.List.sequence(yod.subtract(5), yod)
-		yrs_int = ee.List.sequence(1,6)
+		years = ee.List.sequence(yod.subtract(4), yod)
+		yrs_int = ee.List.sequence(1,5)
 		indices = ee.List(['nbr_ftv', 'tcb_ftv', 'tcg_ftv', 'tcw_ftv'])
 
 		def make_band_names(year):
@@ -169,7 +141,7 @@ def attribute_with_reference_data(self):
 		selected_bands = selected_bands.cat(special_bands)
 		selected_bands_int = selected_bands_int.cat(special_bands)
 
-		raster_filtered = self.in_img.select(selected_bands,selected_bands_int)
+		raster_filtered = in_img.select(selected_bands,selected_bands_int)
 
 		raster_values = raster_filtered.reduceRegion(
 			reducer=ee.Reducer.mean(),
@@ -183,13 +155,64 @@ def attribute_with_reference_data(self):
 
 		return polygon.set(raster_values).set({'area_km2': area,'perimeter_km': perimeter})
 
-	if self.img_type == "training":
-		return self.in_fc.filter(ee.Filter.gt('count',75)).map(process_polygon)
-	else:       
-		return self.in_fc.map(process_polygon)
+	if who == 'training':
+                in_img = ee.Image(params['assetDir'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
+                in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_training'])
+                return in_fc.filter(ee.Filter.gt('count',75)).map(process_polygon)
+	else:
+                in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
+                in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor'])
+                return in_fc.map(process_polygon)
+
+# Move the `process_polygon` function to the global scope for multiprocessing compatibility
+def process_polygon(polygon, raster_path):
+	"""
+	Process each polygon by extracting cMonster data.
+	"""
+	def calculate_occurrences_proportion(values):
+		total_count = len(values)
+		occurrences = Counter(values)
+		proportions = {key: value / total_count for key, value in occurrences.items()}
+		return proportions
+
+	def create_virtual_raster(polygon, raster_path, yod_band):
+		with rasterio.open(raster_path) as src:
+			band_index = yod_band - 1984 + 1  # Adjust for 1-based indexing
+			geom = [shape(polygon['geometry'])]
+			out_image, out_transform = mask(src, geom, crop=True, indexes=int(band_index))
+			return out_image
+
+	def calculate_mode(virtual_raster):
+		flat_pixels = virtual_raster.flatten()
+		flat_pixels = flat_pixels[flat_pixels != 0]  # Filter out no-data values if needed
+		#print(flat_pixels)
+		if len(flat_pixels) == 0:
+			return -9999
+		proportions = calculate_occurrences_proportion(flat_pixels)
+
+		if any(value >= 0.50 for value in proportions.values()):
+			if len(flat_pixels) > 0:
+				mode_result = stats.mode(flat_pixels, axis=None)
+				mode_value = mode_result.mode.item()
+			else:
+				mode_value = -9999  # No valid pixels in this polygon
+		else:
+			mode_value = -9999
+		return mode_value
+
+	yod = polygon['properties']['yod']
+	virtual_raster = create_virtual_raster(polygon, raster_path, yod)
+	mode_value = calculate_mode(virtual_raster)
+
+	if mode_value == -9999:
+		return None
+
+	polygon['properties']['mode_value'] = mode_value
+	return polygon
 
 
-def attribute_with_cmonster_data(self, polygon_list):
+
+def attribute_with_cmonster_data(polygon_list,raster_path):
 	"""
 	Attribute polygons with cMonster data using a local raster (virtual raster).
 	"""
@@ -201,28 +224,15 @@ def attribute_with_cmonster_data(self, polygon_list):
 	return parallel_processing(polygon_list, self.cmonster)
 
 
-
-def export_attributed_polygons(self, attributed_polygons, asset_path, asset_id):
-	"""
-	Export the attributed polygons to GEE assets.
-	"""
+def export_fearture_collection(fc,asset_id,asset_path):
 	# Create the export task
 	fc_task = ee.batch.Export.table.toAsset(
-		collection=ee.FeatureCollection(attributed_polygons),
+		collection=fc,
 		description=asset_id,
 		assetId=asset_path + asset_id
 	)
-
-	try:
-		ee.data.getAsset(asset_path + asset_id)
-		print("Exists: " + asset_path + asset_id)
-		return 0
-	except ee.ee_exception.EEException:
-		if fc_task.status()['state'] in ['READY', 'RUNNING']:
-			return fc_task 
-		else:
-			fc_task.start()
-			return fc_task
+	fc_task.start()
+	return fc_task
 
 
 #------------------------------------------------------------------------------------------
@@ -295,28 +305,6 @@ def classify_features(self, classifier):
 	classified = self.unlabeled_fc.classify(classifier)
 	return classified
 
-def export_classified(self, classified_fc, asset_path, asset_id='classified_polgyons'):
-	"""
-	Export the classified feature collection to Google Drive.
-
-	:param classified_fc: The classified feature collection to export
-	:param description: The description for the export task
-	"""
-	# Create the export task
-	fc_task = ee.batch.Export.table.toAsset(
-		collection=classified_fc,
-		description=asset_id,
-		assetId=asset_path + asset_id
-	)
-	try:
-		ee.data.getAsset(asset_path + asset_id)
-		return 0
-	except ee.ee_exception.EEException:
-		if fc_task.status()['state'] in ['READY', 'RUNNING']:
-			return fc_task
-		else:
-			fc_task.start()
-			return fc_task
 
 
 def print_classified_features(self, classified_fc, limit=5):
@@ -333,7 +321,7 @@ def print_classified_features(self, classified_fc, limit=5):
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
-def reproject_geojson(self, ft_geojson, src_epsg, target_epsg):
+def reproject_geojson(ft_geojson, src_epsg, target_epsg):
 	"""
 	Reproject the coordinates of a GeoJSON feature from the source EPSG to the target EPSG.
 
@@ -361,10 +349,10 @@ def reproject_geojson(self, ft_geojson, src_epsg, target_epsg):
 
 
 #### Function to convert GeoJSON features to EE Features
-def geojson_to_ee_feature(geojson,reprojector,s_crs,t_crs):
+def geojson_to_ee_feature(geojson,s_crs,t_crs):
 	features = []
 	for feature in geojson:
-		feature = reprojector.reproject_geojson(feature, s_crs, t_crs)
+		feature = reproject_geojson(feature, s_crs, t_crs)
 		geometry = feature['geometry']
 		properties = feature['properties']
 
@@ -376,12 +364,12 @@ def geojson_to_ee_feature(geojson,reprojector,s_crs,t_crs):
 	return ee.FeatureCollection(features)
 
 
-def process_feature(index, f_list, reprojector, src_epsg, target_epsg):
+def process_feature(index, f_list, src_epsg, target_epsg):
 	# Convert the feature from GEE to a Python dict
 	feature = ee.Feature(f_list.get(index)).getInfo()  # Get feature and convert to Python dict
 
 	# Use the reprojector to reproject the feature using the provided EPSG codes
-	feature = reprojector.reproject_geojson(feature, src_epsg, target_epsg)
+	feature = reproject_geojson(feature, src_epsg, target_epsg)
 
 	return {
 		"type": "Feature",
@@ -390,7 +378,7 @@ def process_feature(index, f_list, reprojector, src_epsg, target_epsg):
 		}
 
 
-def feature_collection_to_geojson(fc, reprojector, src_epsg, target_epsg):
+def feature_collection_to_geojson(fc, src_epsg, target_epsg):
 	# Convert GEE FeatureCollection to a Python List object
 	f_list = fc.toList(fc.size())
 	# Create an empty GeoJSON structure
@@ -409,7 +397,7 @@ def feature_collection_to_geojson(fc, reprojector, src_epsg, target_epsg):
 	# Create a pool of worker processes
 	with multiprocessing.Pool(processes=30) as pool:
 		# Map the process_feature function to each feature index in parallel
-		results = pool.starmap(process_feature, [(i, f_list, reprojector, src_epsg, target_epsg) for i in range(num_features)])
+		results = pool.starmap(process_feature, [(i, f_list, src_epsg, target_epsg) for i in range(num_features)])
 
 		# Collect valid features (filter out None values)
 		# geojson['features'] = [res for res in results if res is not None]
@@ -614,22 +602,6 @@ def export_image_to_asset(image, asset_id, description,scale, region, max_pixels
 	task.start()
 	print(f"Exporting image to {asset_id} with task ID: {task.id}")
 
-def export_featurecollection_to_asset(feature_collection, asset_id, description):
-	"""
-	Export a FeatureCollection to an Earth Engine asset.
-
-	Parameters:
-	feature_collection (ee.FeatureCollection): The FeatureCollection to export.
-	asset_id (str): The destination asset path in Earth Engine (e.g., 'users/your_username/asset_name').
-	description (str): The description for the export task.
-	"""
-	task = ee.batch.Export.table.toAsset(
-		collection=feature_collection,
-		description=description,
-		assetId=asset_id+description
-	)
-	task.start()
-	print(f"Exporting FeatureCollection to {asset_id} with task ID: {task.id}")
 
 
 #------------------------------------------------------------------------------------------
