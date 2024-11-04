@@ -18,6 +18,8 @@ import time
 from collections import Counter
 import ee
 import sys
+import time
+
 #-------------------------------------------------------------------
 import params.north_cascades_config_opt3_2023 as access
 ee.Initialize(project="r6-bugnet")
@@ -57,28 +59,41 @@ if mode == 'generate' or mode == 'all':
 #---------------------------------------------------------------
 if mode == 'attribute' or mode == 'all':
 
+    # Start the timer
+    start_time = time.time()
     # attribute with gee methods
+    this_time = time.time()
     gee_attributed_fc = run.attribute_with_reference_data(access.param,'training')
+    print("attributed with reference data "+str((this_time-start_time)/60)) 
 
     # reproject and change feature collecton to json
+    this_time = time.time()
     reprojected_geojson = run.feature_collection_to_geojson(gee_attributed_fc, access.param['source_epsg'], access.param['target_epsg'])    # apply reprojections and feature collection to geojson t>
-    print(reprojected_geojson) # <<<<<<   look in to fc_list in run.py passing a whole list of features could we just pass a single feature?
+    print("feature collection to geojson and reproject "+str((this_time-start_time)/60)) 
+    #print(reprojected_geojson) # <<<<<<   look in to fc_list in run.py passing a whole list of features could we just pass a single feature?
 
     # attribute with Cmonster
+    this_time = time.time()
     event_polygons_attri1 = run.attribute_with_cmonster_data(reprojected_geojson,access.param['cMonster_img_path'])                   # apply attribution (cMonster)
-    print(event_polygons_attri1) # <<<<<<<< Look into vrt creation. It looks like  it reading in an image everytime it does somthing. try to read the image in once into memeory.
+    print("attribute geojson with cmonster data "+str((this_time-start_time)/60)) 
 
     # reproject and convert to featrue collection
+    this_time = time.time()
     reprojected_geojson = run.geojson_to_ee_feature(event_polygons_attri1, access.param['target_epsg'], access.param['source_epsg'])           # apply re-reprojection and geojson to feature collection>
+    print("geojson to gee feature collection and reproject "+str((this_time-start_time)/60)) 
 
-    # export 
-    export_fearture_collection(reprojected_geojson,access.param['attributed_polygons_training'],access.param['assetDir'] )
+    # export
+    this_time = time.time()
+    run.export_fearture_collection(reprojected_geojson,access.param['attributed_polygons_training'],access.param['assetDir'] )
+    print("export "+str((this_time-start_time)/60)) 
     #-------------------------------------------------------------------
     # attribute polygons two with refeance data
     # attribute with gee methods
+    print("attribute_with_reference_data (predictor)") 
     gee_attributed_fc = run.attribute_with_reference_data(access.param,'predictor')
-    # export 
-    export_fearture_collection(reprojected_geojson,access.param['attributed_polygons_predictor'],access.param['assetDir'] )
+    # exportt 
+    print("export") 
+    run.export_fearture_collection(gee_attributed_fc,access.param['attributed_polygons_predictor'],access.param['assetDir'] )
     
 
 #---------------------------------------------------------------

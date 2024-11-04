@@ -85,21 +85,6 @@ def export_image(stack, params, asset,scale=30, max_pixels=1e13):
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------
-def polygons(self, lt, composite_params, change_params,asset_path,prefix):
-	self.lt = lt  # LandTrendr object
-	self.composite_params = composite_params
-	self.change_params = change_params
-	self.asset_path = asset_path
-	self.prefix = prefix
-	self.asset_id = prefix + "_polygons_"+str(change_params['years']['start'])+'_'+str(change_params['years']['end'])
-	self.exists = 0
-	try:
-		ee.data.getAsset(self.asset_path+self.asset_id)
-		self.exists = 1
-		print("Asset Exists: "+self.asset_id)
-	except ee.ee_exception.EEException:
-		self.exists = 0
-		print("Asset Does not Exist: "+self.asset_id+" Creating")
 
 def vectorize_disturbance(change_image,params):
 	disturbance_polygons = change_image.select('yod').reduceToVectors(
@@ -126,8 +111,8 @@ def attribute_with_reference_data(params,who):
 	"""
 	def _process_polygon(polygon):
 		yod = ee.Number(polygon.get('yod'))
-		years = ee.List.sequence(yod.subtract(4), yod)
-		yrs_int = ee.List.sequence(1,5)
+		years = ee.List.sequence(yod.subtract(3), yod)
+		yrs_int = ee.List.sequence(1,4)
 		indices = ee.List(['nbr_ftv', 'tcb_ftv', 'tcg_ftv', 'tcw_ftv'])
 
 		def make_band_names(year):
@@ -164,7 +149,7 @@ def attribute_with_reference_data(params,who):
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor'])
                 return in_fc.map(_process_polygon)
 
-# Move the `process_polygon` function to the global scope for multiprocessing compatibility
+
 def process_polygon(polygon, raster_path):
 	"""
 	Process each polygon by extracting cMonster data.
@@ -175,17 +160,16 @@ def process_polygon(polygon, raster_path):
 		proportions = {key: value / total_count for key, value in occurrences.items()}
 		return proportions
 
-	def create_virtual_raster(polygon, raster_path, yod_band):
-		with rasterio.open(raster_path) as src:
+	def create_virtual_raster(_polygon, _raster_path, yod_band):
+		with rasterio.open(_raster_path) as src:
 			band_index = yod_band - 1984 + 1  # Adjust for 1-based indexing
-			geom = [shape(polygon['geometry'])]
+			geom = [shape(_polygon['geometry'])]
 			out_image, out_transform = mask(src, geom, crop=True, indexes=int(band_index))
 			return out_image
 
 	def calculate_mode(virtual_raster):
 		flat_pixels = virtual_raster.flatten()
 		flat_pixels = flat_pixels[flat_pixels != 0]  # Filter out no-data values if needed
-		#print(flat_pixels)
 		if len(flat_pixels) == 0:
 			return -9999
 		proportions = calculate_occurrences_proportion(flat_pixels)
@@ -216,10 +200,14 @@ def attribute_with_cmonster_data(polygon_list,raster_path):
 	"""
 	Attribute polygons with cMonster data using a local raster (virtual raster).
 	"""
+	print(len(polygon_list))
 	#def parallel_processing(polygon_list, raster_path):
 	with multiprocessing.Pool(processes=20) as pool:
 		results = pool.starmap(process_polygon, [(polygon, raster_path) for polygon in polygon_list])
-		return [x for x in results if x is not None]
+	print(len(results))
+	out = [x for x in results if x is not None]
+	print(out)
+	return out
 
 	#return parallel_processing(polygon_list, raster_path)
 
@@ -277,7 +265,6 @@ def drop_null_features(self,fc, property_name):
 
 # Run the check before classification
 def _mutate_predictor_variables_list(self):
-	print(self.predictor_variables)
 	self.predictor_variables = self.predictor_variables.filter(ee.Filter.neq('item', 'system:index')) 
 	return 0
 
@@ -331,9 +318,9 @@ def geojson_to_ee_feature(geojson,s_crs,t_crs):
 		geometry = feature['geometry']
 		properties = feature['properties']
 
-	# Create an Earth Engine feature from GeoJSON geometry and properties
-	ee_feature = ee.Feature(ee.Geometry(geometry), properties)
-	features.append(ee_feature)
+		# Create an Earth Engine feature from GeoJSON geometry and properties
+		ee_feature = ee.Feature(ee.Geometry(geometry), properties)
+		features.append(ee_feature)
 
 	# Return a FeatureCollection from the list of EE Features
 	return ee.FeatureCollection(features)
@@ -405,63 +392,6 @@ def feature_collection_to_geojson(fc, src_epsg, target_epsg):
 	return geojson
 
 
-# Move the `process_polygon` function to the global scope for multiprocessing compatibility
-def process_polygon(polygon, raster_path):
-	"""
-	Process each polygon by extracting cMonster data.
-	"""
-	def calculate_occurrences_proportion(values):
-		total_count = len(values)
-		occurrences = Counter(values)
-		proportions = {key: value / total_count for key, value in occurrences.items()}
-		return proportions
-
-	def create_virtual_raster(polygon, raster_path, yod_band):
-		with rasterio.open(raster_path) as src:
-			band_index = yod_band - 1984 + 1  # Adjust for 1-based indexing
-			geom = [shape(polygon['geometry'])]
-			out_image, out_transform = mask(src, geom, crop=True, indexes=int(band_index))
-			return out_image
-
-	def calculate_mode(virtual_raster):
-		flat_pixels = virtual_raster.flatten()
-		flat_pixels = flat_pixels[flat_pixels != 0]  # Filter out no-data values if needed
-		#print(flat_pixels)
-		if len(flat_pixels) == 0:
-			return -9999
-		proportions = calculate_occurrences_proportion(flat_pixels)
-
-		if any(value >= 0.50 for value in proportions.values()):
-			if len(flat_pixels) > 0:
-				mode_result = stats.mode(flat_pixels, axis=None)
-				mode_value = mode_result.mode.item()
-			else:
-				mode_value = -9999  # No valid pixels in this polygon
-		else:
-			mode_value = -9999
-			return mode_value
-	
-		yod = polygon['properties']['yod']
-		virtual_raster = create_virtual_raster(polygon, raster_path, yod)
-		mode_value = calculate_mode(virtual_raster)
-
-		if mode_value == -9999:
-			return None
-
-		polygon['properties']['mode_value'] = mode_value
-		return polygon
-
-
-
-	yod = polygon['properties']['yod']
-	virtual_raster = create_virtual_raster(polygon, raster_path, yod)
-	mode_value = calculate_mode(virtual_raster)
-
-	if mode_value == -9999:
-		return None
-
-	polygon['properties']['mode_value'] = mode_value
-	return polygon
 
 # Function to monitor the status of multiple tasks and update in place
 def monitor_tasks(tasks):
