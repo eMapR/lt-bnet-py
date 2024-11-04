@@ -79,12 +79,12 @@ if mode == 'attribute' or mode == 'all':
 
     # reproject and convert to featrue collection
     this_time = time.time()
-    reprojected_geojson = run.geojson_to_ee_feature(event_polygons_attri1, access.param['target_epsg'], access.param['source_epsg'])           # apply re-reprojection and geojson to feature collection>
+    reprojected_fc = run.geojson_to_ee_feature(event_polygons_attri1, access.param['target_epsg'], access.param['source_epsg'])           # apply re-reprojection and geojson to feature collection>
     print("geojson to gee feature collection and reproject "+str((this_time-start_time)/60)) 
 
     # export
     this_time = time.time()
-    run.export_fearture_collection(reprojected_geojson,access.param['attributed_polygons_training'],access.param['assetDir'] )
+    run.export_fearture_collection(reprojected_fc,access.param['attributed_polygons_training'],access.param['assetDir'] )
     print("export "+str((this_time-start_time)/60)) 
     #-------------------------------------------------------------------
     # attribute polygons two with refeance data

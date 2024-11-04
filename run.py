@@ -143,7 +143,7 @@ def attribute_with_reference_data(params,who):
 	if who == 'training':
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_training'])
-                return in_fc.filter(ee.Filter.gt('count',75)).map(_process_polygon)
+                return in_fc.filter(ee.Filter.And(ee.Filter.gt('count',75),ee.Filter.lt('count',70000))).map(_process_polygon)
 	else:
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor'])
@@ -206,7 +206,7 @@ def attribute_with_cmonster_data(polygon_list,raster_path):
 		results = pool.starmap(process_polygon, [(polygon, raster_path) for polygon in polygon_list])
 	print(len(results))
 	out = [x for x in results if x is not None]
-	print(out)
+	print(len(out))
 	return out
 
 	#return parallel_processing(polygon_list, raster_path)
