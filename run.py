@@ -303,7 +303,7 @@ def attribute_with_cmonster_data(polygon_list,raster_path):
 
 
 
-def export_fearture_collection(fc,asset_id,asset_path):
+def export_feature_collection(fc,asset_id,asset_path):
 	# Create the export task
 	fc_task = ee.batch.Export.table.toAsset(
 		collection=fc,
@@ -339,7 +339,7 @@ def classifier(self, labeled_fc_path, unlabeled_fc_path, label_property, num_tre
 	self.labeled_fc = self.drop_null_features(self.labeled_fc,'tcw_ftv_6')
 	self.unlabeled_fc = self.drop_null_features(self.unlabeled_fc,'tcw_ftv_6')
 
-def drop_null_features(self,fc, property_name):
+def drop_null_features(fc, property_name):
 	"""
 	Drops features from a Feature Collection if they contain null values for a specific property.
 
@@ -351,36 +351,36 @@ def drop_null_features(self,fc, property_name):
 	- ee.FeatureCollection, the filtered feature collection.
 	"""
 	# Filter out features that have null values for the specified property
-	filtered_fc = fc.filter(ee.Filter.notNull([property_name]))
+	filtered_fc = fc.filter(ee.Filter.notNull(property_name))
 	return filtered_fc
 
 # Run the check before classification
-def _mutate_predictor_variables_list(self):
-	self.predictor_variables = self.predictor_variables.filter(ee.Filter.neq('item', 'system:index')) 
-	return 0
+def _mutate_predictor_variables_list(__predictor_variables):
+	__predictor_variables = __predictor_variables.filter(ee.Filter.neq('item', 'system:index')) 
+	return __predictor_variables
 
-def train_classifier(self):
+def train_classifier(_labeled_fc,_label_property,_predictor_variables,_num_trees):
 	"""
 	Train a Random Forest classifier using the labeled data.
 	"""
-	self._mutate_predictor_variables_list()
+	_predictor_variables = _mutate_predictor_variables_list(_predictor_variables)
 
-	classifier = ee.Classifier.smileRandomForest(self.num_trees).train(
-		features=self.labeled_fc,
-		classProperty=self.label_property,
-		inputProperties=self.predictor_variables
+	classifier = ee.Classifier.smileRandomForest(_num_trees).train(
+		features=_labeled_fc,
+		classProperty=_label_property,
+		inputProperties=_predictor_variables
 	)
 	return classifier
 
 
-def classify_features(self, classifier):
+def classify_features(_unlabeled_fc,_classifier):
 	"""
 	Classify the unlabeled feature collection.
 
 	:param classifier: The trained classifier to use for classifying features
 	:return: The classified feature collection
 	"""
-	classified = self.unlabeled_fc.classify(classifier)
+	classified = _unlabeled_fc.classify(_classifier)
 	return classified
 
 

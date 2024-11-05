@@ -62,6 +62,13 @@ param['change_params'] = {
                     'preval': {'value': 300, 'operator': '>'},
                     'mmu': {'value': 5}
                 }
+param['classified_fc']= f"classified_polygons_{param['composite_params']['end_date'].year}"
+param['num_trees']= 200
+param['filtered_classes'] = f"classified_polygons_filtered_{param['composite_params']['end_date'].year}"
+param['buffered_classes'] = f"classified_polygons_buffered_{param['composite_params']['end_date'].year}"
+param['rasterize_classes'] = f"classed_img_{param['composite_params']['end_date'].year}"
+
+
 
 # Transformation parameters
 param['index'] = "NBR"

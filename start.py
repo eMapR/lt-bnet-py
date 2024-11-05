@@ -28,7 +28,7 @@ ee.Initialize(project="r6-bugnet")
 #asset_path = "projects/r6-bugnet/assets/north_cascades/"
 #ROI = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
 #asset_path = "projects/r6-bugnet/assets/north_cascades/"
-mode = 'attribute'
+mode = 'post'
 #-------------------------------------------------------------------
 # Parameter Setup---------------------------------------------------
 #---------------------------------------------------------------
@@ -50,10 +50,10 @@ if mode == 'generate' or mode == 'all':
     run.export_image(change_img_p,access.param, access.param['predictor_change_img'])
 
     disturbance_polygons_t = run.vectorize_disturbance(change_img_t,access.param)
-    run.export_polygons(disturbance_polygons_t,access.param,access.param['disturbance_polygons_training'])
+    run.export_polygons(disturbance_polygons_t,access.param['disturbance_polygons_training'])
 
-    disturbance_polygons_p = run.vectorize_disturbance(change_img_p,access.param)
-    run.export_polygons(disturbance_polygons_p,access.param,access.param['disturbance_polygons_predictor'])
+    disturbance_polygons_p = run.vectorize_disturbance(change_img_p,access.param,access.param['assetDir'])
+    run.export_polygons(disturbance_polygons_p,access.param['disturbance_polygons_predictor'],access.param['assetDir'])
 
 #---------------------------------------------------------------
 #---------------------------------------------------------------
@@ -84,7 +84,7 @@ if mode == 'attribute' or mode == 'all':
 
     # export
     this_time = time.time()
-    run.export_fearture_collection(reprojected_fc,access.param['attributed_polygons_training'],access.param['assetDir'] )
+    run.export_feature_collection(reprojected_fc,access.param['attributed_polygons_training'],access.param['assetDir'] )
     print("export "+str((this_time-start_time)/60)) 
     #-------------------------------------------------------------------
     # attribute polygons two with refeance data
@@ -93,24 +93,41 @@ if mode == 'attribute' or mode == 'all':
     gee_attributed_fc = run.attribute_with_reference_data(access.param,'predictor')
     # exportt 
     print("export") 
-    run.export_fearture_collection(gee_attributed_fc,access.param['attributed_polygons_predictor'],access.param['assetDir'] )
+    run.export_feature_collection(gee_attributed_fc,access.param['attributed_polygons_predictor'],access.param['assetDir'] )
     
 
 #---------------------------------------------------------------
 #-------------------------------------------------------------------
 if mode == 'predict' or mode == 'all':
-    label_property = 'mode_value'
-    main.predict(params_handler,change_params,label_property,asset_path)
+
+
+    labeled_fc = ee.FeatureCollection(access.param['assetDir']+access.param['attributed_polygons_training']) #.filter(ee.Filter.lt('mode_value',101))
+    unlabeled_fc = ee.FeatureCollection(access.param['assetDir']+access.param['attributed_polygons_predictor'])
+    predictor_variables = unlabeled_fc.first().propertyNames()
+    labeled_fc = run.drop_null_features(labeled_fc,predictor_variables)
+    unlabeled_fc = run.drop_null_features(unlabeled_fc,predictor_variables)
+    print(predictor_variables.getInfo())
+    # Train the classifier
+    trained_classifier = run.train_classifier(labeled_fc,"mode_value",predictor_variables,access.param['num_trees'])
+    # Classify the features
+    classified_fc = run.classify_features(unlabeled_fc, trained_classifier)
+    # Export the classified FeatureCollection to Google Drive
+    run.export_feature_collection(classified_fc,access.param['classified_fc'],access.param['assetDir'])
+
+
+
 #---------------------------------------------------------------
 #-------------------------------------------------------------------
 if mode == 'post' or mode == 'all':
-    fc1 = bnet.filter_by_mode_value(ee.FeatureCollection(asset_path + 'classified_polgyons_'+str(composite_params['end_date'].year)), 19, 41, 60, 90)
-    fc2 = bnet.buffer_features(fc1, 100)
-    #img = bnet.rasterize_polygons(fc2, 'classification', 30, region=ROI)
-    img = bnet.rasterize_polygons(ee.FeatureCollection('projects/r6-bugnet/assets/north_cascades/classed_buffer_2024'), 'classification', 30, region=ROI)
-    bnet.export_featurecollection_to_asset(fc1, asset_path,'classed_filtered_'+str(composite_params['end_date'].year))
-    bnet.export_featurecollection_to_asset(fc2, asset_path,'classed_buffer_'+str(composite_params['end_date'].year))
-    bnet.export_image_to_asset(img, asset_path,"classed_img_"+str(composite_params['end_date'].year), 30, ROI)
+
+    fc1 = run.filter_by_mode_value(ee.FeatureCollection(access.param['assetDir'] + access.param['classified_fc']), 19, 41, 60, 90)
+    fc2 = run.buffer_features(fc1, 100)
+    img = run.rasterize_polygons(fc2, 'classification', 30, region=access.param['aoi'])
+
+    run.export_feature_collection(fc1, access.param['filtered_classes'], access.param['assetDir'])
+    run.export_feature_collection(fc2, access.param['buffered_classes'], access.param['assetDir'])
+    run.export_image(img, access.param,access.param['rasterize_classes'])
+
 #---------------------------------------------------------------
 #-------------------------------------------------------------------
 if mode == 'remove':
