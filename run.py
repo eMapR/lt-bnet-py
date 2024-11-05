@@ -7,6 +7,7 @@ import json
 import os
 import rasterio
 import geopandas as gpd
+import pandas as pd
 import numpy as np
 from rasterio.features import geometry_mask
 from scipy import stats
@@ -18,6 +19,7 @@ import time
 from collections import Counter
 import ee
 import sys
+from sklearn.utils import resample
 #-------------------------------------------------------------------
 ee.Initialize(project="r6-bugnet")
 #-------------------------------------------------------------------
@@ -143,7 +145,7 @@ def attribute_with_reference_data(params,who):
 	if who == 'training':
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_training'])
-                return in_fc.filter(ee.Filter.And(ee.Filter.gt('count',75),ee.Filter.lt('count',70000))).map(_process_polygon)
+                return in_fc.filter(ee.Filter.And(ee.Filter.gt('count',75),ee.Filter.lt('count',50000))).map(_process_polygon)
 	else:
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor'])
@@ -194,22 +196,111 @@ def process_polygon(polygon, raster_path):
 	polygon['properties']['mode_value'] = mode_value
 	return polygon
 
+def geojsons_to_dataframe(geojson_dicts):
+    """
+    Converts a list of GeoJSON dictionaries into a single DataFrame.
+    
+    Parameters:
+    geojson_dicts (list): A list of dictionaries, each representing GeoJSON data.
+    
+    Returns:
+    pd.DataFrame: A DataFrame containing data from all GeoJSON dictionaries.
+    """
+    # List to hold GeoDataFrames
+    gdf_list = []
+    
+    # Iterate over each GeoJSON dictionary in the list
+    for feature in geojson_dicts:
+        # Extract features and convert each feature into a row with geometry
+        #features = geojson['features']
+        #rows = []
+        #for feature in features:
+        row = feature['properties'].copy()  # Copy properties to a new dictionary
+        row['geometry'] = shape(feature['geometry'])  # Convert geometry to shapely object
+        gdf_list.append(row)
+        
+        # Create a GeoDataFrame from the list of rows
+    gdf = gpd.GeoDataFrame(gdf_list, geometry='geometry', crs="EPSG:4326")
+        #gdf_list.append(gdf)
+    # Concatenate all GeoDataFrames into a single DataFrame
+    #combined_gdf = pd.concat(gdf, ignore_index=True)
+    
+    return gdf
 
+def balance_dataset(df, category_col, sample_size=100):
+    """
+    Balances a dataset by downsampling overrepresented categories.
+    
+    Parameters:
+    df (pd.DataFrame): The dataset containing the categories to balance.
+    category_col (str): The name of the column with categorical values to balance.
+    sample_size (int): Maximum number of samples per category. Default is 100.
+    
+    Returns:
+    pd.DataFrame: A balanced DataFrame.
+    """
+    # List to hold balanced data
+    balanced_data = []
+    
+    # Iterate over each category in the category column
+    for category, group in df.groupby(category_col):
+        # Determine the number of samples to keep
+        if len(group) > sample_size:
+            # Downsample if the group is larger than sample_size
+            group_downsampled = resample(group, n_samples=sample_size, random_state=42)
+            balanced_data.append(group_downsampled)
+        else:
+            # Keep the group as is if it's smaller than or equal to sample_size
+            balanced_data.append(group)
+    
+    # Concatenate all the balanced groups
+    balanced_df = pd.concat(balanced_data)
+    
+    return balanced_df
+
+
+def dataframe_to_geojson_features(df):
+    """
+    Converts each record in a DataFrame to a GeoJSON feature and appends to a list.
+    
+    Parameters:
+    df (pd.DataFrame or gpd.GeoDataFrame): The DataFrame to convert.
+    
+    Returns:
+    list: A list of GeoJSON features.
+    """
+    # Ensure the DataFrame is a GeoDataFrame to include geometry
+    if not isinstance(df, gpd.GeoDataFrame):
+        raise TypeError("The DataFrame must be a GeoDataFrame with a 'geometry' column.")
+    
+    # List to hold GeoJSON features
+    features = []
+    
+    # Iterate over each row in the DataFrame
+    for _, row in df.iterrows():
+        # Convert each row to a GeoJSON feature
+        feature = {
+            "type": "Feature",
+            "properties": row.drop("geometry").to_dict(),  # Exclude geometry from properties
+            "geometry": mapping(row["geometry"])  # Convert geometry to GeoJSON format
+        }
+        features.append(feature)
+    
+    return features
 
 def attribute_with_cmonster_data(polygon_list,raster_path):
 	"""
 	Attribute polygons with cMonster data using a local raster (virtual raster).
 	"""
-	print(len(polygon_list))
-	#def parallel_processing(polygon_list, raster_path):
 	with multiprocessing.Pool(processes=20) as pool:
 		results = pool.starmap(process_polygon, [(polygon, raster_path) for polygon in polygon_list])
-	print(len(results))
 	out = [x for x in results if x is not None]
-	print(len(out))
-	return out
+	combined_df = geojsons_to_dataframe(out)
+	balanced_df = balance_dataset(combined_df, category_col='mode_value', sample_size=200)
+	geojson_features = dataframe_to_geojson_features(balanced_df)
 
-	#return parallel_processing(polygon_list, raster_path)
+	return geojson_features
+
 
 
 def export_fearture_collection(fc,asset_id,asset_path):
