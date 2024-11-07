@@ -3,7 +3,7 @@ from ltgee import LandTrendr, LandsatComposite, LtCollection
 from datetime import date
 import datetime 
 import bnet as bnet
-import pprint
+
 ee.Initialize(project='r6-bugnet')
 
 param = {}
@@ -21,8 +21,8 @@ param["platform"] = 'lS'
 param['start_date'] = '06-01'
 param['end_date'] = '09-01'
 param['ltstartYear'] = 2000
-param['ltendYear'] = 2023
-param['target'] = 2023
+param['ltendYear'] = 2024
+param['target'] = 2024
 param['trainingYear'] = 2023
 targetPlus5 = param['target']+5
 param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 1000)
@@ -34,40 +34,9 @@ param['composite_params'] = {
     "start_date": date(param['ltstartYear'], 6,1),
     "end_date": date(param['ltendYear'], 9,1),
     "area_of_interest": param['aoi'],
-    "mask_labels": ['cloud', 'shadow', 'snow', 'water'],
+    "mask_labels": [],
     "debug": True
 }
-
-# HIGH MAG STUFF 
-param['fitted_img_t'] = f"training_fitted_img_2008_2012"
-param['fitted_img_p'] = f"predictor_fitted_img_{param['composite_params']['end_date'].year-5}_{param['composite_params']['end_date'].year}"
-param['training_change_img'] = f"training_change_img_2012"
-param['predictor_change_img'] = f"predictor_change_img_{param['composite_params']['end_date'].year}"
-param['disturbance_polygons_training']= f"training_disturbance_polygons_2012"
-param['disturbance_polygons_predictor']= f"predictor_disturbance_polygons_{param['composite_params']['end_date'].year}"
-
-param['attributed_polygons_training']= f"attributed_training_polygons_2012"
-param['attributed_polygons_predictor']= f"attributed_predictor_polygons_{param['composite_params']['end_date'].year}"
-
-param['source_epsg'] = 'EPSG:4326'
-param['target_epsg'] = 'EPSG:5070'
-
-param['cMonster_img_path']= "/vol/v1/lt-bnet-py/assets/aggregated_attributions.tif" 
-param['change_params'] = {
-                    'delta': 'loss',
-                    'sort': 'greatest',
-                    'years': {'start': param['composite_params']["start_date"].year, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 200, 'operator': '>' },
-                    'dur': {'value': 4, 'operator': '<'},
-                    'preval': {'value': 300, 'operator': '>'},
-                    'mmu': {'value': 5}
-                }
-param['classified_fc']= f"classified_polygons_{param['composite_params']['end_date'].year}"
-param['num_trees']= 200
-param['filtered_classes'] = f"classified_polygons_filtered_{param['composite_params']['end_date'].year}"
-param['buffered_classes'] = f"classified_polygons_buffered_{param['composite_params']['end_date'].year}"
-param['rasterize_classes'] = f"classed_img_{param['composite_params']['end_date'].year}"
-
 
 
 # Transformation parameters
@@ -76,7 +45,7 @@ param['fit'] = ["NBR", "TCG", "TCW", "TCB"]
 
 # ADS parameters
 param['ads'] = ee.FeatureCollection('projects/r6-bugnet/assets/ads-r6-2023')  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-#param['ads_damage'] = 30
+param['ads_damage'] = 30
 
 # File naming parameters
 param['version'] = 'v1'
@@ -87,7 +56,7 @@ param['assetDir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<
 param['LTSDdir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # LTSD name
-param['LTSDname'] = param['fitted_img_p']
+param['LTSDname'] = f"predictor_img_{param['target']}"
 
 # SNIC parameters
 param['snicName'] = f"SNIC_{param['configName']}_{param['target']}"
@@ -159,15 +128,14 @@ else:
     param['lt_params'] = {
         "lt_collection": param['lt_collection_params'], # - you may also just pass in your own collection or the params directly. Note: in the former, some methods in the class may not work.
         "run_params": {
-                "maxSegments": 6,
-                "spikeThreshold": 0.9,
-                "vertexCountOvershoot": 3,
-                "preventOneYearRecovery": True,
-                "recoveryThreshold": 0.25,
-                "pvalThreshold": 0.05,
-                "bestModelProportion": 0.75,
-                "minObservationsNeeded": 6,
+            'maxSegments': 10,
+            'spikeThreshold': 0.9,
+            'vertexCountOvershoot': 3,
+            'preventOneYearRecovery': True,
+            'recoveryThreshold': 0.95,
+            'pvalThreshold': 0.05,
+            'bestModelProportion': 0.95,
+            'minObservationsNeeded': 10
         }
     }
-
-pprint.pprint(param)
+print(param)

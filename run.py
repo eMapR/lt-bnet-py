@@ -113,6 +113,7 @@ def attribute_with_reference_data(params,who):
 	"""
 	def _process_polygon(polygon):
 		yod = ee.Number(polygon.get('yod'))
+		#count = ee.Number(polygon.get('count')).getInfo()
 		years = ee.List.sequence(yod.subtract(3), yod)
 		yrs_int = ee.List.sequence(1,4)
 		indices = ee.List(['nbr_ftv', 'tcb_ftv', 'tcg_ftv', 'tcw_ftv'])
@@ -140,7 +141,10 @@ def attribute_with_reference_data(params,who):
 
 		perimeter = polygon.geometry().perimeter().divide(1000)
 
-		return polygon.set(raster_values).set({'area_km2': area,'perimeter_km': perimeter})
+		#if count > 4000:
+		#	return polygon.set(raster_values).set({'area_km2': area,'perimeter_km': perimeter,'mode_value': 40})
+		#else:
+		return polygon.set(raster_values).set({'area_km2': area,'perimeter_km': perimeter, 'mode_value': 0})
 
 	if who == 'training':
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
@@ -174,6 +178,8 @@ def process_polygon(polygon, raster_path):
 		flat_pixels = flat_pixels[flat_pixels != 0]  # Filter out no-data values if needed
 		if len(flat_pixels) == 0:
 			return -9999
+		if len(flat_pixels) > 4000:
+			return 40
 		proportions = calculate_occurrences_proportion(flat_pixels)
 
 		if any(value >= 0.50 for value in proportions.values()):
@@ -380,8 +386,20 @@ def classify_features(_unlabeled_fc,_classifier):
 	:param classifier: The trained classifier to use for classifying features
 	:return: The classified feature collection
 	"""
+
+	def cast_fire(f):
+		#count = f.get('count').getInfo()		
+		count = ee.Number(f.get('count'))
+		# Use ee.Algorithms.If to perform conditional logic
+		_result = ee.Algorithms.If(
+			count.gt(4000),    # Condition to check
+			f.set({"classification":40}),            # Expression if condition is true
+			f      # Expression if condition is false
+		)
+		return _result
+
 	classified = _unlabeled_fc.classify(_classifier)
-	return classified
+	return classified.map(cast_fire)
 
 
 

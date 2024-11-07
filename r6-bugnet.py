@@ -1,11 +1,5 @@
-# Import the Earth Engine library
 import ee
-
-# Import the LandTrendr, LandsatComposite, and LtCollection modules from the ltgee package
 from ltgee import LandTrendr, LandsatComposite, LtCollection
-
-# Import the geemap package, which provides a convenient interface for using GEE with Python
-#import geemap
 
 # Import a custom configuration module named config as bnet_config
 #import blue_mt_config_opt2_2023 as bnet_config
@@ -49,12 +43,6 @@ import sys
 
 import time
 
-# Get the current script's directory
-#current_dir = os.path.dirname(os.path.abspath("./"))
-
-# Add the parent directory to sys.path
-#sys.path.append(current_dir)
-
 # Import a custom module named bnet
 import bnet as bnet
 
@@ -67,7 +55,7 @@ from datetime import date
 # Initialize the Earth Engine API with a specific project
 ee.Initialize(project="r6-bugnet")
 
-
+sys.exit()
 ##############################################################################
 # Wait for Task to complete
 ##############################################################################
@@ -102,40 +90,18 @@ def asset_exists(asset_id):
 
 
 ##############################################################################
-# Create LTSD Image
+# Create Base Imagery and disturbance Polygons
 ##############################################################################
-def CreateLTSDimage(lt_,params_):
-    # check to see if output asset exists
-    exists = asset_exists(params_["assetDir"]+params_["LTSDname"])
-    
-    if exists:
+##############################################################################
+# Attribute Disturbance Polygons with Base Imagery 
+##############################################################################
+##############################################################################
+# Classify Polygons 
+##############################################################################
+##############################################################################
+# Create High Disturbance Mask From Polygons 
+##############################################################################
 
-        return
-
-    # Get LandTrendr Segment info
-    last_seg = bnet.get_lt_last_seg_info(lt_, 'nbr').selfMask()
-
-    # Forests Height
-    canopy_ht_img = ee.ImageCollection("projects/meta-forest-monitoring-okw37/assets/CanopyHeight").mean().gt(5)
-
-    # Forest locations Alaska
-    forestMask = canopy_ht_img.reproject(crs='EPSG:4326', scale=30).clip(bnet_config.param['aoi']).selfMask()
-
-    # Generate LandTrendr standardized imagery and add the LandTrendr segment info as an additional band then mask non-forest regions
-    ltsd = bnet.standardized_lt_image(lt_, params_["ltstartYear"], params_["ltendYear"], params_["index"], params_["ltendYear"]).addBands(last_seg).mask(forestMask)
-
-    # Export imagery
-    task_ltsd = ee.batch.Export.image.toAsset(
-        image=ltsd.toInt16(),
-        description=params_["LTSDname"],
-        assetId=params_["assetDir"]+params_["LTSDname"],
-        region=params_["aoi"].geometry(),
-        scale=30,
-        maxPixels=1e9
-    )
-    task_ltsd.start()
-
-    return task_ltsd
 
 
 ##############################################################################
@@ -144,30 +110,22 @@ def CreateLTSDimage(lt_,params_):
 def CreateForestMask():
 	# check to see if output asset exists
 	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['forestMaskName'])
-	
+
 	if exists:
 
 		return
 
 	mtbs = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
-	
+
 	# LCMS forest mask
 	lcms_mask = bnet.lcms_forest_mask(bnet_config.param['target']-5,bnet_config.param['target']).clip(bnet_config.param['aoi'])
-	
+
 	#reflectance mask
-	tassMap = bnet.tasselCapMask(bnet_config) # <<<<<<<<<<<<<< need to find a better way. WorldViews canopy cover?
-	
+	tassMap = bnet.tasselCapMask(bnet_config)
+
 	#High Magnitude -- makes a raster mask from vector layer of clear cuts fire etc 
-	#highMagChange_img = bnet_config.param['ltchange'].lte(bnet_config.param['target']).unmask().Not()
 	highMagChange_img = bnet_config.param['ltchange'].gt(0).unmask().Not()
-	#highMagChange_img = (
-	#	bnet.ltcalc(bnet_config.param['target'], bnet_config.param['ltchange'])
-	#	.reduceToImage(properties=["yod"], reducer=ee.Reducer.mean())
-	#	.gt(0)
-	#	.unmask()
-	#	.Not()
-	#)
-	
+
 	#Fire mask - filter MTBS dataset by date 
 	fires = mtbs.filter(
 		ee.Filter.And(
@@ -175,18 +133,19 @@ def CreateForestMask():
 			ee.Filter.lte("Ig_Date", bnet_config.param['maskEndTime'])
 		)
 	)
+
 	# change MTBS dataset to raster binary
 	fire_img = fires.reduceToImage(properties=["Map_ID"], reducer=ee.Reducer.mean()) \
                 	.gt(0) \
                 	.unmask() \
                 	.Not()
-		
+
 		# takes the product of all the  mask
 	mask = lcms_mask.multiply(highMagChange_img) \
 			.multiply(fire_img) \
 			.multiply(tassMap) \
 			.clip(bnet_config.param['aoi'])
-		
+
 	# export image mask
 	task_mask = ee.batch.Export.image.toAsset(
 		#image=ee.Image(bnet_config.param['LTSDdir'] + bnet_config.param['LTSDname']).select([0]).multiply(0).add(1).byte(),
@@ -198,7 +157,7 @@ def CreateForestMask():
 		maxPixels=1e13
 	)
 	task_mask.start()
-	
+
 	return task_mask
 
 ##############################################################################
@@ -207,6 +166,7 @@ def CreateForestMask():
 def SNIC():
 	# check to see if output asset exists
 	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['snicName'])
+
 	if exists:
 
 		return
@@ -237,6 +197,7 @@ def SNIC():
 # Declining SNIC
 ##############################################################################
 def DecliningSNIC():
+
 	# check to see if output asset exists
 	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['declineName'])
 
@@ -267,6 +228,7 @@ def DecliningSNIC():
 # Declining LTSD
 ##############################################################################
 def DecliningLTSD():
+
 	# check to see if output asset exists
 	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['declineName'])
 
@@ -275,7 +237,7 @@ def DecliningLTSD():
 		return
 
 	# Apply the function
-	ltsd_decline = bnet.LTSD_decline_image(ee.Image(bnet_config.param['assetDir'] + bnet_config.param['LTSDname']),bnet_config.param['ltendYear']).updateMask(bnet_config.param['Mask'])
+	ltsd_decline = bnet.LTSD_decline_image(ee.Image(bnet_config.param['assetDir'] + bnet_config.param['fitted_img_p']),bnet_config.param['ltendYear']).updateMask(bnet_config.param['Mask'])
 
 	# Export the image
 	export_params = {
@@ -292,7 +254,7 @@ def DecliningLTSD():
 	task_decline_snic.start()
 
 	return task_decline_snic
-	
+
 
 ##############################################################################
 # Sample for Kmeans build 

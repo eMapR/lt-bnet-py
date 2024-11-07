@@ -21,14 +21,15 @@ import sys
 import time
 
 #-------------------------------------------------------------------
-import params.north_cascades_config_opt3_2023 as access
+#import params.north_cascades_config_opt3_2023 as access
+import params.north_cascades_config_opt3_2024 as access
 ee.Initialize(project="r6-bugnet")
 #-------------------------------------------------------------------
 #ROI = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/bugnet_North_Cascades")
 #asset_path = "projects/r6-bugnet/assets/north_cascades/"
 #ROI = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
 #asset_path = "projects/r6-bugnet/assets/north_cascades/"
-mode = 'post'
+mode = 'generate'
 #-------------------------------------------------------------------
 # Parameter Setup---------------------------------------------------
 #---------------------------------------------------------------
@@ -50,10 +51,10 @@ if mode == 'generate' or mode == 'all':
     run.export_image(change_img_p,access.param, access.param['predictor_change_img'])
 
     disturbance_polygons_t = run.vectorize_disturbance(change_img_t,access.param)
-    run.export_polygons(disturbance_polygons_t,access.param['disturbance_polygons_training'])
+    run.export_feature_collection(disturbance_polygons_t,access.param['disturbance_polygons_training'],access.param['assetDir'])
 
-    disturbance_polygons_p = run.vectorize_disturbance(change_img_p,access.param,access.param['assetDir'])
-    run.export_polygons(disturbance_polygons_p,access.param['disturbance_polygons_predictor'],access.param['assetDir'])
+    disturbance_polygons_p = run.vectorize_disturbance(change_img_p,access.param)
+    run.export_feature_collection(disturbance_polygons_p,access.param['disturbance_polygons_predictor'],access.param['assetDir'])
 
 #---------------------------------------------------------------
 #---------------------------------------------------------------
@@ -98,7 +99,7 @@ if mode == 'attribute' or mode == 'all':
 
 #---------------------------------------------------------------
 #-------------------------------------------------------------------
-if mode == 'predict' or mode == 'all':
+if mode == 'label' or mode == 'all':
 
 
     labeled_fc = ee.FeatureCollection(access.param['assetDir']+access.param['attributed_polygons_training']) #.filter(ee.Filter.lt('mode_value',101))
@@ -131,5 +132,5 @@ if mode == 'post' or mode == 'all':
 #---------------------------------------------------------------
 #-------------------------------------------------------------------
 if mode == 'remove':
-    bnet.list_and_delete_assets(asset_path)
+    run.list_and_delete_assets(access.param['assetDir'])
 

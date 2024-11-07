@@ -202,26 +202,26 @@ def SNIC_decline_image(im,std_end_year):
     }))
 
 def LTSD_decline_image(im,std_end_year):
-    years = {i: str(std_end_year - i) for i in [0, 1, 2, 5, 9]}
+    years = {i: str(std_end_year - i) for i in [0, 1, 2, 3, 4]}
     expression = '((nbr_3 - nbr_4 > 75 ) && (nbr_4 - nbr_5 > 100)) || (((tcg_3 - tcg_4 > 100 ) && (tcg_4 - tcg_5 > 100)) && ((tcw_3 - tcw_4 > 100 ) && (tcw_4 - tcw_5 > 100)))'
     return im.mask(im.expression(expression, {
-        'nbr_1': im.select('nbr_ftv_' + years[9]),
-        'nbr_2': im.select('nbr_ftv_' + years[5]),
+        'nbr_1': im.select('nbr_ftv_' + years[4]),
+        'nbr_2': im.select('nbr_ftv_' + years[3]),
         'nbr_3': im.select('nbr_ftv_' + years[2]),
         'nbr_4': im.select('nbr_ftv_' + years[1]),
         'nbr_5': im.select('nbr_ftv_' + years[0]),
-        'tcg_1': im.select('tcg_ftv_' + years[9]),
-        'tcg_2': im.select('tcg_ftv_' + years[5]),
+        'tcg_1': im.select('tcg_ftv_' + years[4]),
+        'tcg_2': im.select('tcg_ftv_' + years[3]),
         'tcg_3': im.select('tcg_ftv_' + years[2]),
         'tcg_4': im.select('tcg_ftv_' + years[1]),
         'tcg_5': im.select('tcg_ftv_' + years[0]),
-        'tcw_1': im.select('tcw_ftv_' + years[9]),
-        'tcw_2': im.select('tcw_ftv_' + years[5]),
+        'tcw_1': im.select('tcw_ftv_' + years[4]),
+        'tcw_2': im.select('tcw_ftv_' + years[3]),
         'tcw_3': im.select('tcw_ftv_' + years[2]),
         'tcw_4': im.select('tcw_ftv_' + years[1]),
-        'tcw_5': im.select('tcw_ftv_' + years[0]),
-        'rate': im.select('rate'), # first 
-        'dur': im.select('dur')  #first
+        'tcw_5': im.select('tcw_ftv_' + years[0])
+        #'rate': im.select('rate'), # first 
+        #'dur': im.select('dur')  #first
     }))
 
 def get_training_points(recovery, disturbances, roi, referImage, ads_in_roi):
@@ -248,7 +248,7 @@ def get_ref_image(lt, ltstartYear, yer, fit, roi):
 def tasselCapMask(bnet):
 
     # Run the LandTrendr algorithm
-    targetImage = ee.Image(bnet.param['LTSDdir']+bnet.param['LTSDname'])
+    targetImage = ee.Image(bnet.param['LTSDdir']+bnet.param['fitted_img_p'])
 
     tcb = targetImage.select(["tcb_ftv_" + str(bnet.param['target'])])
     
@@ -282,11 +282,11 @@ def rename_img_opt3(img, target_year):
     yearNine = str(target_year - 9)
     print(img.bandNames().getInfo())
     return img.select(img.bandNames(), [
-        'yr_11_nbr','yr_10_nbr','yr_9_nbr','yr_8_nbr','yr_7_nbr','yr_6_nbr', 'yr_5_nbr','yr_4_nbr', 'yr_3_nbr','yr_2_nbr', 'yr_1_nbr', 'yr_0_nbr',
-        'yr_11_tcb','yr_10_tcb','yr_9_tcb','yr_8_tcb','yr_7_tcb','yr_6_tcb', 'yr_5_tcb','yr_4_tcb', 'yr_3_tcb','yr_2_tcb', 'yr_1_tcb', 'yr_0_tcb',
-        'yr_11_tcg','yr_10_tcg','yr_9_tcg','yr_8_tcg','yr_7_tcg','yr_6_tcg', 'yr_5_tcg','yr_4_tcg', 'yr_3_tcg','yr_2_tcg', 'yr_1_tcg', 'yr_0_tcg',
-        'yr_11_tcw','yr_10_tcw','yr_9_tcw','yr_8_tcw','yr_7_tcw','yr_6_tcw', 'yr_5_tcw','yr_4_tcw', 'yr_3_tcw','yr_2_tcw', 'yr_1_tcw', 'yr_0_tcw',
-        "yod", "mag", "dur", "preval", "rate", "dsnr"
+        'yr_9_nbr','yr_8_nbr','yr_7_nbr','yr_6_nbr', 'yr_5_nbr','yr_4_nbr', 'yr_3_nbr','yr_2_nbr', 'yr_1_nbr', 'yr_0_nbr',
+        'yr_9_tcb','yr_8_tcb','yr_7_tcb','yr_6_tcb', 'yr_5_tcb','yr_4_tcb', 'yr_3_tcb','yr_2_tcb', 'yr_1_tcb', 'yr_0_tcb',
+        'yr_9_tcg','yr_8_tcg','yr_7_tcg','yr_6_tcg', 'yr_5_tcg','yr_4_tcg', 'yr_3_tcg','yr_2_tcg', 'yr_1_tcg', 'yr_0_tcg',
+        'yr_9_tcw','yr_8_tcw','yr_7_tcw','yr_6_tcw', 'yr_5_tcw','yr_4_tcw', 'yr_3_tcw','yr_2_tcw', 'yr_1_tcw', 'yr_0_tcw'
+        #"yod", "mag", "dur", "preval", "rate", "dsnr"
     ])
 
 def rename_ltsd_img(img, target_year):
