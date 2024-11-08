@@ -4,7 +4,8 @@ import os
 import sys
 import time
 from datetime import date
-from parameters import north_cascades_config_opt3_2023 as bnet_config
+#from parameters import north_cascades_config_opt3_2023 as bnet_config
+from parameters import north_cascades_config_opt3_2024 as bnet_config
 import bnet as bnet
 import run as run
 # Authenticate the Earth Engine API (uncomment if needed for authentication)
