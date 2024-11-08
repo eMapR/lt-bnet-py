@@ -1,61 +1,18 @@
 import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection
-
-# Import a custom configuration module named config as bnet_config
-#import blue_mt_config_opt2_2023 as bnet_config
-#import blue_mt_config_opt2_2024 as bnet_config
-#import blue_mt_config_opt3_2023 as bnet_config
-#import blue_mt_config_opt3_2024 as bnet_config
-
-#import cascades_config_opt3_2023 as bnet_config
-#import cascades_config_opt2_2023 as bnet_config
-#import cascades_config_opt2_2024 as bnet_config
-#import cascades_config_opt3_2024 as bnet_config
-
-#import coast_range_config_opt2_2023 as bnet_config
-#import coast_range_config_opt2_2024 as bnet_config
-#import coast_range_config_opt3_2023 as bnet_config
-#import coast_range_config_opt3_2024 as bnet_config
-
-#import eastern_cascades_config_opt2_2023 as bnet_config
-#import eastern_cascades_config_opt2_2024 as bnet_config
-#import eastern_cascades_config_opt3_2023 as bnet_config
-#import eastern_cascades_config_opt3_2024 as bnet_config
-
-#import klamath_mts_config_opt2_2023 as bnet_config
-#import klamath_mts_config_opt2_2024 as bnet_config
-#import klamath_mts_config_opt3_2023 as bnet_config
-#import klamath_mts_config_opt3_2024 as bnet_config
-
-#import north_cascades_config_opt2_2023 as bnet_config
-#import north_cascades_config_opt2_2024 as bnet_config
-#import params.north_cascades_config_opt3_2023 as bnet_config
-import params.north_cascades_config_opt3_2024 as bnet_config
-
-#import northern_rockies_config_opt2_2023 as bnet_config
-#import northern_rockies_config_opt2_2024 as bnet_config
-#import northern_rockies_config_opt3_2023 as bnet_config
-#import northern_rockies_config_opt3_2024 as bnet_config
-
 import os
-
 import sys
-
 import time
-
-# Import a custom module named bnet
-import bnet as bnet
-
-# Import the date class from the datetime module for handling dates
 from datetime import date
-
+from parameters import north_cascades_config_opt3_2023 as bnet_config
+import bnet as bnet
+import run as run
 # Authenticate the Earth Engine API (uncomment if needed for authentication)
 #ee.Authenticate(force=True)
 
 # Initialize the Earth Engine API with a specific project
 ee.Initialize(project="r6-bugnet")
 
-sys.exit()
 ##############################################################################
 # Wait for Task to complete
 ##############################################################################
@@ -92,15 +49,204 @@ def asset_exists(asset_id):
 ##############################################################################
 # Create Base Imagery and disturbance Polygons
 ##############################################################################
+def CreateTrainingFittedImagery(lt):
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['fitted_img_t'])
+
+	if exists:
+
+		return
+
+	else:
+		fitted_img_t = run.get_fitted_stack(lt,'fitted_training',bnet_config.param)
+		task = run.export_image(fitted_img_t,bnet_config.param, bnet_config.param['fitted_img_t'])
+		return task
+
+def CreatePredictorFittedImagery(lt):
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['fitted_img_p'])
+
+	if exists:
+
+		return
+
+	else:
+		fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',bnet_config.param)
+		task = run.export_image(fitted_img_p,bnet_config.param, bnet_config.param['fitted_img_p'])
+		return task
+
+def CreateTrainingChangeImagery(lt):
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['training_change_img'])
+
+	if exists:
+
+		return
+
+	else:
+
+		bnet_config.param['change_params']['years'] = {'start': 2007, 'end': 2012}
+		change_img_t = lt.get_change_map(bnet_config.param['change_params'])
+		task = run.export_image(change_img_t, bnet_config.param, bnet_config.param['training_change_img'])
+		return task
+
+def CreatePredictorChangeImagery(lt):
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['predictor_change_img'])
+
+	if exists:
+
+		return
+
+	else:
+		bnet_config.param['change_params']['years'] = {'start': bnet_config.param['composite_params']['end_date'].year-6, 'end': bnet_config.param['composite_params']['end_date'].year}
+		change_img_p = lt.get_change_map(bnet_config.param['change_params'])
+		task = run.export_image(change_img_p,bnet_config.param, bnet_config.param['predictor_change_img'])
+
+		return task
+
+def CreateTrainingDisturbancePolygons():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['disturbance_polygons_training'])
+
+	if exists:
+
+		return
+
+	else:
+
+		change_img_t = ee.Image(bnet_config.param["assetDir"]+bnet_config.param['training_change_img'])
+		disturbance_polygons_t = run.vectorize_disturbance(change_img_t,bnet_config.param)
+		task = run.export_feature_collection(disturbance_polygons_t,bnet_config.param['disturbance_polygons_training'],bnet_config.param['assetDir'])
+		return task
+
+def CreatePredictorDisturbancePolygons():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['disturbance_polygons_predictor'])
+
+	if exists:
+
+		return
+
+	else:
+		change_img_p = ee.Image(bnet_config.param["assetDir"]+bnet_config.param['predictor_change_img'])
+		disturbance_polygons_p = run.vectorize_disturbance(change_img_p,bnet_config.param)
+		task = run.export_feature_collection(disturbance_polygons_p,bnet_config.param['disturbance_polygons_predictor'],bnet_config.param['assetDir'])
+		return task
 ##############################################################################
 # Attribute Disturbance Polygons with Base Imagery 
 ##############################################################################
+def attributeTrainingPolygons():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['attributed_polygons_training'])
+
+	if exists:
+
+		return
+
+	else:
+
+		gee_attributed_fc = run.attribute_with_reference_data(bnet_config.param,'training')
+
+		# reproject and change feature collecton to json
+		reprojected_geojson = run.feature_collection_to_geojson(gee_attributed_fc, bnet_config.param['source_epsg'], bnet_config.param['target_epsg'])    # apply reprojections and feature collectio>
+		#print(reprojected_geojson) # <<<<<<   look in to fc_list in run.py passing a whole list of features could we just pass a single feature?
+
+		# attribute with Cmonster
+		event_polygons_attri1 = run.attribute_with_cmonster_data(reprojected_geojson,bnet_config.param['cMonster_img_path'])                   # apply attribution (cMonster)
+
+		# reproject and convert to featrue collection
+		reprojected_fc = run.geojson_to_ee_feature(event_polygons_attri1, bnet_config.param['target_epsg'], bnet_config.param['source_epsg'])           # apply re-reprojection and geojson to featur>
+		# export
+		task = run.export_feature_collection(reprojected_fc,bnet_config.param['attributed_polygons_training'],bnet_config.param['assetDir'] )
+
+		return task
+
+
+def attributePredictorPolygons():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['attributed_polygons_predictor'])
+
+	if exists:
+
+		return
+
+	else:
+		gee_attributed_fc = run.attribute_with_reference_data(bnet_config.param,'predictor')
+		task = run.export_feature_collection(gee_attributed_fc,bnet_config.param['attributed_polygons_predictor'],bnet_config.param['assetDir'] )
+		return task
+
 ##############################################################################
 # Classify Polygons 
 ##############################################################################
+def classify_polygons():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['classified_fc'])
+
+	if exists:
+
+		return
+
+	else:
+
+		labeled_fc = ee.FeatureCollection(bnet_config.param['assetDir']+bnet_config.param['attributed_polygons_training']) #.filter(ee.Filter.lt('mode_value',101))
+		unlabeled_fc = ee.FeatureCollection(bnet_config.param['assetDir']+bnet_config.param['attributed_polygons_predictor'])
+
+		predictor_variables = unlabeled_fc.first().propertyNames()
+		labeled_fc = run.drop_null_features(labeled_fc,predictor_variables)
+		unlabeled_fc = run.drop_null_features(unlabeled_fc,predictor_variables)
+
+		trained_classifier = run.train_classifier(labeled_fc,"mode_value",predictor_variables,bnet_config.param['num_trees'])
+		classified_fc = run.classify_features(unlabeled_fc, trained_classifier)
+
+		task = run.export_feature_collection(classified_fc,bnet_config.param['classified_fc'],bnet_config.param['assetDir'])
+		return task
+
 ##############################################################################
 # Create High Disturbance Mask From Polygons 
 ##############################################################################
+def filter_classes():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['filtered_classes'])
+
+	if exists:
+
+		return
+
+	else:
+		fc1 = run.filter_by_mode_value(ee.FeatureCollection(bnet_config.param['assetDir'] + bnet_config.param['classified_fc']), 19, 41, 60, 90)
+
+		task = run.export_feature_collection(fc1, bnet_config.param['filtered_classes'], bnet_config.param['assetDir'])
+
+		return task
+
+def buffer_classed_polygons():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['buffered_classes'])
+	if exists:
+
+		return
+
+	else:
+		fc1 = ee.FeatureCollection(bnet_config.param["assetDir"]+bnet_config.param['filtered_classes'])
+		fc2 = run.buffer_features(fc1, 100)
+		task = run.export_feature_collection(fc2, bnet_config.param['buffered_classes'], bnet_config.param['assetDir'])
+		return task
+
+def rasterize_classed_polygons():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['rasterize_classes'])
+
+	if exists:
+
+		return
+
+	else:
+		fc2 = ee.FeatureCollection(bnet_config.param["assetDir"]+bnet_config.param['buffered_classes'])
+		img = run.rasterize_polygons(fc2, 'classification', 30, region=bnet_config.param['aoi'])
+		task = run.export_image(img, bnet_config.param,bnet_config.param['rasterize_classes'])
+
+		return task
 
 
 
@@ -417,7 +563,6 @@ def proportionCalc():
 	clusters_that_touch_1 = ee.Number(proportion_attri.filter(ee.Filter.And(ee.Filter.eq('label', 1), ee.Filter.eq('touch', 1))).size())
 	clusters_that_touch_2 = ee.Number(proportion_attri.filter(ee.Filter.And(ee.Filter.eq('label', 2), ee.Filter.eq('touch', 1))).size())
 	median_value = ee.Array([ee.Number(clusters_that_touch_0),ee.Number(clusters_that_touch_1),ee.Number(clusters_that_touch_2)]).reduce(ee.Reducer.median(),[0]).get([0])
-	print(intersect_std.getInfo())
 	# Add proportions to clusters
 	def add_proportions(f):
 		cluster = f.get('label')
@@ -427,7 +572,6 @@ def proportionCalc():
 		return f.set("prop_count", clusters_that_touch).set("bnet", bnet_value)
 
 	add_k_proportions = proportion_attri.map(add_proportions)
-	print(add_k_proportions.first().getInfo())
 	feat_label = add_k_proportions.aggregate_array("label")
 	feat_bnet = add_k_proportions.aggregate_array("bnet")
 	feat_zip = feat_label.zip(feat_bnet).distinct().unzip()
@@ -579,8 +723,38 @@ def main():
 	}
 
 
-	#taskltsd = CreateLTSDimage(lt, params)
-	#wait_for_task(taskltsd)
+	lt = LandTrendr(**bnet_config.param['lt_params'])
+
+	task1 = CreateTrainingFittedImagery(lt)
+	task2 = CreatePredictorFittedImagery(lt)
+	task3 = CreateTrainingChangeImagery(lt)
+	task4 = CreatePredictorChangeImagery(lt)
+	wait_for_task(task1)
+	wait_for_task(task2)
+	wait_for_task(task3)
+	wait_for_task(task4)
+
+	task5 = CreateTrainingDisturbancePolygons()
+	task6 = CreatePredictorDisturbancePolygons()
+	wait_for_task(task5)
+	wait_for_task(task6)
+
+	task7 = attributeTrainingPolygons()
+	task8 = attributePredictorPolygons()
+	wait_for_task(task7)
+	wait_for_task(task8)
+
+	task9 = classify_polygons()
+	wait_for_task(task9)
+
+	task10 = filter_classes()
+	wait_for_task(task10)
+
+	task11 = buffer_classed_polygons()
+	wait_for_task(task11)
+
+	task12 = rasterize_classed_polygons()
+	wait_for_task(task12)
 
 	task_mask = CreateForestMask()	
 	wait_for_task(task_mask)

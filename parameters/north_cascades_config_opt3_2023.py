@@ -2,8 +2,9 @@ import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection
 from datetime import date
 import datetime 
-import bnet as bnet
+#import bnet as bnet
 import pprint
+
 ee.Initialize(project='r6-bugnet')
 
 param = {}
