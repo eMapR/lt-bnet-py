@@ -749,11 +749,10 @@ def buffer_bnet_polygons():
 # MAIN
 ##############################################################################
 def main():
-
-	# Run the LandTrendr algorithm
-	#lt_params = bnet_config.param['lt_params']
-
-	#lt = LandTrendr(**lt_params)
+	mode = 'nope'
+	if mode == 'remove':
+		run.list_and_delete_assets(bnet_config.param['assetDir'])
+		sys.exit()
 
 	# Configuration parameters
 	params = {

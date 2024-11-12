@@ -57,7 +57,7 @@ param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
                     'years': {'start': param['composite_params']["start_date"].year, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 200, 'operator': '>' },
+                    'mag': {'value': 300, 'operator': '>' },
                     'dur': {'value': 4, 'operator': '<'},
                     'preval': {'value': 300, 'operator': '>'},
                     'mmu': {'value': 5}
