@@ -178,27 +178,25 @@ def snic_image(img):
     return ee.Algorithms.Image.Segmentation.SNIC(image=img, size=5, compactness=1)
 
 def SNIC_decline_image(im,std_end_year):
-    years = {i: str(std_end_year - i) for i in [0, 1, 2, 5, 9]}
+    years = {i: str(std_end_year - i) for i in [0, 1, 2, 3, 4]}
     #expression = 'rate > 50 && rate < 160 && dur < 6 && dur > 1'
-    expression = 'nbr_3 > nbr_4 > nbr_5 && tcg_3 > tcg_4 > tcg_5 && tcw_3 > tcw_4 > tcw_5 && rate > 20 && rate < 100 && dur < 6 && dur > 2'
+    expression = '((nbr_3 - nbr_4 > 75 ) && (nbr_4 - nbr_5 > 100)) || (((tcg_3 - tcg_4 > 100 ) && (tcg_4 - tcg_5 > 100)) && ((tcw_3 - tcw_4 > 100 ) && (tcw_4 - tcw_5 > 100)))'
     return im.mask(im.expression(expression, {
-        'nbr_1': im.select('yr_' + years[9] + '_nbr_mean'),
-        'nbr_2': im.select('yr_' + years[5] + '_nbr_mean'),
-        'nbr_3': im.select('yr_' + years[2] + '_nbr_mean'),
-        'nbr_4': im.select('yr_' + years[1] + '_nbr_mean'),
-        'nbr_5': im.select('yr_' + years[0] + '_nbr_mean'),
-        'tcg_1': im.select('yr_' + years[9] + '_tcg_mean'),
-        'tcg_2': im.select('yr_' + years[5] + '_tcg_mean'),
-        'tcg_3': im.select('yr_' + years[2] + '_tcg_mean'),
-        'tcg_4': im.select('yr_' + years[1] + '_tcg_mean'),
-        'tcg_5': im.select('yr_' + years[0] + '_tcg_mean'),
-        'tcw_1': im.select('yr_' + years[9] + '_tcw_mean'),
-        'tcw_2': im.select('yr_' + years[5] + '_tcw_mean'),
-        'tcw_3': im.select('yr_' + years[2] + '_tcw_mean'),
-        'tcw_4': im.select('yr_' + years[1] + '_tcw_mean'),
-        'tcw_5': im.select('yr_' + years[0] + '_tcw_mean'),
-        'rate': im.select('rate_mean'), # first 
-        'dur': im.select('dur_mean')  # first
+        'nbr_1': im.select('nbr_ftv_' + years[4] + '_mean'),
+        'nbr_2': im.select('nbr_ftv_' + years[3] + '_mean'),
+        'nbr_3': im.select('nbr_ftv_' + years[2] + '_mean'),
+        'nbr_4': im.select('nbr_ftv_' + years[1] + '_mean'),
+        'nbr_5': im.select('nbr_ftv_' + years[0] + '_mean'),
+        'tcg_1': im.select('tcg_ftv_' + years[4] + '_mean'),
+        'tcg_2': im.select('tcg_ftv_' + years[3] + '_mean'),
+        'tcg_3': im.select('tcg_ftv_' + years[2] + '_mean'),
+        'tcg_4': im.select('tcg_ftv_' + years[1] + '_mean'),
+        'tcg_5': im.select('tcg_ftv_' + years[0] + '_mean'),
+        'tcw_1': im.select('tcw_ftv_' + years[4] + '_mean'),
+        'tcw_2': im.select('tcw_ftv_' + years[3] + '_mean'),
+        'tcw_3': im.select('tcw_ftv_' + years[2] + '_mean'),
+        'tcw_4': im.select('tcw_ftv_' + years[1] + '_mean'),
+        'tcw_5': im.select('tcw_ftv_' + years[0] + '_mean')
     }))
 
 def LTSD_decline_image(im,std_end_year):
@@ -263,15 +261,21 @@ def rename_img(img, target_year):
     yearNine = str(target_year - 9)
     
     return img.select(img.bandNames(), [
-        'clusters','yr_9_nbr_ltsd_mean', 'yr_5_nbr_ltsd_mean', 'yr_2_nbr_ltsd_mean', 'yr_1_nbr_ltsd_mean', 'yr_0_nbr_ltsd_mean',
-        'yr_9_tcb_ltsd_mean', 'yr_5_tcb_ltsd_mean', 'yr_2_tcb_ltsd_mean', 'yr_1_tcb_ltsd_mean', 'yr_0_tcb_ltsd_mean',
-        'yr_9_tcg_ltsd_mean', 'yr_5_tcg_ltsd_mean', 'yr_2_tcg_ltsd_mean', 'yr_1_tcg_ltsd_mean', 'yr_0_tcg_ltsd_mean',
-        'yr_9_tcw_ltsd_mean', 'yr_5_tcw_ltsd_mean', 'yr_2_tcw_ltsd_mean', 'yr_1_tcw_ltsd_mean', 'yr_0_tcw_ltsd_mean',
-        "yr_9_nbr_mean", "yr_5_nbr_mean", "yr_2_nbr_mean", "yr_1_nbr_mean", "yr_0_nbr_mean",
-        "yr_9_tcb_mean", "yr_5_tcb_mean", "yr_2_tcb_mean", "yr_1_tcb_mean", "yr_0_tcb_mean",
-        "yr_9_tcg_mean", "yr_5_tcg_mean", "yr_2_tcg_mean", "yr_1_tcg_mean", "yr_0_tcg_mean",
-        "yr_9_tcw_mean", "yr_5_tcw_mean", "yr_2_tcw_mean", "yr_1_tcw_mean", "yr_0_tcw_mean",
-        "yod_mean", "mag_mean", "dur_mean", "preval_mean", "rate_mean", "dsnr_mean", "seeds"
+        #'clusters','yr_9_nbr_ltsd_mean', 'yr_3_nbr_ltsd_mean', 'yr_2_nbr_ltsd_mean', 'yr_1_nbr_ltsd_mean', 'yr_0_nbr_ltsd_mean',
+        #'yr_9_tcb_ltsd_mean', 'yr_5_tcb_ltsd_mean', 'yr_2_tcb_ltsd_mean', 'yr_1_tcb_ltsd_mean', 'yr_0_tcb_ltsd_mean',
+        #'yr_9_tcg_ltsd_mean', 'yr_5_tcg_ltsd_mean', 'yr_2_tcg_ltsd_mean', 'yr_1_tcg_ltsd_mean', 'yr_0_tcg_ltsd_mean',
+        #'yr_9_tcw_ltsd_mean', 'yr_5_tcw_ltsd_mean', 'yr_2_tcw_ltsd_mean', 'yr_1_tcw_ltsd_mean', 'yr_0_tcw_ltsd_mean',
+        #"yr_9_nbr_mean", "yr_5_nbr_mean", "yr_2_nbr_mean", "yr_1_nbr_mean", "yr_0_nbr_mean",
+        #"yr_9_tcb_mean", "yr_5_tcb_mean", "yr_2_tcb_mean", "yr_1_tcb_mean", "yr_0_tcb_mean",
+        #"yr_9_tcg_mean", "yr_5_tcg_mean", "yr_2_tcg_mean", "yr_1_tcg_mean", "yr_0_tcg_mean",
+        #"yr_9_tcw_mean", "yr_5_tcw_mean", "yr_2_tcw_mean", "yr_1_tcw_mean", "yr_0_tcw_mean",
+        #"yod_mean", "mag_mean", "dur_mean", "preval_mean", "rate_mean", "dsnr_mean", "seeds"
+
+        'clusters','yr_9_nbr_mean','yr_8_nbr_mean','yr_7_nbr_mean','yr_6_nbr_mean', 'yr_5_nbr_mean','yr_4_nbr_mean', 'yr_3_nbr_mean','yr_2_nbr_mean', 'yr_1_nbr_mean', 'yr_0_nbr_mean',
+        'yr_9_tcb_mean','yr_8_tcb_mean','yr_7_tcb_mean','yr_6_tcb_mean', 'yr_5_tcb','yr_4_tcb_mean', 'yr_3_tcb_mean','yr_2_tcb_mean', 'yr_1_tcb_mean', 'yr_0_tcb_mean',
+        'yr_9_tcg_mean','yr_8_tcg_mean','yr_7_tcg_mean','yr_6_tcg_mean', 'yr_5_tcg','yr_4_tcg_mean', 'yr_3_tcg_mean','yr_2_tcg_mean', 'yr_1_tcg_mean', 'yr_0_tcg_mean',
+        'yr_9_tcw_mean','yr_8_tcw_mean','yr_7_tcw_mean','yr_6_tcw_mean', 'yr_5_tcw','yr_4_tcw_mean', 'yr_3_tcw_mean','yr_2_tcw_mean', 'yr_1_tcw_mean', 'yr_0_tcw_mean','seeds'
+
     ])
 
 def rename_img_opt3(img, target_year):

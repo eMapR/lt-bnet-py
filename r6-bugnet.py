@@ -4,7 +4,6 @@ import os
 import sys
 import time
 from datetime import date
-#from parameters import north_cascades_config_opt3_2023 as bnet_config
 from parameters import north_cascades_config_opt3_2024 as bnet_config
 import bnet as bnet
 import run as run
@@ -353,7 +352,7 @@ def DecliningSNIC():
 		return
 
 	# Apply the function
-	snic_decline = bnet.SNIC_decline_image(ee.Image(bnet_config.param['assetDir'] + bnet_config.param['snicName']))#.updateMask(bnet_config.param['Mask'])
+	snic_decline = bnet.SNIC_decline_image(ee.Image(bnet_config.param['assetDir'] + bnet_config.param['snicName']),bnet_config.param['target'])#.updateMask(bnet_config.param['Mask'])
 
 	# Export the image
 	export_params = {
@@ -699,6 +698,54 @@ def predict():
 	return export_task 
 
 ##############################################################################
+# Polygonize
+##############################################################################
+def polygonize_bnet():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['bnet_polygonized'])
+
+	if exists:
+		return
+	img = ee.Image(bnet_config.param['assetDir'] + bnet_config.param['predicted'])
+	polygons = img.reduceToVectors(reducer=ee.Reducer.countEvery(), scale=30, maxPixels=1e13)
+
+	export_params = {
+		'collection': polygons,
+		'description': bnet_config.param['bnet_polygonized'],
+		'assetId': bnet_config.param['assetDir'] + bnet_config.param['bnet_polygonized']
+	}
+
+	task = ee.batch.Export.table.toAsset(**export_params)
+	task.start()
+	return task
+##############################################################################
+# buffer Bnet  Polygon
+##############################################################################
+def buffer_bnet_polygons():
+	# check to see if output asset exists
+	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['bnet_buffered_polygons'])
+
+	if exists:
+		return
+	fc = ee.FeatureCollection(bnet_config.param['assetDir'] + bnet_config.param['bnet_polygonized'])
+	def buffer_f(ft):
+		polygon = ft.buffer(bnet_config.param['bnet_buffer'])
+		area = polygon.geometry().area().divide(1000 * 1000);
+  
+		return polygon.set('area_m2', area);
+	polygons = fc.map(buffer_f)
+
+	export_params = {
+		'collection':ee.FeatureCollection(polygons),
+		'description': bnet_config.param['bnet_buffered_polygons'],
+		'assetId': bnet_config.param['assetDir'] + bnet_config.param['bnet_buffered_polygons']
+	}
+
+	task = ee.batch.Export.table.toAsset(**export_params)
+	task.start()
+	return task
+
+##############################################################################
 # MAIN
 ##############################################################################
 def main():
@@ -785,8 +832,11 @@ def main():
 	task_proportion = proportionCalc()
 	wait_for_task(task_proportion)
 
-	export_task = predict()
-	wait_for_task(export_task)
+	task_predict = predict()
+	wait_for_task(task_predict)
+
+	task_buffer = buffer_bnet_polygons()
+	wait_for_task(task_buffer)
 
 if __name__ == "__main__":
     main()

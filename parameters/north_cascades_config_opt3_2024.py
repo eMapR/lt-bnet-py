@@ -120,6 +120,11 @@ param['ltchange'] = ee.Image(f"{param['assetDir']}classed_img_{param['target']}"
 # Agent labeling parameters
 param['agent_lookback'] = 5
 param['agent_distance'] = 10000
+
+param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}"
+param['bnet_buffered_polygons'] = f"bugnet_buffered_polygons_{param['target']}"
+param['bnet_buffer'] = 100
+
 param['bugnet_polygons'] = f"bugnet_polygons_unlabeled_{param['region']}_{param['target']}_{param['version']}"
 param['bugnet_distance_img'] = f"bugnet_distance_image_{param['region']}_{param['target']}_{param['version']}"
 param['bugnet_polygons_labeled'] = f"bugnet_polygons_distance_labeled_{param['region']}_{param['target']}_{param['version']}"

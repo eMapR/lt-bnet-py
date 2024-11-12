@@ -12,7 +12,7 @@ param = {}
 param['configName'] = 'option2'
 
 # AOI
-param['aoi'] = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/bugnet_North_Cascades")
+param['aoi'] = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
 
 # image type 
 param["platform"] = 'lS'
@@ -86,7 +86,7 @@ param['assetDir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<
 param['LTSDdir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # LTSD name
-param['LTSDname'] = f"LTSD_{param['target']}"
+param['LTSDname'] = param['fitted_img_p']
 
 # SNIC parameters
 param['snicName'] = f"SNIC_{param['configName']}_{param['target']}"
