@@ -201,7 +201,7 @@ def SNIC_decline_image(im,std_end_year):
 
 def LTSD_decline_image(im,std_end_year):
     years = {i: str(std_end_year - i) for i in [0, 1, 2, 3, 4]}
-    expression = '((nbr_3 - nbr_4 > 75 ) && (nbr_4 - nbr_5 > 100)) || (((tcg_3 - tcg_4 > 100 ) && (tcg_4 - tcg_5 > 100)) && ((abs(tcw_3 - tcw_4) > 100 ) && (tcw_4 - tcw_5 > 100))) || ((nbr_4 - nbr_5 > 120)&&(tcg_4 - tcg_5 > 150) &&(abs(tcw_4 - tcw_5) > 150) )'
+    expression = '((nbr_3 - nbr_4 > 75 ) && (nbr_4 - nbr_5 > 100)) || (((tcg_3 - tcg_4 > 100 ) && (tcg_4 - tcg_5 > 100)) && ((abs(tcw_3 - tcw_4) > 100 ) && (tcw_4 - tcw_5 > 100))) || ((nbr_4 - nbr_5 > 100) && (tcg_4 - tcg_5 > 100) && (abs(tcw_4 - tcw_5) > 100) )'
     return im.mask(im.expression(expression, {
         'nbr_1': im.select('nbr_ftv_' + years[4]),
         'nbr_2': im.select('nbr_ftv_' + years[3]),
@@ -218,8 +218,6 @@ def LTSD_decline_image(im,std_end_year):
         'tcw_3': im.select('tcw_ftv_' + years[2]),
         'tcw_4': im.select('tcw_ftv_' + years[1]),
         'tcw_5': im.select('tcw_ftv_' + years[0])
-        #'rate': im.select('rate'), # first 
-        #'dur': im.select('dur')  #first
     }))
 
 def get_training_points(recovery, disturbances, roi, referImage, ads_in_roi):

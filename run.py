@@ -149,7 +149,7 @@ def attribute_with_reference_data(params,who):
 	if who == 'training':
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_training'])
-                return in_fc.filter(ee.Filter.And(ee.Filter.gt('count',75),ee.Filter.lt('count',50000))).map(_process_polygon)
+                return in_fc.filter(ee.Filter.And(ee.Filter.gt('count',params['trainingMin']),ee.Filter.lt('count',params['trainingMax']))).map(_process_polygon) # 50000
 	else:
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor'])

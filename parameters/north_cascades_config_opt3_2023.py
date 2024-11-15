@@ -9,13 +9,13 @@ ee.Initialize(project='r6-bugnet')
 
 param = {}
 
-# Config name
+## Config name
 param['configName'] = 'option3'
 
-# AOI
+## AOI
 param['aoi'] = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
 
-# image type 
+## image type 
 param["platform"] = 'lS'
 
 # Time parameters

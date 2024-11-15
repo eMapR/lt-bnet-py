@@ -4,14 +4,14 @@ import os
 import sys
 import time
 from datetime import date
-from parameters import north_cascades_config_opt3_2024 as bnet_config
+from parameters import blue_mt_config_opt3_2023 as bnet_config
 import bnet as bnet
 import run as run
 # Authenticate the Earth Engine API (uncomment if needed for authentication)
 #ee.Authenticate(force=True)
 
 # Initialize the Earth Engine API with a specific project
-ee.Initialize(project="r6-bugnet")
+ee.Initialize(project=bnet_config.param["project_name"])
 
 ##############################################################################
 # Wait for Task to complete
@@ -150,13 +150,13 @@ def attributeTrainingPolygons():
 
 		# reproject and change feature collecton to json
 		reprojected_geojson = run.feature_collection_to_geojson(gee_attributed_fc, bnet_config.param['source_epsg'], bnet_config.param['target_epsg'])    # apply reprojections and feature collectio>
-		#print(reprojected_geojson) # <<<<<<   look in to fc_list in run.py passing a whole list of features could we just pass a single feature?
 
 		# attribute with Cmonster
 		event_polygons_attri1 = run.attribute_with_cmonster_data(reprojected_geojson,bnet_config.param['cMonster_img_path'])                   # apply attribution (cMonster)
 
 		# reproject and convert to featrue collection
 		reprojected_fc = run.geojson_to_ee_feature(event_polygons_attri1, bnet_config.param['target_epsg'], bnet_config.param['source_epsg'])           # apply re-reprojection and geojson to featur>
+
 		# export
 		task = run.export_feature_collection(reprojected_fc,bnet_config.param['attributed_polygons_training'],bnet_config.param['assetDir'] )
 
@@ -744,98 +744,197 @@ def buffer_bnet_polygons():
 	task = ee.batch.Export.table.toAsset(**export_params)
 	task.start()
 	return task
+##############################################################################
+# export metadata
+##############################################################################
+def export_parameter_file():
+	return 0
+##############################################################################
+# Wait for Task to complete
+##############################################################################
+def gui():
+	print("Welcome to bugnet!")
+	print("How would you like to continue? Enter ...")
+	print("    1 - to all bugnet.")
+	print("    2 - high Magnitude base data (step 1-a).")
+	print("    3 - high magnitude disturbance polygons (step 1-b) .")
+	print("    4 - high magnitude attribution (step 1-c)")
+	print("    5 - high magnitude polygon classification (step 1-d)")
+	print("    6 - high magnitude polygon classification (step 1-d)")
+	print("    7 - forest mask")
+	print("    8 - the rest")
+	print("    9 - clean asset storage.")
+	mode = input(':')
+	return mode
 
 ##############################################################################
 # MAIN
 ##############################################################################
 def main():
-	mode = 'nope'
-	if mode == 'remove':
+
+	mode = gui()
+
+	if mode == '9':
+
 		run.list_and_delete_assets(bnet_config.param['assetDir'])
 		sys.exit()
 
-	# Configuration parameters
-	params = {
-		"ltstartYear": bnet_config.param['ltstartYear'],
-		"ltendYear": bnet_config.param['ltendYear'],
-		#"startDay": bnet_config.param['startDay'],
-		#"endDay": bnet_config.param['endDay'],
-		"aoi": bnet_config.param['aoi'],
-		"index": bnet_config.param['index'],
-		"fit": bnet_config.param['fit'],
-		"runParams": bnet_config.param['lt_params']['run_params'],
-		"maskThese": bnet_config.param['maskThese'],
-		"LTSDname": bnet_config.param['LTSDname'],
-		"assetDir": bnet_config.param['assetDir']
-	}
+	elif mode == '22':
 
+		export_parameter_file()
 
-	lt = LandTrendr(**bnet_config.param['lt_params'])
+	elif mode == '1':
 
-	task1 = CreateTrainingFittedImagery(lt)
-	task2 = CreatePredictorFittedImagery(lt)
-	task3 = CreateTrainingChangeImagery(lt)
-	task4 = CreatePredictorChangeImagery(lt)
-	wait_for_task(task1)
-	wait_for_task(task2)
-	wait_for_task(task3)
-	wait_for_task(task4)
+		lt = LandTrendr(**bnet_config.param['lt_params'])
 
-	task5 = CreateTrainingDisturbancePolygons()
-	task6 = CreatePredictorDisturbancePolygons()
-	wait_for_task(task5)
-	wait_for_task(task6)
+		task1 = CreateTrainingFittedImagery(lt)
+		task2 = CreatePredictorFittedImagery(lt)
+		task3 = CreateTrainingChangeImagery(lt)
+		task4 = CreatePredictorChangeImagery(lt)
+		wait_for_task(task1)
+		wait_for_task(task2)
+		wait_for_task(task3)
+		wait_for_task(task4)
 
-	task7 = attributeTrainingPolygons()
-	task8 = attributePredictorPolygons()
-	wait_for_task(task7)
-	wait_for_task(task8)
+		task5 = CreateTrainingDisturbancePolygons()
+		task6 = CreatePredictorDisturbancePolygons()
+		wait_for_task(task5)
+		wait_for_task(task6)
 
-	task9 = classify_polygons()
-	wait_for_task(task9)
+		task7 = attributeTrainingPolygons()
+		task8 = attributePredictorPolygons()
+		wait_for_task(task7)
+		wait_for_task(task8)
 
-	task10 = filter_classes()
-	wait_for_task(task10)
+		task9 = classify_polygons()
+		wait_for_task(task9)
 
-	task11 = buffer_classed_polygons()
-	wait_for_task(task11)
+		task10 = filter_classes()
+		wait_for_task(task10)
 
-	task12 = rasterize_classed_polygons()
-	wait_for_task(task12)
+		task11 = buffer_classed_polygons()
+		wait_for_task(task11)
 
-	task_mask = CreateForestMask()	
-	wait_for_task(task_mask)
+		task12 = rasterize_classed_polygons()
+		wait_for_task(task12)
 
-	if '3' in bnet_config.param['configName']:
+		task_mask = CreateForestMask()	
+		wait_for_task(task_mask)
 
-		task_decline = DecliningLTSD()
-		wait_for_task(task_decline)
+		if '3' in bnet_config.param['configName']:
+
+			task_decline = DecliningLTSD()
+			wait_for_task(task_decline)
+
+		else:
+
+			task_snic = SNIC()
+			wait_for_task(task_snic)
+
+			task_decline_snic = DecliningSNIC()
+			wait_for_task(task_decline_snic)
+
+		task_kmeans_sample = buildKMeansSample()
+		wait_for_task(task_kmeans_sample)
+
+		task_kmeans = kMeansImage()
+		wait_for_task(task_kmeans)
+
+		task_sample = kMeansProporitonsADSsample()
+		wait_for_task(task_sample)
+
+		task_proportion = proportionCalc()
+		wait_for_task(task_proportion)
+
+		task_predict = predict()
+		wait_for_task(task_predict)
+
+		task_buffer = buffer_bnet_polygons()
+		waaait_for_task(task_buffer)
+
+	elif mode == '2':
+
+		lt = LandTrendr(**bnet_config.param['lt_params'])
+
+		task1 = CreateTrainingFittedImagery(lt)
+		task2 = CreatePredictorFittedImagery(lt)
+		task3 = CreateTrainingChangeImagery(lt)
+		task4 = CreatePredictorChangeImagery(lt)
+		wait_for_task(task1)
+		wait_for_task(task2)
+		wait_for_task(task3)
+		wait_for_task(task4)
+
+	elif mode == '3':
+
+		task5 = CreateTrainingDisturbancePolygons()
+		task6 = CreatePredictorDisturbancePolygons()
+		wait_for_task(task5)
+		wait_for_task(task6)
+
+	elif mode == '4':
+
+		task7 = attributeTrainingPolygons()
+		task8 = attributePredictorPolygons()
+		wait_for_task(task7)
+		wait_for_task(task8)
+
+	elif mode == '5':
+
+		task9 = classify_polygons()
+		wait_for_task(task9)
+
+	elif mode == '6':
+
+		task10 = filter_classes()
+		wait_for_task(task10)
+
+		task11 = buffer_classed_polygons()
+		wait_for_task(task11)
+
+		task12 = rasterize_classed_polygons()
+		wait_for_task(task12)
+
+	elif mode == '7':
+
+		task_mask = CreateForestMask()	
+		wait_for_task(task_mask)
+
+	elif mode == '8':
+
+		if '3' in bnet_config.param['configName']:
+
+			task_decline = DecliningLTSD()
+			wait_for_task(task_decline)
+
+		else:
+
+			task_snic = SNIC()
+			wait_for_task(task_snic)
+
+			task_decline_snic = DecliningSNIC()
+			wait_for_task(task_decline_snic)
+
+		task_kmeans_sample = buildKMeansSample()
+		wait_for_task(task_kmeans_sample)
+
+		task_kmeans = kMeansImage()
+		wait_for_task(task_kmeans)
+
+		task_sample = kMeansProporitonsADSsample()
+		wait_for_task(task_sample)
+
+		task_proportion = proportionCalc()
+		wait_for_task(task_proportion)
+
+		task_predict = predict()
+		wait_for_task(task_predict)
+
+		task_buffer = buffer_bnet_polygons()
+		wait_for_task(task_buffer)
 
 	else:
-
-		task_snic = SNIC()
-		wait_for_task(task_snic)
-
-		task_decline_snic = DecliningSNIC()
-		wait_for_task(task_decline_snic)
-
-	task_kmeans_sample = buildKMeansSample()
-	wait_for_task(task_kmeans_sample)
-
-	task_kmeans = kMeansImage()
-	wait_for_task(task_kmeans)
-
-	task_sample = kMeansProporitonsADSsample()
-	wait_for_task(task_sample)
-
-	task_proportion = proportionCalc()
-	wait_for_task(task_proportion)
-
-	task_predict = predict()
-	wait_for_task(task_predict)
-
-	task_buffer = buffer_bnet_polygons()
-	wait_for_task(task_buffer)
+		print('bye')
 
 if __name__ == "__main__":
     main()
