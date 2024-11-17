@@ -2,18 +2,22 @@ import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection
 from datetime import date
 import datetime 
-#import bnet as bnet
-import pprint
 
-ee.Initialize(project='r6-bugnet')
 
 param = {}
 
 ## Config name
+param['project_name'] = 'north-cascades-bugnet'
+
+ee.Initialize(project=param['project_name'])
+
 param['configName'] = 'option3'
+param['parameter_file'] = f"{param['project_name']}_parameter_file"
 
 ## AOI
-param['aoi'] = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
+param['aoi'] = ee.FeatureCollection('EPA/Ecoregions/2013/L3').filter(ee.Filter.eq('na_l3name','North Cascades'))
+
+# Working directories  # if your area is spatially large these should be different locations
 
 ## image type 
 param["platform"] = 'lS'
@@ -25,10 +29,12 @@ param['ltstartYear'] = 2000
 param['ltendYear'] = 2023
 param['target'] = 2023
 param['trainingYear'] = 2023
-targetPlus5 = param['target']+5
+targetPlus5 = param['target']-5
 param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 1000)
 param['maskEndTime'] = int(datetime.datetime(param['target'],12,30).timestamp() * 1000)
 
+param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}/" 
+param['LTSDdir'] = param['assetDir']  
 
 # Initialize variables for LandTrendr algorithm
 param['composite_params'] = {
@@ -58,7 +64,7 @@ param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
                     'years': {'start': param['composite_params']["start_date"].year, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 200, 'operator': '>' },
+                    'mag': {'value': 175, 'operator': '>' },
                     'dur': {'value': 4, 'operator': '<'},
                     'preval': {'value': 300, 'operator': '>'},
                     'mmu': {'value': 5}
@@ -69,6 +75,10 @@ param['filtered_classes'] = f"classified_polygons_filtered_{param['composite_par
 param['buffered_classes'] = f"classified_polygons_buffered_{param['composite_params']['end_date'].year}"
 param['rasterize_classes'] = f"classed_img_{param['composite_params']['end_date'].year}"
 
+# these parameter filter the size of the training dataset for high magnitude disturbance. these value are polygons pixel counts.
+# example: if I want polygons with a pixel count higher thean 75 and less than 50000
+param['trainingMin'] = 75
+param['trainingMax'] = 50000 
 
 
 # Transformation parameters
@@ -83,9 +93,6 @@ param['ads'] = ee.FeatureCollection('projects/r6-bugnet/assets/ads-r6-2023')  # 
 param['version'] = 'v1'
 param['region'] = 'north_cascades'
 
-# Working directories  # if your area is spatially large these should be different locations
-param['assetDir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-param['LTSDdir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # LTSD name
 param['LTSDname'] = param['fitted_img_p']
@@ -171,4 +178,3 @@ else:
         }
     }
 
-pprint.pprint(param)

@@ -4,14 +4,30 @@ import os
 import sys
 import time
 from datetime import date
-from parameters import blue_mt_config_opt3_2023 as bnet_config
+#from parameters import blue_mt_config_opt3_2023 as bnet_config
 import bnet as bnet
 import run as run
+import importlib.util
 # Authenticate the Earth Engine API (uncomment if needed for authentication)
 #ee.Authenticate(force=True)
 
 # Initialize the Earth Engine API with a specific project
-ee.Initialize(project=bnet_config.param["project_name"])
+
+
+##############################################################################
+# Load Parameter dictionary
+##############################################################################
+def load_parameters(file_path):
+    # Dynamically load the module from the file path
+    spec = importlib.util.spec_from_file_location("dynamic_params", file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    # Check for the dictionary and return it
+    if hasattr(module, "param"):
+        return module.param
+    else:
+        raise ValueError("The provided script does not define 'parameters'.")
+
 
 ##############################################################################
 # Wait for Task to complete
@@ -49,35 +65,35 @@ def asset_exists(asset_id):
 ##############################################################################
 # Create Base Imagery and disturbance Polygons
 ##############################################################################
-def CreateTrainingFittedImagery(lt):
+def CreateTrainingFittedImagery(lt,param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['fitted_img_t'])
+	exists = asset_exists(param["assetDir"]+param['fitted_img_t'])
 
 	if exists:
 
 		return
 
 	else:
-		fitted_img_t = run.get_fitted_stack(lt,'fitted_training',bnet_config.param)
-		task = run.export_image(fitted_img_t,bnet_config.param, bnet_config.param['fitted_img_t'])
+		fitted_img_t = run.get_fitted_stack(lt,'fitted_training',param)
+		task = run.export_image(fitted_img_t,param, param['fitted_img_t'])
 		return task
 
-def CreatePredictorFittedImagery(lt):
+def CreatePredictorFittedImagery(lt,param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['fitted_img_p'])
+	exists = asset_exists(param["assetDir"]+param['fitted_img_p'])
 
 	if exists:
 
 		return
 
 	else:
-		fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',bnet_config.param)
-		task = run.export_image(fitted_img_p,bnet_config.param, bnet_config.param['fitted_img_p'])
+		fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',param)
+		task = run.export_image(fitted_img_p,param, param['fitted_img_p'])
 		return task
 
-def CreateTrainingChangeImagery(lt):
+def CreateTrainingChangeImagery(lt,param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['training_change_img'])
+	exists = asset_exists(param["assetDir"]+param['training_change_img'])
 
 	if exists:
 
@@ -85,29 +101,29 @@ def CreateTrainingChangeImagery(lt):
 
 	else:
 
-		bnet_config.param['change_params']['years'] = {'start': 2007, 'end': 2012}
-		change_img_t = lt.get_change_map(bnet_config.param['change_params'])
-		task = run.export_image(change_img_t, bnet_config.param, bnet_config.param['training_change_img'])
+		param['change_params']['years'] = {'start': 2007, 'end': 2012}
+		change_img_t = lt.get_change_map(param['change_params'])
+		task = run.export_image(change_img_t, param, param['training_change_img'])
 		return task
 
-def CreatePredictorChangeImagery(lt):
+def CreatePredictorChangeImagery(lt,param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['predictor_change_img'])
+	exists = asset_exists(param["assetDir"]+param['predictor_change_img'])
 
 	if exists:
 
 		return
 
 	else:
-		bnet_config.param['change_params']['years'] = {'start': bnet_config.param['composite_params']['end_date'].year-6, 'end': bnet_config.param['composite_params']['end_date'].year}
-		change_img_p = lt.get_change_map(bnet_config.param['change_params'])
-		task = run.export_image(change_img_p,bnet_config.param, bnet_config.param['predictor_change_img'])
+		param['change_params']['years'] = {'start': param['composite_params']['end_date'].year-6, 'end': param['composite_params']['end_date'].year}
+		change_img_p = lt.get_change_map(param['change_params'])
+		task = run.export_image(change_img_p,param, param['predictor_change_img'])
 
 		return task
 
-def CreateTrainingDisturbancePolygons():
+def CreateTrainingDisturbancePolygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['disturbance_polygons_training'])
+	exists = asset_exists(param["assetDir"]+param['disturbance_polygons_training'])
 
 	if exists:
 
@@ -115,30 +131,30 @@ def CreateTrainingDisturbancePolygons():
 
 	else:
 
-		change_img_t = ee.Image(bnet_config.param["assetDir"]+bnet_config.param['training_change_img'])
-		disturbance_polygons_t = run.vectorize_disturbance(change_img_t,bnet_config.param)
-		task = run.export_feature_collection(disturbance_polygons_t,bnet_config.param['disturbance_polygons_training'],bnet_config.param['assetDir'])
+		change_img_t = ee.Image(param["assetDir"]+param['training_change_img'])
+		disturbance_polygons_t = run.vectorize_disturbance(change_img_t,param)
+		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir'])
 		return task
 
-def CreatePredictorDisturbancePolygons():
+def CreatePredictorDisturbancePolygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['disturbance_polygons_predictor'])
+	exists = asset_exists(param["assetDir"]+param['disturbance_polygons_predictor'])
 
 	if exists:
 
 		return
 
 	else:
-		change_img_p = ee.Image(bnet_config.param["assetDir"]+bnet_config.param['predictor_change_img'])
-		disturbance_polygons_p = run.vectorize_disturbance(change_img_p,bnet_config.param)
-		task = run.export_feature_collection(disturbance_polygons_p,bnet_config.param['disturbance_polygons_predictor'],bnet_config.param['assetDir'])
+		change_img_p = ee.Image(param["assetDir"]+param['predictor_change_img'])
+		disturbance_polygons_p = run.vectorize_disturbance(change_img_p,param)
+		task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
 		return task
 ##############################################################################
 # Attribute Disturbance Polygons with Base Imagery 
 ##############################################################################
-def attributeTrainingPolygons():
+def attributeTrainingPolygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['attributed_polygons_training'])
+	exists = asset_exists(param["assetDir"]+param['attributed_polygons_training'])
 
 	if exists:
 
@@ -146,42 +162,42 @@ def attributeTrainingPolygons():
 
 	else:
 
-		gee_attributed_fc = run.attribute_with_reference_data(bnet_config.param,'training')
+		gee_attributed_fc = run.attribute_with_reference_data(param,'training')
 
 		# reproject and change feature collecton to json
-		reprojected_geojson = run.feature_collection_to_geojson(gee_attributed_fc, bnet_config.param['source_epsg'], bnet_config.param['target_epsg'])    # apply reprojections and feature collectio>
+		reprojected_geojson = run.feature_collection_to_geojson(gee_attributed_fc, param['source_epsg'], param['target_epsg'])    # apply reprojections and feature collectio>
 
 		# attribute with Cmonster
-		event_polygons_attri1 = run.attribute_with_cmonster_data(reprojected_geojson,bnet_config.param['cMonster_img_path'])                   # apply attribution (cMonster)
+		event_polygons_attri1 = run.attribute_with_cmonster_data(reprojected_geojson,param['cMonster_img_path'])                   # apply attribution (cMonster)
 
 		# reproject and convert to featrue collection
-		reprojected_fc = run.geojson_to_ee_feature(event_polygons_attri1, bnet_config.param['target_epsg'], bnet_config.param['source_epsg'])           # apply re-reprojection and geojson to featur>
+		reprojected_fc = run.geojson_to_ee_feature(event_polygons_attri1, param['target_epsg'], param['source_epsg'])           # apply re-reprojection and geojson to featur>
 
 		# export
-		task = run.export_feature_collection(reprojected_fc,bnet_config.param['attributed_polygons_training'],bnet_config.param['assetDir'] )
+		task = run.export_feature_collection(reprojected_fc,param['attributed_polygons_training'],param['assetDir'] )
 
 		return task
 
 
-def attributePredictorPolygons():
+def attributePredictorPolygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['attributed_polygons_predictor'])
+	exists = asset_exists(param["assetDir"]+param['attributed_polygons_predictor'])
 
 	if exists:
 
 		return
 
 	else:
-		gee_attributed_fc = run.attribute_with_reference_data(bnet_config.param,'predictor')
-		task = run.export_feature_collection(gee_attributed_fc,bnet_config.param['attributed_polygons_predictor'],bnet_config.param['assetDir'] )
+		gee_attributed_fc = run.attribute_with_reference_data(param,'predictor')
+		task = run.export_feature_collection(gee_attributed_fc,param['attributed_polygons_predictor'],param['assetDir'] )
 		return task
 
 ##############################################################################
 # Classify Polygons 
 ##############################################################################
-def classify_polygons():
+def classify_polygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['classified_fc'])
+	exists = asset_exists(param["assetDir"]+param['classified_fc'])
 
 	if exists:
 
@@ -189,62 +205,62 @@ def classify_polygons():
 
 	else:
 
-		labeled_fc = ee.FeatureCollection(bnet_config.param['assetDir']+bnet_config.param['attributed_polygons_training']) #.filter(ee.Filter.lt('mode_value',101))
-		unlabeled_fc = ee.FeatureCollection(bnet_config.param['assetDir']+bnet_config.param['attributed_polygons_predictor'])
+		labeled_fc = ee.FeatureCollection(param['assetDir']+param['attributed_polygons_training']) #.filter(ee.Filter.lt('mode_value',101))
+		unlabeled_fc = ee.FeatureCollection(param['assetDir']+param['attributed_polygons_predictor'])
 
 		predictor_variables = unlabeled_fc.first().propertyNames()
 		labeled_fc = run.drop_null_features(labeled_fc,predictor_variables)
 		unlabeled_fc = run.drop_null_features(unlabeled_fc,predictor_variables)
 
-		trained_classifier = run.train_classifier(labeled_fc,"mode_value",predictor_variables,bnet_config.param['num_trees'])
+		trained_classifier = run.train_classifier(labeled_fc,"mode_value",predictor_variables,param['num_trees'])
 		classified_fc = run.classify_features(unlabeled_fc, trained_classifier)
 
-		task = run.export_feature_collection(classified_fc,bnet_config.param['classified_fc'],bnet_config.param['assetDir'])
+		task = run.export_feature_collection(classified_fc,param['classified_fc'],param['assetDir'])
 		return task
 
 ##############################################################################
 # Create High Disturbance Mask From Polygons 
 ##############################################################################
-def filter_classes():
+def filter_classes(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['filtered_classes'])
+	exists = asset_exists(param["assetDir"]+param['filtered_classes'])
 
 	if exists:
 
 		return
 
 	else:
-		fc1 = run.filter_by_mode_value(ee.FeatureCollection(bnet_config.param['assetDir'] + bnet_config.param['classified_fc']), 19, 41, 60, 90)
+		fc1 = run.filter_by_mode_value(ee.FeatureCollection(param['assetDir'] + param['classified_fc']), 19, 41, 60, 90)
 
-		task = run.export_feature_collection(fc1, bnet_config.param['filtered_classes'], bnet_config.param['assetDir'])
+		task = run.export_feature_collection(fc1, param['filtered_classes'], param['assetDir'])
 
 		return task
 
-def buffer_classed_polygons():
+def buffer_classed_polygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['buffered_classes'])
+	exists = asset_exists(param["assetDir"]+param['buffered_classes'])
 	if exists:
 
 		return
 
 	else:
-		fc1 = ee.FeatureCollection(bnet_config.param["assetDir"]+bnet_config.param['filtered_classes'])
+		fc1 = ee.FeatureCollection(param["assetDir"]+param['filtered_classes'])
 		fc2 = run.buffer_features(fc1, 100)
-		task = run.export_feature_collection(fc2, bnet_config.param['buffered_classes'], bnet_config.param['assetDir'])
+		task = run.export_feature_collection(fc2, param['buffered_classes'], param['assetDir'])
 		return task
 
-def rasterize_classed_polygons():
+def rasterize_classed_polygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['rasterize_classes'])
+	exists = asset_exists(param["assetDir"]+param['rasterize_classes'])
 
 	if exists:
 
 		return
 
 	else:
-		fc2 = ee.FeatureCollection(bnet_config.param["assetDir"]+bnet_config.param['buffered_classes'])
-		img = run.rasterize_polygons(fc2, 'classification', 30, region=bnet_config.param['aoi'])
-		task = run.export_image(img, bnet_config.param,bnet_config.param['rasterize_classes'])
+		fc2 = ee.FeatureCollection(param["assetDir"]+param['buffered_classes'])
+		img = run.rasterize_polygons(fc2, 'classification', 30, region=param['aoi'])
+		task = run.export_image(img, param,param['rasterize_classes'])
 
 		return task
 
@@ -253,9 +269,9 @@ def rasterize_classed_polygons():
 ##############################################################################
 # Create forest mask
 ##############################################################################
-def CreateForestMask():
+def CreateForestMask(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param["assetDir"]+bnet_config.param['forestMaskName'])
+	exists = asset_exists(param["assetDir"]+param['forestMaskName'])
 
 	if exists:
 
@@ -264,19 +280,19 @@ def CreateForestMask():
 	mtbs = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
 
 	# LCMS forest mask
-	lcms_mask = bnet.lcms_forest_mask(bnet_config.param['target']-5,bnet_config.param['target']).clip(bnet_config.param['aoi'])
+	lcms_mask = bnet.lcms_forest_mask(param['target']-5,param['target']).clip(param['aoi'])
 
 	#reflectance mask
-	tassMap = bnet.tasselCapMask(bnet_config)
+	tassMap = bnet.tasselCapMask(param)
 
 	#High Magnitude -- makes a raster mask from vector layer of clear cuts fire etc 
-	highMagChange_img = bnet_config.param['ltchange'].gt(0).unmask().Not()
+	highMagChange_img = param['ltchange'].gt(0).unmask().Not()
 
 	#Fire mask - filter MTBS dataset by date 
 	fires = mtbs.filter(
 		ee.Filter.And(
-			ee.Filter.gte("Ig_Date", bnet_config.param['maskStartTime']),
-			ee.Filter.lte("Ig_Date", bnet_config.param['maskEndTime'])
+			ee.Filter.gte("Ig_Date", param['maskStartTime']),
+			ee.Filter.lte("Ig_Date", param['maskEndTime'])
 		)
 	)
 
@@ -290,15 +306,15 @@ def CreateForestMask():
 	mask = lcms_mask.multiply(highMagChange_img) \
 			.multiply(fire_img) \
 			.multiply(tassMap) \
-			.clip(bnet_config.param['aoi'])
+			.clip(param['aoi'])
 
 	# export image mask
 	task_mask = ee.batch.Export.image.toAsset(
-		#image=ee.Image(bnet_config.param['LTSDdir'] + bnet_config.param['LTSDname']).select([0]).multiply(0).add(1).byte(),
+		#image=ee.Image(param['LTSDdir'] + param['LTSDname']).select([0]).multiply(0).add(1).byte(),
 		image=mask.byte(),
- 		description=bnet_config.param['forestMaskName'],
-		assetId=bnet_config.param["assetDir"]+bnet_config.param['forestMaskName'],
-		region=bnet_config.param['aoi'].geometry(),
+ 		description=param['forestMaskName'],
+		assetId=param["assetDir"]+param['forestMaskName'],
+		region=param['aoi'].geometry(),
 		scale=30,
 		maxPixels=1e13
 	)
@@ -309,26 +325,26 @@ def CreateForestMask():
 ##############################################################################
 # SNIC
 ##############################################################################
-def SNIC():
+def SNIC(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['snicName'])
+	exists = asset_exists(param['assetDir'] + param['snicName'])
 
 	if exists:
 
 		return
 
 	# Get LTSD image
-	ltsd = ee.Image(bnet_config.param['LTSDdir'] + bnet_config.param['LTSDname'])
+	ltsd = ee.Image(param['LTSDdir'] + param['LTSDname'])
 
 	# Generate a SNIC image from the LTSD image and then mask with non-forest mask
-	ltsd_snic = bnet.snic_image(ltsd).mask(bnet_config.param['Mask'])
+	ltsd_snic = bnet.snic_image(ltsd).mask(param['Mask'])
 
 	# Export image
 	export_params = {
 		'image': ltsd_snic.toInt16(),
-		'description': bnet_config.param['snicName'],
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['snicName'],
-		'region': bnet_config.param['aoi'].geometry(),
+		'description': param['snicName'],
+		'assetId': param['assetDir'] + param['snicName'],
+		'region': param['aoi'].geometry(),
 		'scale': 30,
 		'maxPixels': 1e13
 	}
@@ -342,24 +358,24 @@ def SNIC():
 ##############################################################################
 # Declining SNIC
 ##############################################################################
-def DecliningSNIC():
+def DecliningSNIC(param):
 
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['declineName'])
+	exists = asset_exists(param['assetDir'] + param['declineName'])
 
 	if exists:
 
 		return
 
 	# Apply the function
-	snic_decline = bnet.SNIC_decline_image(ee.Image(bnet_config.param['assetDir'] + bnet_config.param['snicName']),bnet_config.param['target'])#.updateMask(bnet_config.param['Mask'])
+	snic_decline = bnet.SNIC_decline_image(ee.Image(param['assetDir'] + param['snicName']),param['target'])#.updateMask(param['Mask'])
 
 	# Export the image
 	export_params = {
 		'image': snic_decline.toInt16(),
-		'description': bnet_config.param['declineName'],
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['declineName'],
-		'region': bnet_config.param['aoi'].geometry(),
+		'description': param['declineName'],
+		'assetId': param['assetDir'] + param['declineName'],
+		'region': param['aoi'].geometry(),
 		'scale': 30,
 		'maxPixels': 1e13
 	}
@@ -373,24 +389,24 @@ def DecliningSNIC():
 ##############################################################################
 # Declining LTSD
 ##############################################################################
-def DecliningLTSD():
+def DecliningLTSD(param):
 
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['declineName'])
+	exists = asset_exists(param['assetDir'] + param['declineName'])
 
 	if exists:
 
 		return
 
 	# Apply the function
-	ltsd_decline = bnet.LTSD_decline_image(ee.Image(bnet_config.param['assetDir'] + bnet_config.param['fitted_img_p']),bnet_config.param['ltendYear']).updateMask(bnet_config.param['Mask'])
+	ltsd_decline = bnet.LTSD_decline_image(ee.Image(param['assetDir'] + param['fitted_img_p']),param['ltendYear']).updateMask(param['Mask'])
 
 	# Export the image
 	export_params = {
 		'image': ltsd_decline.toInt16(),
-		'description': bnet_config.param['declineName'],
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['declineName'],
-		'region': bnet_config.param['aoi'].geometry(),
+		'description': param['declineName'],
+		'assetId': param['assetDir'] + param['declineName'],
+		'region': param['aoi'].geometry(),
 		'scale': 30,
 		'maxPixels': 1e13
 	}
@@ -405,15 +421,15 @@ def DecliningLTSD():
 ##############################################################################
 # Sample for Kmeans build 
 ##############################################################################
-def buildKMeansSample():
+def buildKMeansSample(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['kmeansName']+"_sample")
+	exists = asset_exists(param['assetDir'] + param['kmeansName']+"_sample")
 
 	if exists:
 		return
 
 	# Import SNIC decline image
-	snic_decline_path = bnet_config.param['assetDir'] + bnet_config.param['declineName']
+	snic_decline_path = param['assetDir'] + param['declineName']
 	snic_decline = ee.Image(snic_decline_path)
 
 	# Get band names from the SNIC decline image -- slice first and last (SNIC seed and cluster bands)
@@ -423,9 +439,9 @@ def buildKMeansSample():
 	# Get random sample of point attributes for KMeans
 	sample = ee.FeatureCollection(
 		snic_decline.sample(region=
-			bnet_config.param['aoi'], 
+			param['aoi'], 
 			scale=30, 
-			numPixels=bnet_config.param['kmeans_num_sample'], 
+			numPixels=param['kmeans_num_sample'], 
 			tileScale=12, 
 			geometries=True)
 		.randomColumn().sort('random')
@@ -436,18 +452,18 @@ def buildKMeansSample():
 		# Get random sample of point attributes for KMeans	
 		sample = ee.FeatureCollection(
 			snic_decline.sampleRegions(
-				collection=bnet_config.param['aoi'],
+				collection=param['aoi'],
 				scale=30,
 				tileScale=12,
 				geometries=True
-			).randomColumn().sort('random').toList(bnet_config.param['kmeans_num_sample'])
+			).randomColumn().sort('random').toList(param['kmeans_num_sample'])
 		)
 
 
 	export_params = {
 		'collection': sample,
-		'description': bnet_config.param['kmeansName']+"_sample",
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['kmeansName']+"_sample"
+		'description': param['kmeansName']+"_sample",
+		'assetId': param['assetDir'] + param['kmeansName']+"_sample"
 	}
 
 	task_kmeans_sample = ee.batch.Export.table.toAsset(**export_params)
@@ -457,15 +473,15 @@ def buildKMeansSample():
 ##############################################################################
 # make KMEANS iamge 
 ##############################################################################
-def kMeansImage():
+def kMeansImage(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['kmeansName'])
+	exists = asset_exists(param['assetDir'] + param['kmeansName'])
 
 	if exists:
 		return
 
 	# Import SNIC decline image
-	snic_decline_path = bnet_config.param['assetDir'] + bnet_config.param['declineName']
+	snic_decline_path = param['assetDir'] + param['declineName']
 	snic_decline = ee.Image(snic_decline_path)
 
 	# Get band names from the SNIC decline image -- slice first and last (SNIC seed and cluster bands)
@@ -474,25 +490,25 @@ def kMeansImage():
 
 	# Train KMeans on random sample across selected bands and number of clusters
 	training = ee.Clusterer.wekaCascadeKMeans(
-		bnet_config.param['num_of_clusters'],
-		bnet_config.param['num_of_clusters'],
+		param['num_of_clusters'],
+		param['num_of_clusters'],
 		10,
 		False,
 		True
 	).train(
-		ee.FeatureCollection(bnet_config.param['assetDir'] +bnet_config.param['kmeansNameSample']),
+		ee.FeatureCollection(param['assetDir'] +param['kmeansNameSample']),
 		snic_bands
 	)
 
 	# Apply KMeans clustering to the SNIC decline image and clip to AOI
-	snic_decline_kmeans = snic_decline.cluster(training).clip(bnet_config.param['aoi'])
+	snic_decline_kmeans = snic_decline.cluster(training).clip(param['aoi'])
 
 	# Export image to assets
 	export_params = {
 		'image': snic_decline_kmeans.toInt16(),
-		'description': bnet_config.param['kmeansName'],
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['kmeansName'],
-		'region': bnet_config.param['aoi'].geometry(),
+		'description': param['kmeansName'],
+		'assetId': param['assetDir'] + param['kmeansName'],
+		'region': param['aoi'].geometry(),
 		'scale': 30,
 		'maxPixels': 1e13
 	}
@@ -504,21 +520,21 @@ def kMeansImage():
 ##############################################################################
 # Kmeans Proportion of Intersection with ADS sample
 ##############################################################################
-def kMeansProporitonsADSsample():
+def kMeansProporitonsADSsample(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['KmeansVector'])
+	exists = asset_exists(param['assetDir'] + param['KmeansVector'])
 
 	if exists:
 		return
 
 	# ADS filtering
-	ads = bnet_config.param['ads'].filterBounds(bnet_config.param['aoi']) #.filter(ee.Filter.eq('SURVEY_YEA', 2022))
+	ads = param['ads'].filterBounds(param['aoi']) #.filter(ee.Filter.eq('SURVEY_YEA', 2022))
 
 	# Define AOI
-	aoi = bnet_config.param['aoi']
+	aoi = param['aoi']
 
 	# KMeans image histogram
-	kmeans = ee.Image(bnet_config.param['assetDir'] + bnet_config.param['kmeansName']).rename(['kmeans_clusters'])
+	kmeans = ee.Image(param['assetDir'] + param['kmeansName']).rename(['kmeans_clusters'])
 
 	# ADS image histogram
 	kmeansV = kmeans.reduceToVectors(reducer=ee.Reducer.countEvery(), geometry=aoi.geometry(),tileScale=12 ,maxPixels=1e13)
@@ -536,7 +552,7 @@ def kMeansProporitonsADSsample():
 	export_params = {
 		'collection': proportion_attri,
 		'description': 'kmeansVectorAttr',
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['KmeansVector']
+		'assetId': param['assetDir'] + param['KmeansVector']
 		#'maxVertices': 100000000
 	}
 
@@ -549,14 +565,14 @@ def kMeansProporitonsADSsample():
 ##############################################################################
 # Calculation of proportion of intersection
 ##############################################################################
-def proportionCalc():
+def proportionCalc(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['proportionName'])
+	exists = asset_exists(param['assetDir'] + param['proportionName'])
 
 	if exists:
 		return
 
-	proportion_attri = ee.FeatureCollection(bnet_config.param['assetDir'] + bnet_config.param['KmeansVector'] )
+	proportion_attri = ee.FeatureCollection(param['assetDir'] + param['KmeansVector'] )
 
 	intersect_std = proportion_attri.filter(ee.Filter.eq('touch', 1)).aggregate_stats('label').get('total_sd')
 	clusters_that_touch_0 = ee.Number(proportion_attri.filter(ee.Filter.And(ee.Filter.eq('label', 0), ee.Filter.eq('touch', 1))).size())
@@ -580,7 +596,7 @@ def proportionCalc():
 	corrected_bnet = feat_zip.get(1)
 	diclist = ee.Dictionary.fromLists(corrected_label, corrected_bnet) 
 
-	kmeans = ee.Image(bnet_config.param['assetDir'] + bnet_config.param['kmeansName']).rename(['kmeans_clusters'])
+	kmeans = ee.Image(param['assetDir'] + param['kmeansName']).rename(['kmeans_clusters'])
 
 	def label_img_function(k):
 		return kmeans.eq(ee.Number.parse(k)).multiply(ee.Number(diclist.get(k))).byte()
@@ -589,21 +605,21 @@ def proportionCalc():
 	sample_img = ee.ImageCollection(label_img).sum().selfMask().rename(['label'])
 
 	# Reference image
-	ref_img = ee.Image(bnet_config.param['assetDir'] + bnet_config.param['declineName'])
+	ref_img = ee.Image(param['assetDir'] + param['declineName'])
 
-	if '2' in bnet_config.param['configName']:
+	if '2' in param['configName']:
 
-		ref_img = bnet.rename_img(ref_img, bnet_config.param['target']).addBands(kmeans).addBands(sample_img)
+		ref_img = bnet.rename_img(ref_img, param['target']).addBands(kmeans).addBands(sample_img)
 
 	else:
 
-		ref_img = bnet.rename_img_opt3(ref_img, bnet_config.param['target']).addBands(kmeans).addBands(sample_img)
+		ref_img = bnet.rename_img_opt3(ref_img, param['target']).addBands(kmeans).addBands(sample_img)
 
 	# Stratified sample
 	sample = ref_img.stratifiedSample(
-		numPoints=bnet_config.param['proportion_strat_sample_size'],
+		numPoints=param['proportion_strat_sample_size'],
 		classBand='label',
-		region= bnet_config.param['aoi'],
+		region= param['aoi'],
 		scale=30,
 		tileScale=4,
 		geometries=True
@@ -612,8 +628,8 @@ def proportionCalc():
 	# Export to asset
 	export_params = {
 		'collection': sample,
-		'description': bnet_config.param['proportionName']+"_sample",
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['proportionName']+"_sample",
+		'description': param['proportionName']+"_sample",
+		'assetId': param['assetDir'] + param['proportionName']+"_sample",
 		#'maxVertices': 100000000
 	}
 
@@ -623,9 +639,9 @@ def proportionCalc():
 
 	export_params2 = {
 		'image': sample_img,
-		'description':bnet_config.param['proportionName'],
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['proportionName'],
-		'region': bnet_config.param['aoi'].geometry(),
+		'description':param['proportionName'],
+		'assetId': param['assetDir'] + param['proportionName'],
+		'region': param['aoi'].geometry(),
 		'scale': 30,
 		'maxPixels': 1e13
 	}
@@ -640,24 +656,24 @@ def proportionCalc():
 ##############################################################################
 # Predict 
 ##############################################################################
-def predict():
+def predict(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['predicted'])
+	exists = asset_exists(param['assetDir'] + param['predicted'])
 
 	if exists:
 		return
 
 	# Define variables
-	states = bnet_config.param['aoi']
-	snic_decline = ee.Image(bnet_config.param['assetDir'] + bnet_config.param['declineName'])
-	kmeans_decline = ee.Image(bnet_config.param['assetDir'] + bnet_config.param['kmeansName'])
-	sample = ee.FeatureCollection(bnet_config.param['assetDir'] + bnet_config.param['proportionName']+'_sample')
+	states = param['aoi']
+	snic_decline = ee.Image(param['assetDir'] + param['declineName'])
+	kmeans_decline = ee.Image(param['assetDir'] + param['kmeansName'])
+	sample = ee.FeatureCollection(param['assetDir'] + param['proportionName']+'_sample')
 
 	# Rename the bands in the reference image
-	if '2' in bnet_config.param['configName']:
-		refer_image = bnet.rename_img(snic_decline, bnet_config.param['target'])
+	if '2' in param['configName']:
+		refer_image = bnet.rename_img(snic_decline, param['target'])
 	else:
-		refer_image = bnet.rename_img_opt3(snic_decline, bnet_config.param['target'])
+		refer_image = bnet.rename_img_opt3(snic_decline, param['target'])
 
 
 	# Get property names and band names
@@ -680,12 +696,12 @@ def predict():
 	)
 
 	# Classify using Random Forest
-	rf_model = refer_image.classify(random_forest).selfMask().clip(states).rename('bugnet_{}_{}_{}'.format(bnet_config.param['region'], bnet_config.param['target'], bnet_config.param['version']))
+	rf_model = refer_image.classify(random_forest).selfMask().clip(states).rename('bugnet_{}_{}_{}'.format(param['region'], param['target'], param['version']))
 
 	export_params = {
 		'image': rf_model,
-		'description': bnet_config.param['predicted'],
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['predicted'],
+		'description': param['predicted'],
+		'assetId': param['assetDir'] + param['predicted'],
 		'region': states.geometry(),
 		'scale': 30,
 		'maxPixels': 1e13
@@ -700,19 +716,19 @@ def predict():
 ##############################################################################
 # Polygonize
 ##############################################################################
-def polygonize_bnet():
+def polygonize_bnet(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['bnet_polygonized'])
+	exists = asset_exists(param['assetDir'] + param['bnet_polygonized'])
 
 	if exists:
 		return
-	img = ee.Image(bnet_config.param['assetDir'] + bnet_config.param['predicted'])
+	img = ee.Image(param['assetDir'] + param['predicted'])
 	polygons = img.reduceToVectors(reducer=ee.Reducer.countEvery(), scale=30, maxPixels=1e13)
 
 	export_params = {
 		'collection': polygons,
-		'description': bnet_config.param['bnet_polygonized'],
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['bnet_polygonized']
+		'description': param['bnet_polygonized'],
+		'assetId': param['assetDir'] + param['bnet_polygonized']
 	}
 
 	task = ee.batch.Export.table.toAsset(**export_params)
@@ -721,15 +737,15 @@ def polygonize_bnet():
 ##############################################################################
 # buffer Bnet  Polygon
 ##############################################################################
-def buffer_bnet_polygons():
+def buffer_bnet_polygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(bnet_config.param['assetDir'] + bnet_config.param['bnet_buffered_polygons'])
+	exists = asset_exists(param['assetDir'] + param['bnet_buffered_polygons'])
 
 	if exists:
 		return
-	fc = ee.FeatureCollection(bnet_config.param['assetDir'] + bnet_config.param['bnet_polygonized'])
+	fc = ee.FeatureCollection(param['assetDir'] + param['bnet_polygonized'])
 	def buffer_f(ft):
-		polygon = ft.buffer(bnet_config.param['bnet_buffer'])
+		polygon = ft.buffer(param['bnet_buffer'])
 		area = polygon.geometry().area().divide(1000 * 1000);
   
 		return polygon.set('area_m2', area);
@@ -737,8 +753,8 @@ def buffer_bnet_polygons():
 
 	export_params = {
 		'collection':ee.FeatureCollection(polygons),
-		'description': bnet_config.param['bnet_buffered_polygons'],
-		'assetId': bnet_config.param['assetDir'] + bnet_config.param['bnet_buffered_polygons']
+		'description': param['bnet_buffered_polygons'],
+		'assetId': param['assetDir'] + param['bnet_buffered_polygons']
 	}
 
 	task = ee.batch.Export.table.toAsset(**export_params)
@@ -747,7 +763,7 @@ def buffer_bnet_polygons():
 ##############################################################################
 # export metadata
 ##############################################################################
-def export_parameter_file():
+def export_parameter_file(param):
 	return 0
 ##############################################################################
 # Wait for Task to complete
@@ -755,28 +771,50 @@ def export_parameter_file():
 def gui():
 	print("Welcome to bugnet!")
 	print("How would you like to continue? Enter ...")
-	print("    1 - to all bugnet.")
-	print("    2 - high Magnitude base data (step 1-a).")
-	print("    3 - high magnitude disturbance polygons (step 1-b) .")
-	print("    4 - high magnitude attribution (step 1-c)")
-	print("    5 - high magnitude polygon classification (step 1-d)")
-	print("    6 - high magnitude polygon classification (step 1-d)")
-	print("    7 - forest mask")
-	print("    8 - the rest")
-	print("    9 - clean asset storage.")
+	print("    1 - Run all of bugnet.")
+	print("    2 - Run individual step.")
 	mode = input(':')
-	return mode
+	if mode == '2':
+		print("    3 - Run high Magnitude base data (step 1-a).")
+		print("    4 - Run high magnitude disturbance polygons (step 1-b) .")
+		print("    5 - Run high magnitude attribution (step 1-c)")
+		print("    6 - Run high magnitude polygon classification (step 1-d)")
+		print("    7 - Run high magnitude polygon classification (step 1-d)")
+		print("    8 - Run forest mask")
+		print("    9 - Run the rest")
+		print("    del - clean asset storage.")
+		mode = input(':')
+		return mode
+	elif mode == '1':
+		return mode
+	else:
+		print('bye')
+		sys.exit()
 
 ##############################################################################
 # MAIN
 ##############################################################################
 def main():
 
+	if len(sys.argv) != 2:
+		print("Usage: python main.py <parameter script path>")
+		sys.exit(1)
+
+	param_file = sys.argv[1]
+
+	try:
+		param = load_parameters(param_file)
+	except Exception as e:
+		print(f"Error loading parameters: {e}")
+		sys.exit(1)
+
+	ee.Initialize(project=param["project_name"])
+
 	mode = gui()
 
-	if mode == '9':
+	if mode == 'del':
 
-		run.list_and_delete_assets(bnet_config.param['assetDir'])
+		run.list_and_delete_assets(param['assetDir'])
 		sys.exit()
 
 	elif mode == '22':
@@ -785,152 +823,152 @@ def main():
 
 	elif mode == '1':
 
-		lt = LandTrendr(**bnet_config.param['lt_params'])
+		lt = LandTrendr(**param['lt_params'])
 
-		task1 = CreateTrainingFittedImagery(lt)
-		task2 = CreatePredictorFittedImagery(lt)
-		task3 = CreateTrainingChangeImagery(lt)
-		task4 = CreatePredictorChangeImagery(lt)
+		task1 = CreateTrainingFittedImagery(lt,param)
+		task2 = CreatePredictorFittedImagery(lt,param)
+		task3 = CreateTrainingChangeImagery(lt,param)
+		task4 = CreatePredictorChangeImagery(lt,param)
 		wait_for_task(task1)
 		wait_for_task(task2)
 		wait_for_task(task3)
 		wait_for_task(task4)
 
-		task5 = CreateTrainingDisturbancePolygons()
-		task6 = CreatePredictorDisturbancePolygons()
+		task5 = CreateTrainingDisturbancePolygons(param)
+		task6 = CreatePredictorDisturbancePolygons(param)
 		wait_for_task(task5)
 		wait_for_task(task6)
 
-		task7 = attributeTrainingPolygons()
-		task8 = attributePredictorPolygons()
+		task7 = attributeTrainingPolygons(param)
+		task8 = attributePredictorPolygons(param)
 		wait_for_task(task7)
 		wait_for_task(task8)
 
-		task9 = classify_polygons()
+		task9 = classify_polygons(param)
 		wait_for_task(task9)
 
-		task10 = filter_classes()
+		task10 = filter_classes(param)
 		wait_for_task(task10)
 
-		task11 = buffer_classed_polygons()
+		task11 = buffer_classed_polygons(param)
 		wait_for_task(task11)
 
-		task12 = rasterize_classed_polygons()
+		task12 = rasterize_classed_polygons(param)
 		wait_for_task(task12)
 
-		task_mask = CreateForestMask()	
+		task_mask = CreateForestMask(param)	
 		wait_for_task(task_mask)
 
-		if '3' in bnet_config.param['configName']:
+		if '3' in param['configName']:
 
-			task_decline = DecliningLTSD()
+			task_decline = DecliningLTSD(param)
 			wait_for_task(task_decline)
 
 		else:
 
-			task_snic = SNIC()
+			task_snic = SNIC(param)
 			wait_for_task(task_snic)
 
-			task_decline_snic = DecliningSNIC()
+			task_decline_snic = DecliningSNIC(param)
 			wait_for_task(task_decline_snic)
 
-		task_kmeans_sample = buildKMeansSample()
+		task_kmeans_sample = buildKMeansSample(param)
 		wait_for_task(task_kmeans_sample)
 
-		task_kmeans = kMeansImage()
+		task_kmeans = kMeansImage(param)
 		wait_for_task(task_kmeans)
 
-		task_sample = kMeansProporitonsADSsample()
+		task_sample = kMeansProporitonsADSsample(param)
 		wait_for_task(task_sample)
 
-		task_proportion = proportionCalc()
+		task_proportion = proportionCalc(param)
 		wait_for_task(task_proportion)
 
-		task_predict = predict()
+		task_predict = predict(param)
 		wait_for_task(task_predict)
 
-		task_buffer = buffer_bnet_polygons()
-		waaait_for_task(task_buffer)
-
-	elif mode == '2':
-
-		lt = LandTrendr(**bnet_config.param['lt_params'])
-
-		task1 = CreateTrainingFittedImagery(lt)
-		task2 = CreatePredictorFittedImagery(lt)
-		task3 = CreateTrainingChangeImagery(lt)
-		task4 = CreatePredictorChangeImagery(lt)
-		wait_for_task(task1)
-		wait_for_task(task2)
-		wait_for_task(task3)
-		wait_for_task(task4)
+		#task_buffer = buffer_bnet_polygons(param)
+		#wait_for_task(task_buffer)
 
 	elif mode == '3':
 
-		task5 = CreateTrainingDisturbancePolygons()
-		task6 = CreatePredictorDisturbancePolygons()
-		wait_for_task(task5)
-		wait_for_task(task6)
+		lt = LandTrendr(**param['lt_params'])
+
+		task1 = CreateTrainingFittedImagery(lt,param)
+		task2 = CreatePredictorFittedImagery(lt,param)
+		task3 = CreateTrainingChangeImagery(lt,param)
+		task4 = CreatePredictorChangeImagery(lt,param)
+		wait_for_task(task1)
+		wait_for_task(task2)
+		wait_for_task(task3)
+		wait_for_task(task4)
 
 	elif mode == '4':
 
-		task7 = attributeTrainingPolygons()
-		task8 = attributePredictorPolygons()
-		wait_for_task(task7)
-		wait_for_task(task8)
+		task5 = CreateTrainingDisturbancePolygons(param)
+		task6 = CreatePredictorDisturbancePolygons(param)
+		wait_for_task(task5)
+		wait_for_task(task6)
 
 	elif mode == '5':
 
-		task9 = classify_polygons()
-		wait_for_task(task9)
+		task7 = attributeTrainingPolygons(param)
+		task8 = attributePredictorPolygons(param)
+		wait_for_task(task7)
+		wait_for_task(task8)
 
 	elif mode == '6':
 
-		task10 = filter_classes()
-		wait_for_task(task10)
-
-		task11 = buffer_classed_polygons()
-		wait_for_task(task11)
-
-		task12 = rasterize_classed_polygons()
-		wait_for_task(task12)
+		task9 = classify_polygons(param)
+		wait_for_task(task9)
 
 	elif mode == '7':
 
-		task_mask = CreateForestMask()	
-		wait_for_task(task_mask)
+		task10 = filter_classes(param)
+		wait_for_task(task10)
+
+		task11 = buffer_classed_polygons(param)
+		wait_for_task(task11)
+
+		task12 = rasterize_classed_polygons(param)
+		wait_for_task(task12)
 
 	elif mode == '8':
 
-		if '3' in bnet_config.param['configName']:
+		task_mask = CreateForestMask(param)	
+		wait_for_task(task_mask)
 
-			task_decline = DecliningLTSD()
+	elif mode == '9':
+
+		if '3' in param['configName']:
+
+			task_decline = DecliningLTSD(param)
 			wait_for_task(task_decline)
 
 		else:
 
-			task_snic = SNIC()
+			task_snic = SNIC(param)
 			wait_for_task(task_snic)
 
-			task_decline_snic = DecliningSNIC()
+			task_decline_snic = DecliningSNIC(param)
 			wait_for_task(task_decline_snic)
 
-		task_kmeans_sample = buildKMeansSample()
+		task_kmeans_sample = buildKMeansSample(param)
 		wait_for_task(task_kmeans_sample)
 
-		task_kmeans = kMeansImage()
+		task_kmeans = kMeansImage(param)
 		wait_for_task(task_kmeans)
 
-		task_sample = kMeansProporitonsADSsample()
+		task_sample = kMeansProporitonsADSsample(param)
 		wait_for_task(task_sample)
 
-		task_proportion = proportionCalc()
+		task_proportion = proportionCalc(param)
 		wait_for_task(task_proportion)
 
-		task_predict = predict()
+		task_predict = predict(param)
 		wait_for_task(task_predict)
 
-		task_buffer = buffer_bnet_polygons()
+		task_buffer = buffer_bnet_polygons(param)
 		wait_for_task(task_buffer)
 
 	else:

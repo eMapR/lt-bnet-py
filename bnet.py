@@ -244,9 +244,9 @@ def get_ref_image(lt, ltstartYear, yer, fit, roi):
 def tasselCapMask(bnet):
 
     # Run the LandTrendr algorithm
-    targetImage = ee.Image(bnet.param['LTSDdir']+bnet.param['fitted_img_p'])
+    targetImage = ee.Image(bnet['LTSDdir']+bnet['fitted_img_p'])
 
-    tcb = targetImage.select(["tcb_ftv_" + str(bnet.param['target'])])
+    tcb = targetImage.select(["tcb_ftv_" + str(bnet['target'])])
     
     tcb_mask = tcb.expression('band > 2200 ? 0 : 1', {'band': tcb})
     return tcb_mask

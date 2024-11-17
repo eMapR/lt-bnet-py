@@ -23,18 +23,19 @@ from sklearn.utils import resample
 #-------------------------------------------------------------------
 ee.Initialize(project="r6-bugnet")
 #-------------------------------------------------------------------
-# Image processing-------------------------------------------------------------------
+###########################################################################################################################
+## 
+###########################################################################################################################
 def rename_bands_by_year(image, index, start_year, end_year):
 	"""Rename bands in the image by year."""
 	num_years = end_year - start_year+1
 	new_band_names = [f"{index}_ftv_{start_year + i}" for i in range(num_years)]
-	if len(image.bandNames().getInfo()) == len(new_band_names):
-		return image.rename(new_band_names)
-	else:
-		print("error in: rename_bands_by_year-different number of band names")
-		return 0
+	return image.rename(new_band_names)
 
 
+###########################################################################################################################
+## 
+###########################################################################################################################
 def get_fitted_stack(lt,prefix,parameters):
 
 	start_year = parameters['composite_params']['start_date'].year
@@ -70,6 +71,9 @@ def get_fitted_stack(lt,prefix,parameters):
 		return stack
 
 
+###########################################################################################################################
+## 
+###########################################################################################################################
 def export_image(stack, params, asset,scale=30, max_pixels=1e13):
 	"""Export the image to Google Earth Engine Assets."""
 	# Define export parameters
@@ -83,11 +87,10 @@ def export_image(stack, params, asset,scale=30, max_pixels=1e13):
 	)
 	img_task.start() 
 	return img_task 
-#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<here
-#------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------
 
+###########################################################################################################################
+## 
+###########################################################################################################################
 def vectorize_disturbance(change_image,params):
 	disturbance_polygons = change_image.select('yod').reduceToVectors(
 		reducer=ee.Reducer.countEvery(),
@@ -102,18 +105,16 @@ def vectorize_disturbance(change_image,params):
 
 
 
-#------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------
 
-
+###########################################################################################################################
+## 
+###########################################################################################################################
 def attribute_with_reference_data(params,who):
 	"""
 	Attribute the polygons with reference data from the raster stack.
 	"""
 	def _process_polygon(polygon):
 		yod = ee.Number(polygon.get('yod'))
-		#count = ee.Number(polygon.get('count')).getInfo()
 		years = ee.List.sequence(yod.subtract(3), yod)
 		yrs_int = ee.List.sequence(1,4)
 		indices = ee.List(['nbr_ftv', 'tcb_ftv', 'tcg_ftv', 'tcw_ftv'])
@@ -141,21 +142,23 @@ def attribute_with_reference_data(params,who):
 
 		perimeter = polygon.geometry().perimeter().divide(1000)
 
-		#if count > 4000:
-		#	return polygon.set(raster_values).set({'area_km2': area,'perimeter_km': perimeter,'mode_value': 40})
-		#else:
 		return polygon.set(raster_values).set({'area_km2': area,'perimeter_km': perimeter, 'mode_value': 0})
 
 	if who == 'training':
-                in_img = ee.Image(params['assetDir'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
-                in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_training'])
-                return in_fc.filter(ee.Filter.And(ee.Filter.gt('count',params['trainingMin']),ee.Filter.lt('count',params['trainingMax']))).map(_process_polygon) # 50000
+		in_img = ee.Image(params['assetDir'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
+		in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_training'])
+		out_fc = in_fc.filter(ee.Filter.And(ee.Filter.gt('count',params['trainingMin']),ee.Filter.lt('count',params['trainingMax']))).map(_process_polygon) 
+		print(out_fc.size().getInfo())
+		return out_fc 
 	else:
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
                 in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor'])
                 return in_fc.map(_process_polygon)
 
 
+###########################################################################################################################
+## 
+###########################################################################################################################
 def process_polygon(polygon, raster_path):
 	"""
 	Process each polygon by extracting cMonster data.
@@ -182,7 +185,7 @@ def process_polygon(polygon, raster_path):
 			return 40
 		proportions = calculate_occurrences_proportion(flat_pixels)
 
-		if any(value >= 0.50 for value in proportions.values()):
+		if any(value >= 0.60 for value in proportions.values()):
 			if len(flat_pixels) > 0:
 				mode_result = stats.mode(flat_pixels, axis=None)
 				mode_value = mode_result.mode.item()
@@ -202,6 +205,9 @@ def process_polygon(polygon, raster_path):
 	polygon['properties']['mode_value'] = mode_value
 	return polygon
 
+###########################################################################################################################
+## 
+###########################################################################################################################
 def geojsons_to_dataframe(geojson_dicts):
     """
     Converts a list of GeoJSON dictionaries into a single DataFrame.
@@ -217,22 +223,18 @@ def geojsons_to_dataframe(geojson_dicts):
     
     # Iterate over each GeoJSON dictionary in the list
     for feature in geojson_dicts:
-        # Extract features and convert each feature into a row with geometry
-        #features = geojson['features']
-        #rows = []
-        #for feature in features:
         row = feature['properties'].copy()  # Copy properties to a new dictionary
         row['geometry'] = shape(feature['geometry'])  # Convert geometry to shapely object
         gdf_list.append(row)
         
         # Create a GeoDataFrame from the list of rows
     gdf = gpd.GeoDataFrame(gdf_list, geometry='geometry', crs="EPSG:4326")
-        #gdf_list.append(gdf)
-    # Concatenate all GeoDataFrames into a single DataFrame
-    #combined_gdf = pd.concat(gdf, ignore_index=True)
     
     return gdf
 
+###########################################################################################################################
+## 
+###########################################################################################################################
 def balance_dataset(df, category_col, sample_size=100):
     """
     Balances a dataset by downsampling overrepresented categories.
@@ -261,10 +263,13 @@ def balance_dataset(df, category_col, sample_size=100):
     
     # Concatenate all the balanced groups
     balanced_df = pd.concat(balanced_data)
-    
+    print(balanced_df.columns.tolist())
     return balanced_df
 
 
+###########################################################################################################################
+## 
+###########################################################################################################################
 def dataframe_to_geojson_features(df):
     """
     Converts each record in a DataFrame to a GeoJSON feature and appends to a list.
@@ -284,31 +289,39 @@ def dataframe_to_geojson_features(df):
     
     # Iterate over each row in the DataFrame
     for _, row in df.iterrows():
+        centroid = row["geometry"].centroid
         # Convert each row to a GeoJSON feature
         feature = {
             "type": "Feature",
             "properties": row.drop("geometry").to_dict(),  # Exclude geometry from properties
-            "geometry": mapping(row["geometry"])  # Convert geometry to GeoJSON format
+            #"geometry": mapping(row["geometry"])  # Convert geometry to GeoJSON format
+            "geometry": {"type": "MultiPolygon","coordinates": [[[(2, 2), (3, 3), (3, 2), (2, 2)]]]}  # Convert geometry to GeoJSON format
         }
         features.append(feature)
     
     return features
 
+###########################################################################################################################
+## 
+###########################################################################################################################
 def attribute_with_cmonster_data(polygon_list,raster_path):
 	"""
 	Attribute polygons with cMonster data using a local raster (virtual raster).
 	"""
-	with multiprocessing.Pool(processes=20) as pool:
+	with multiprocessing.Pool(processes=30) as pool:
 		results = pool.starmap(process_polygon, [(polygon, raster_path) for polygon in polygon_list])
 	out = [x for x in results if x is not None]
 	combined_df = geojsons_to_dataframe(out)
-	balanced_df = balance_dataset(combined_df, category_col='mode_value', sample_size=200)
+	balanced_df = balance_dataset(combined_df, category_col='mode_value', sample_size=500)
 	geojson_features = dataframe_to_geojson_features(balanced_df)
 
 	return geojson_features
 
 
 
+###########################################################################################################################
+## 
+###########################################################################################################################
 def export_feature_collection(fc,asset_id,asset_path):
 	# Create the export task
 	fc_task = ee.batch.Export.table.toAsset(
@@ -425,6 +438,7 @@ def geojson_to_ee_feature(geojson,s_crs,t_crs):
 	for feature in geojson:
 		feature = reproject_geojson(feature, s_crs, t_crs)
 		geometry = feature['geometry']
+		print(geometry)
 		properties = feature['properties']
 
 		# Create an Earth Engine feature from GeoJSON geometry and properties
