@@ -67,7 +67,7 @@ def asset_exists(asset_id):
 ##############################################################################
 def CreateTrainingFittedImagery(lt,param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['fitted_img_t'])
+	exists = asset_exists(param["assetDir_t"]+param['fitted_img_t'])
 
 	if exists:
 
@@ -75,7 +75,7 @@ def CreateTrainingFittedImagery(lt,param):
 
 	else:
 		fitted_img_t = run.get_fitted_stack(lt,'fitted_training',param)
-		task = run.export_image(fitted_img_t,param, param['fitted_img_t'])
+		task = run.export_image(fitted_img_t,param, param['assetDir_t'],param['fitted_img_t'])
 		return task
 
 def CreatePredictorFittedImagery(lt,param):
@@ -88,12 +88,12 @@ def CreatePredictorFittedImagery(lt,param):
 
 	else:
 		fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',param)
-		task = run.export_image(fitted_img_p,param, param['fitted_img_p'])
+		task = run.export_image(fitted_img_p,param, param['assetDir'],param['fitted_img_p'])
 		return task
 
 def CreateTrainingChangeImagery(lt,param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['training_change_img'])
+	exists = asset_exists(param["assetDir_t"]+param['training_change_img'])
 
 	if exists:
 
@@ -103,7 +103,7 @@ def CreateTrainingChangeImagery(lt,param):
 
 		param['change_params']['years'] = {'start': 2007, 'end': 2012}
 		change_img_t = lt.get_change_map(param['change_params'])
-		task = run.export_image(change_img_t, param, param['training_change_img'])
+		task = run.export_image(change_img_t, param, param['assetDir_t'],param['training_change_img'])
 		return task
 
 def CreatePredictorChangeImagery(lt,param):
@@ -117,13 +117,13 @@ def CreatePredictorChangeImagery(lt,param):
 	else:
 		param['change_params']['years'] = {'start': param['composite_params']['end_date'].year-6, 'end': param['composite_params']['end_date'].year}
 		change_img_p = lt.get_change_map(param['change_params'])
-		task = run.export_image(change_img_p,param, param['predictor_change_img'])
+		task = run.export_image(change_img_p,param, param['assetDir'],param['predictor_change_img'])
 
 		return task
 
 def CreateTrainingDisturbancePolygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['disturbance_polygons_training'])
+	exists = asset_exists(param["assetDir_t"]+param['disturbance_polygons_training'])
 
 	if exists:
 
@@ -133,7 +133,7 @@ def CreateTrainingDisturbancePolygons(param):
 
 		change_img_t = ee.Image(param["assetDir"]+param['training_change_img'])
 		disturbance_polygons_t = run.vectorize_disturbance(change_img_t,param)
-		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir'])
+		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir_t'])
 		return task
 
 def CreatePredictorDisturbancePolygons(param):
@@ -154,7 +154,7 @@ def CreatePredictorDisturbancePolygons(param):
 ##############################################################################
 def attributeTrainingPolygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['attributed_polygons_training'])
+	exists = asset_exists(param["assetDir_t"]+param['attributed_polygons_training'])
 
 	if exists:
 
@@ -174,7 +174,7 @@ def attributeTrainingPolygons(param):
 		reprojected_fc = run.geojson_to_ee_feature(event_polygons_attri1, param['target_epsg'], param['source_epsg'])           # apply re-reprojection and geojson to featur>
 
 		# export
-		task = run.export_feature_collection(reprojected_fc,param['attributed_polygons_training'],param['assetDir'] )
+		task = run.export_feature_collection(reprojected_fc,param['attributed_polygons_training'],param['assetDir_t'] )
 
 		return task
 
@@ -205,7 +205,7 @@ def classify_polygons(param):
 
 	else:
 
-		labeled_fc = ee.FeatureCollection(param['assetDir']+param['attributed_polygons_training']) #.filter(ee.Filter.lt('mode_value',101))
+		labeled_fc = ee.FeatureCollection(param['assetDir_t']+param['attributed_polygons_training']) #.filter(ee.Filter.lt('mode_value',101))
 		unlabeled_fc = ee.FeatureCollection(param['assetDir']+param['attributed_polygons_predictor'])
 
 		predictor_variables = unlabeled_fc.first().propertyNames()
@@ -260,7 +260,7 @@ def rasterize_classed_polygons(param):
 	else:
 		fc2 = ee.FeatureCollection(param["assetDir"]+param['buffered_classes'])
 		img = run.rasterize_polygons(fc2, 'classification', 30, region=param['aoi'])
-		task = run.export_image(img, param,param['rasterize_classes'])
+		task = run.export_image(img, param, param['assetDir'],param['rasterize_classes'])
 
 		return task
 
@@ -696,7 +696,8 @@ def predict(param):
 	)
 
 	# Classify using Random Forest
-	rf_model = refer_image.classify(random_forest).selfMask().clip(states).rename('bugnet_{}_{}_{}'.format(param['region'], param['target'], param['version']))
+	#rf_model = refer_image.classify(random_forest).selfMask().clip(states).rename('bugnet_{}_{}_{}'.format(param['region'], param['target'], param['version']))
+	rf_model = refer_image.classify(random_forest).selfMask().clip(states).rename('bugnet_{}'.format(param['target']))
 
 	export_params = {
 		'image': rf_model,

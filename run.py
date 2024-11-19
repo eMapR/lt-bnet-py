@@ -74,13 +74,13 @@ def get_fitted_stack(lt,prefix,parameters):
 ###########################################################################################################################
 ## 
 ###########################################################################################################################
-def export_image(stack, params, asset,scale=30, max_pixels=1e13):
+def export_image(stack, params, assetDir, asset,scale=30, max_pixels=1e13):
 	"""Export the image to Google Earth Engine Assets."""
 	# Define export parameters
 	img_task = ee.batch.Export.image.toAsset(
 		image=stack.clip(params['aoi']),
 		description=asset,  # Task name
-		assetId=params['assetDir'] + asset,  # Path in your GEE assets
+		assetId=assetDir + asset,  # Path in your GEE assets
 		region=params['aoi'].geometry(),  # The area to export
 		scale=scale,  # Resolution in meters per pixel
 		maxPixels=max_pixels  # Maximum number of pixels allowed to export
@@ -145,10 +145,9 @@ def attribute_with_reference_data(params,who):
 		return polygon.set(raster_values).set({'area_km2': area,'perimeter_km': perimeter, 'mode_value': 0})
 
 	if who == 'training':
-		in_img = ee.Image(params['assetDir'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
-		in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_training'])
+		in_img = ee.Image(params['assetDir_t'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
+		in_fc = ee.FeatureCollection(params['assetDir_t'] + params['disturbance_polygons_training'])
 		out_fc = in_fc.filter(ee.Filter.And(ee.Filter.gt('count',params['trainingMin']),ee.Filter.lt('count',params['trainingMax']))).map(_process_polygon) 
-		print(out_fc.size().getInfo())
 		return out_fc 
 	else:
                 in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
@@ -662,31 +661,6 @@ def list_and_delete_assets(asset_path):
 				print(f"Skipped asset: {asset['name']}")
 				print("Finished processing all assets.")
 
-###########################################################################################################################
-## 
-###########################################################################################################################
-def export_image_to_asset(image, asset_id, description,scale, region, max_pixels=1e13):
-	"""
-	Export an image to an Earth Engine asset.
-
-	Parameters:
-	image (ee.Image): The image to export.
-	asset_id (str): The destination asset path in Earth Engine (e.g., 'users/your_username/asset_name').
-	scale (int): The resolution of the export in meters (e.g., 30 for Landsat resolution).
-	region (ee.Geometry): The region to export.
-	description (str): The description for the export task.
-	max_pixels (int): Maximum number of pixels allowed in the export.
-	"""
-	task = ee.batch.Export.image.toAsset(
-		image=image,
-		description=description,
-		assetId=asset_id+description,
-		region=region.geometry(),
-		scale=scale,
-		maxPixels=max_pixels
-	)
-	task.start()
-	print(f"Exporting image to {asset_id} with task ID: {task.id}")
 
 
 
