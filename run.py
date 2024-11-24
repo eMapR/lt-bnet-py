@@ -99,7 +99,7 @@ def vectorize_disturbance(change_image,params):
 		geometryType="polygon",
 		labelProperty='yod',
 		maxPixels=1e13,
-		tileScale=8
+		tileScale=12
 	)
 	return disturbance_polygons
 
@@ -145,7 +145,7 @@ def attribute_with_reference_data(params,who):
 		return polygon.set(raster_values).set({'area_km2': area,'perimeter_km': perimeter, 'mode_value': 0})
 
 	if who == 'training':
-		in_img = ee.Image(params['assetDir_t'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir'] + params['training_change_img']))
+		in_img = ee.Image(params['assetDir_t'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir_t'] + params['training_change_img']))
 		in_fc = ee.FeatureCollection(params['assetDir_t'] + params['disturbance_polygons_training'])
 		out_fc = in_fc.filter(ee.Filter.And(ee.Filter.gt('count',params['trainingMin']),ee.Filter.lt('count',params['trainingMax']))).map(_process_polygon) 
 		return out_fc 

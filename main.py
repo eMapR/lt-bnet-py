@@ -131,7 +131,7 @@ def CreateTrainingDisturbancePolygons(param):
 
 	else:
 
-		change_img_t = ee.Image(param["assetDir"]+param['training_change_img'])
+		change_img_t = ee.Image(param["assetDir_t"]+param['training_change_img'])
 		disturbance_polygons_t = run.vectorize_disturbance(change_img_t,param)
 		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir_t'])
 		return task
@@ -146,7 +146,33 @@ def CreatePredictorDisturbancePolygons(param):
 
 	else:
 		change_img_p = ee.Image(param["assetDir"]+param['predictor_change_img'])
-		disturbance_polygons_p = run.vectorize_disturbance(change_img_p,param)
+		go = 1
+		while go:
+			try:
+				disturbance_polygons_p = run.vectorize_disturbance(change_img_p,param)
+				print(disturbance_polygons_p.size().getInfo())
+				go = 0
+			except:
+				print('error: dataset to large. Decrease area or increase magnitude parameter.')
+				print("    1: exit to Decrease area")
+				print("    2: change magnitude parameter")
+				track = input('    :')
+				if track == '1':
+					sys.exit()
+				elif track == '2':
+					print("old magnitude : ", param['change_params']['mag']['value'])
+					newmag = input('new magnitude : ')
+					param['change_params']['mag']['value'] = int(newmag)
+					new_change_image = change_img_p.mask(change_img_p.select(['mag']).gt(param['change_params']['mag']['value']))
+					disturbance_polygons_p = run.vectorize_disturbance(new_change_image,param)
+					try:
+						print(disturbance_polygons_p.size().getInfo())
+						go = 0
+					except:
+						go = 1
+				else:
+					sys.exit()
+
 		task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
 		return task
 ##############################################################################
@@ -189,6 +215,7 @@ def attributePredictorPolygons(param):
 
 	else:
 		gee_attributed_fc = run.attribute_with_reference_data(param,'predictor')
+		print(gee_attributed_fc.size().getInfo)
 		task = run.export_feature_collection(gee_attributed_fc,param['attributed_polygons_predictor'],param['assetDir'] )
 		return task
 
@@ -820,7 +847,7 @@ def main():
 
 	elif mode == '22':
 
-		export_parameter_file()
+		print(param)
 
 	elif mode == '1':
 
