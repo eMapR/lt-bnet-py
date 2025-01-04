@@ -845,10 +845,6 @@ def main():
 		run.list_and_delete_assets(param['assetDir'])
 		sys.exit()
 
-	elif mode == '22':
-
-		print(param)
-
 	elif mode == '1':
 
 		lt = LandTrendr(**param['lt_params'])
@@ -915,8 +911,11 @@ def main():
 		task_predict = predict(param)
 		wait_for_task(task_predict)
 
-		#task_buffer = buffer_bnet_polygons(param)
-		#wait_for_task(task_buffer)
+		task_poly = polygonize_bnet(param)
+		wait_for_task(task_poly)
+
+		task_buffer = buffer_bnet_polygons(param)
+		wait_for_task(task_buffer)
 
 	elif mode == '3':
 

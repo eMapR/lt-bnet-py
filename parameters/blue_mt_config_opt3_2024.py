@@ -126,6 +126,12 @@ param['Mask'] = ee.Image(f"{param['assetDir']}{param['forestMaskName']}")
 param['buffer'] = 50
 param['ltchange'] = ee.Image(f"{param['assetDir']}classed_img_{param['target']}")
 
+# bugnet polygons stuff 
+param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}"
+param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}"
+param['bnet_buffer'] = 100
+
+
 # Agent labeling parameters
 param['agent_lookback'] = 5
 param['agent_distance'] = 10000
