@@ -2,31 +2,36 @@ import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection
 from datetime import date
 import datetime 
-import bnet as bnet
-import pprint
-ee.Initialize(project='r6-bugnet')
+
 
 param = {}
 
-# Config name
+## Config name
+param['project_name'] = 'blue-mts-bugnet'
+
+ee.Initialize(project=param['project_name'])
+
 param['configName'] = 'option3'
+param['parameter_file'] = f"{param['project_name']}_parameter_file"
 
-# AOI
-param['aoi'] = ee.FeatureCollection("projects/r6-bugnet/assets/north_cascades/NorthCascades_ROI")
+## AOI
+param['aoi'] = ee.FeatureCollection('EPA/Ecoregions/2013/L3').filter(ee.Filter.eq('na_l3name','Blue Mountains'))
 
-# image type 
+# these parameter filter the size of the training dataset for high magnitude disturbance. these value are polygons pixel counts.
+# example: if I want polygons with a pixel count higher thean 75 and less than 50000
+param['trainingMin'] = 75
+param['trainingMax'] = 50000 #50000
+
+## image type 
 param["platform"] = 'lS'
 
 # Time parameters
 param['start_date'] = '06-01'
 param['end_date'] = '09-01'
 param['ltstartYear'] = 2000
-param['ltendYear'] = 2024
-param['target'] = 2024
+param['ltendYear'] = 2023
+param['target'] = 2023
 param['trainingYear'] = 2023
-targetPlus5 = param['target']+5
-param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 1000)
-param['maskEndTime'] = int(datetime.datetime(param['target'],12,30).timestamp() * 1000)
 
 
 # Initialize variables for LandTrendr algorithm
@@ -37,31 +42,32 @@ param['composite_params'] = {
     "mask_labels": ['cloud', 'shadow', 'snow', 'water'],
     "debug": True
 }
+param['change_params'] = {
+                    'delta': 'loss',
+                    'sort': 'greatest',
+                    'years': {'start': param['composite_params']["start_date"].year, 'end': param['composite_params']["end_date"].year},
+                    'mag': {'value': 175, 'operator': '>' },
+                    'dur': {'value': 4, 'operator': '<'},
+                    'preval': {'value': 300, 'operator': '>'},
+                    'mmu': {'value': 5}
+                }
 
-# HIGH MAG STUFF 
+param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}/" 
+param['LTSDdir'] = param['assetDir']  
+targetPlus5 = param['target']-5
+param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 1000)
+param['maskEndTime'] = int(datetime.datetime(param['target'],12,30).timestamp() * 1000)
 param['fitted_img_t'] = f"training_fitted_img_2008_2012"
 param['fitted_img_p'] = f"predictor_fitted_img_{param['composite_params']['end_date'].year-5}_{param['composite_params']['end_date'].year}"
 param['training_change_img'] = f"training_change_img_2012"
 param['predictor_change_img'] = f"predictor_change_img_{param['composite_params']['end_date'].year}"
 param['disturbance_polygons_training']= f"training_disturbance_polygons_2012"
 param['disturbance_polygons_predictor']= f"predictor_disturbance_polygons_{param['composite_params']['end_date'].year}"
-
 param['attributed_polygons_training']= f"attributed_training_polygons_2012"
 param['attributed_polygons_predictor']= f"attributed_predictor_polygons_{param['composite_params']['end_date'].year}"
-
 param['source_epsg'] = 'EPSG:4326'
 param['target_epsg'] = 'EPSG:5070'
-
 param['cMonster_img_path']= "/vol/v1/lt-bnet-py/assets/aggregated_attributions.tif" 
-param['change_params'] = {
-                    'delta': 'loss',
-                    'sort': 'greatest',
-                    'years': {'start': param['composite_params']["start_date"].year, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 300, 'operator': '>' },
-                    'dur': {'value': 4, 'operator': '<'},
-                    'preval': {'value': 300, 'operator': '>'},
-                    'mmu': {'value': 5}
-                }
 param['classified_fc']= f"classified_polygons_{param['composite_params']['end_date'].year}"
 param['num_trees']= 200
 param['filtered_classes'] = f"classified_polygons_filtered_{param['composite_params']['end_date'].year}"
@@ -79,12 +85,7 @@ param['ads'] = ee.FeatureCollection('projects/r6-bugnet/assets/ads-r6-2023')  # 
 #param['ads_damage'] = 30
 
 # File naming parameters
-param['version'] = 'v1'
-param['region'] = 'north_cascades'
 
-# Working directories  # if your area is spatially large these should be different locations
-param['assetDir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-param['LTSDdir'] = "projects/r6-bugnet/assets/north_cascades/"  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # LTSD name
 param['LTSDname'] = param['fitted_img_p']
@@ -120,14 +121,9 @@ param['ltchange'] = ee.Image(f"{param['assetDir']}classed_img_{param['target']}"
 # Agent labeling parameters
 param['agent_lookback'] = 5
 param['agent_distance'] = 10000
-
-param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}"
-param['bnet_buffered_polygons'] = f"bugnet_buffered_polygons_{param['target']}"
-param['bnet_buffer'] = 100
-
-param['bugnet_polygons'] = f"bugnet_polygons_unlabeled_{param['region']}_{param['target']}_{param['version']}"
-param['bugnet_distance_img'] = f"bugnet_distance_image_{param['region']}_{param['target']}_{param['version']}"
-param['bugnet_polygons_labeled'] = f"bugnet_polygons_distance_labeled_{param['region']}_{param['target']}_{param['version']}"
+#param['bugnet_polygons'] = f"bugnet_polygons_unlabeled_{param['region']}_{param['target']}_{param['version']}"
+#param['bugnet_distance_img'] = f"bugnet_distance_image_{param['region']}_{param['target']}_{param['version']}"
+#param['bugnet_polygons_labeled'] = f"bugnet_polygons_distance_labeled_{param['region']}_{param['target']}_{param['version']}"
 
 param['proportion_strat_sample_size'] = 5000  # three classes to be sampled
 
@@ -175,4 +171,3 @@ else:
         }
     }
 
-pprint.pprint(param)

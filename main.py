@@ -803,14 +803,9 @@ def gui():
 	print("    2 - Run individual step.")
 	mode = input(':')
 	if mode == '2':
-		print("    3 - Run high Magnitude base data (step 1-a).")
-		print("    4 - Run high magnitude disturbance polygons (step 1-b) .")
-		print("    5 - Run high magnitude attribution (step 1-c)")
-		print("    6 - Run high magnitude polygon classification (step 1-d)")
-		print("    7 - Run high magnitude polygon classification (step 1-d)")
-		print("    8 - Run forest mask")
-		print("    9 - Run the rest")
-		print("    del - clean asset storage.")
+		print("    1 - export to gdrive .")
+		print("    2 - export to bucket .")
+		print("    3 - delete assets storage.")
 		mode = input(':')
 		return mode
 	elif mode == '1':
@@ -913,87 +908,6 @@ def main():
 
 		task_poly = polygonize_bnet(param)
 		wait_for_task(task_poly)
-
-		task_buffer = buffer_bnet_polygons(param)
-		wait_for_task(task_buffer)
-
-	elif mode == '3':
-
-		lt = LandTrendr(**param['lt_params'])
-
-		task1 = CreateTrainingFittedImagery(lt,param)
-		task2 = CreatePredictorFittedImagery(lt,param)
-		task3 = CreateTrainingChangeImagery(lt,param)
-		task4 = CreatePredictorChangeImagery(lt,param)
-		wait_for_task(task1)
-		wait_for_task(task2)
-		wait_for_task(task3)
-		wait_for_task(task4)
-
-	elif mode == '4':
-
-		task5 = CreateTrainingDisturbancePolygons(param)
-		task6 = CreatePredictorDisturbancePolygons(param)
-		wait_for_task(task5)
-		wait_for_task(task6)
-
-	elif mode == '5':
-
-		task7 = attributeTrainingPolygons(param)
-		task8 = attributePredictorPolygons(param)
-		wait_for_task(task7)
-		wait_for_task(task8)
-
-	elif mode == '6':
-
-		task9 = classify_polygons(param)
-		wait_for_task(task9)
-
-	elif mode == '7':
-
-		task10 = filter_classes(param)
-		wait_for_task(task10)
-
-		task11 = buffer_classed_polygons(param)
-		wait_for_task(task11)
-
-		task12 = rasterize_classed_polygons(param)
-		wait_for_task(task12)
-
-	elif mode == '8':
-
-		task_mask = CreateForestMask(param)	
-		wait_for_task(task_mask)
-
-	elif mode == '9':
-
-		if '3' in param['configName']:
-
-			task_decline = DecliningLTSD(param)
-			wait_for_task(task_decline)
-
-		else:
-
-			task_snic = SNIC(param)
-			wait_for_task(task_snic)
-
-			task_decline_snic = DecliningSNIC(param)
-			wait_for_task(task_decline_snic)
-
-		task_kmeans_sample = buildKMeansSample(param)
-		wait_for_task(task_kmeans_sample)
-
-		task_kmeans = kMeansImage(param)
-		wait_for_task(task_kmeans)
-
-		task_sample = kMeansProporitonsADSsample(param)
-		wait_for_task(task_sample)
-
-		task_proportion = proportionCalc(param)
-		wait_for_task(task_proportion)
-
-		task_predict = predict(param)
-		wait_for_task(task_predict)
 
 		task_buffer = buffer_bnet_polygons(param)
 		wait_for_task(task_buffer)
