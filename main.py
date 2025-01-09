@@ -13,6 +13,128 @@ import importlib.util
 
 # Initialize the Earth Engine API with a specific project
 
+##############################################################################
+# export assets to location gdrive gbucket
+##############################################################################
+def list_assets(params):
+    """
+    Lists all assets in the specified asset directory.
+    
+    Parameters:
+        asset_directory (str): The full path to the asset directory.
+        
+    Returns:
+        list: A list of dictionaries with asset ID and type.
+    """
+    asset_list = []
+    try:
+        assets = ee.data.listAssets({'parent': params['assetDir']}).get('assets', [])
+        for asset in assets:
+            asset_list.append({'id': asset['name'], 'type': asset['type']})
+    except Exception as e:
+        print(f"Error accessing asset directory {asset_directory}: {e}")
+    return asset_list
+
+
+def get_user_input(prompt, options):
+    """Utility function to get user input with validation."""
+    print(prompt)
+    for idx, option in enumerate(options):
+        print(f"{idx + 1}. {option}")
+    choice = input("Enter your choice: ")
+    while not choice.isdigit() or int(choice) < 1 or int(choice) > len(options):
+        print("Invalid choice. Please try again.")
+        choice = input("Enter your choice: ")
+    return options[int(choice) - 1]
+
+
+def export_to_drive(asset, folder):
+    """Exports an asset to Google Drive."""
+    if asset['type'] == 'TABLE':
+        collection = ee.FeatureCollection(asset['id'])
+        task = ee.batch.Export.table.toDrive(
+            collection=collection,
+            description=f"Export_{asset['id'].split('/')[-1]}",
+            folder=folder
+        )
+    elif asset['type'] == 'IMAGE':
+        image = ee.Image(asset['id'])
+        task = ee.batch.Export.image.toDrive(
+            image=image,
+            description=f"Export_{asset['id'].split('/')[-1]}",
+            folder=folder,
+            scale=30,
+            region=image.geometry().bounds(),
+            maxPixels=1e13
+        )
+    else:
+        print(f"Unsupported asset type: {asset['type']}")
+        return
+    task.start()
+    print(f"Export task started for asset: {asset['id']} to Google Drive folder: {folder}")
+
+
+def export_to_cloud_storage(asset, bucket, path):
+    """Exports an asset to Google Cloud Storage."""
+    if asset['type'] == 'TABLE':
+        collection = ee.FeatureCollection(asset['id'])
+        task = ee.batch.Export.table.toCloudStorage(
+            collection=collection,
+            description=f"Export_{asset['id'].split('/')[-1]}",
+            bucket=bucket,
+            path=path
+        )
+    elif asset['type'] == 'IMAGE':
+        image = ee.Image(asset['id'])
+        task = ee.batch.Export.image.toCloudStorage(
+            image=image,
+            description=f"Export_{asset['id'].split('/')[-1]}",
+            bucket=bucket,
+            path=path,
+            scale=30,
+            region=image.geometry().bounds()
+        )
+    else:
+        print(f"Unsupported asset type: {asset['type']}")
+        return
+    task.start()
+    print(f"Export task started for asset: {asset['id']} to Cloud Storage bucket: {bucket}/{path}")
+
+
+def export_assets(params):
+    """Main function to guide the user through exporting assets."""
+    # Ask the user for export location
+    location = get_user_input(
+        "Where would you like to export your assets?",
+        ['Google Drive', 'Google Cloud Storage']
+    )
+
+    # List all assets
+    assets = list_assets(params)
+    print("\nAvailable assets:")
+    for idx, asset in enumerate(assets):
+        print(f"{idx + 1}. {asset['id']} ({asset['type']})")
+
+    # Get user selection
+    selected_indices = input(
+        "Enter the numbers of the assets you'd like to export (comma-separated): "
+    ).split(',')
+    selected_indices = [int(idx.strip()) - 1 for idx in selected_indices if idx.strip().isdigit()]
+    selected_assets = [assets[idx] for idx in selected_indices]
+
+    # Perform export based on location
+    if location == 'Google Drive':
+        folder = input("Enter the Google Drive folder name: ")
+        for asset in selected_assets:
+            export_to_drive(asset, folder)
+    elif location == 'Google Cloud Storage':
+        bucket = input("Enter the Google Cloud Storage bucket name: ")
+        path = input("Enter the path within the bucket: ")
+        for asset in selected_assets:
+            export_to_cloud_storage(asset, bucket, path)
+    else:
+        print("Invalid location. Exiting.")
+
 
 ##############################################################################
 # Load Parameter dictionary
@@ -799,14 +921,13 @@ def export_parameter_file(param):
 def gui():
 	print("Welcome to bugnet!")
 	print("How would you like to continue? Enter ...")
-	print("    1 - Run all of bugnet.")
-	print("    2 - Run individual step.")
+	print("    1 - Run bugnet.")
+	print("    2 - Export.")
+	print("    3 - Clean.")
 	mode = input(':')
 	if mode == '2':
-		print("    1 - export to gdrive .")
-		print("    2 - export to bucket .")
-		print("    3 - delete assets storage.")
-		mode = input(':')
+		return mode
+	elif mode == '3':
 		return mode
 	elif mode == '1':
 		return mode
@@ -835,8 +956,10 @@ def main():
 
 	mode = gui()
 
-	if mode == 'del':
-
+	if mode == '2':
+		export_assets(param)
+		sys.exit()
+	if mode == '3':
 		run.list_and_delete_assets(param['assetDir'])
 		sys.exit()
 
