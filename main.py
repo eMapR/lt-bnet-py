@@ -3,7 +3,8 @@ from ltgee import LandTrendr, LandsatComposite, LtCollection
 import os
 import sys
 import time
-from datetime import date
+#from datetime import date
+import datetime
 #from parameters import blue_mt_config_opt3_2023 as bnet_config
 import bnet as bnet
 import run as run
@@ -12,6 +13,86 @@ import importlib.util
 #ee.Authenticate(force=True)
 
 # Initialize the Earth Engine API with a specific project
+
+##############################################################################
+# export parameter file to assets
+##############################################################################
+def flatten_dict(d, parent_key='', sep='_'):
+    """
+    Recursively flatten a nested dictionary.
+
+    Parameters:
+        d (dict): The dictionary to flatten.
+        parent_key (str): The base key to prepend to each key.
+        sep (str): Separator to use for concatenating keys.
+
+    Returns:
+        dict: A flattened dictionary.
+    """
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        elif isinstance(v, (ee.FeatureCollection, ee.Image, LandsatComposite)):
+            items.append((new_key, "GEE object"))
+        else:
+            items.append((new_key, v))
+
+
+    transformed_list = []
+    for key, value in items:
+        if isinstance(value, list):  # Convert list to comma-separated string
+            transformed_list.append((key, ', '.join(value)))
+        elif isinstance(value, datetime.date):  # Convert date object to string
+            transformed_list.append((key, value.strftime('%Y-%m-%d')))
+        else:  # Keep other types as they are
+            transformed_list.append((key, value))
+
+
+    return dict(transformed_list)
+
+def dict_to_feature_collection(param):
+    #(data_dict, asset_path)
+    """
+    Converts a dictionary to a Google Earth Engine FeatureCollection and exports it.
+
+    Parameters:
+        data_dict (dict): The input dictionary to convert.
+        asset_path (str): The asset path to save the FeatureCollection.
+
+    Returns:
+        None
+    """
+    # check to see if output asset exists
+    exists = asset_exists(param["assetDir"]+param['parameter_file'])
+
+    if exists:
+
+        return
+
+    else:
+
+        # Flatten the dictionary
+        flattened_data = flatten_dict(param)
+
+        # Create a single feature with the flattened data
+        feature = ee.Feature(ee.Geometry.Point([-119.018359375, 44.60978736008787]), flattened_data)
+
+        # Create a FeatureCollection
+        feature_collection = ee.FeatureCollection([feature])
+
+        # Export the FeatureCollection to the specified asset path
+        task = ee.batch.Export.table.toAsset(
+            collection=feature_collection,
+            description=param['parameter_file'],
+            assetId=param['assetDir']+param['parameter_file']
+        )
+        task.start()
+
+        return task
+
+
 
 ##############################################################################
 # export assets to location gdrive gbucket
@@ -1035,6 +1116,8 @@ def main():
 		task_buffer = buffer_bnet_polygons(param)
 		wait_for_task(task_buffer)
 
+		task_params = dict_to_feature_collection(param)
+		wait_for_task(task_params)
 	else:
 		print('bye')
 
