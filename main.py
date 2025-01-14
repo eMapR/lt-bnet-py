@@ -954,7 +954,7 @@ def polygonize_bnet(param):
 	if exists:
 		return
 	img = ee.Image(param['assetDir'] + param['predicted'])
-	polygons = img.reduceToVectors(reducer=ee.Reducer.countEvery(), scale=30, maxPixels=1e13)
+	polygons = img.reduceToVectors(reducer=ee.Reducer.countEvery(), scale=30, maxPixels=1e13).filter(ee.Filter.gt('count',10))
 
 	export_params = {
 		'collection': polygons,
@@ -968,6 +968,36 @@ def polygonize_bnet(param):
 ##############################################################################
 # buffer Bnet  Polygon
 ##############################################################################
+
+def extract_zonal_stats(image, feature_collection, stat_type, output_field_name):
+    # Define the reducer based on the desired statistic type
+    if stat_type == 'mean':
+        reducer = ee.Reducer.mean()
+    elif stat_type == 'sum':
+        reducer = ee.Reducer.sum()
+    elif stat_type == 'min':
+        reducer = ee.Reducer.min()
+    elif stat_type == 'max':
+        reducer = ee.Reducer.max()
+    else:
+        raise ValueError('Unsupported stat_type: ' + stat_type)
+
+    # Apply the reducer to the feature collection
+    zonal_stats = image.reduceRegions(
+        collection=feature_collection,
+        reducer=reducer,
+        scale=30  # Adjust the scale as needed
+    )
+
+    # Rename the output field to the desired name
+    def set_stat_value(feature):
+        stat_value = feature.get(stat_type)
+        return feature.set(output_field_name, stat_value)
+
+    zonal_stats = zonal_stats.map(set_stat_value)
+
+    return zonal_stats
+
 def buffer_bnet_polygons(param):
 	# check to see if output asset exists
 	exists = asset_exists(param['assetDir'] + param['bnet_buffered_polygons'])
@@ -981,6 +1011,11 @@ def buffer_bnet_polygons(param):
   
 		return polygon.set('area_m2', area);
 	polygons = fc.map(buffer_f)
+	polygons = ee.FeatureCollection(polygons.geometry().dissolve())
+	img = ee.Image(param['assetDir'] + param['predicted'])
+
+	polygons = extract_zonal_stats(img, polygons, "max", "label")
+
 
 	export_params = {
 		'collection':ee.FeatureCollection(polygons),
