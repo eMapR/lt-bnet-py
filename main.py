@@ -1,3 +1,4 @@
+
 import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection
 import os
@@ -129,21 +130,21 @@ def get_user_input(prompt, options):
     return options[int(choice) - 1]
 
 
-def export_to_drive(asset, folder):
+def export_to_drive(prefix, asset, folder):
     """Exports an asset to Google Drive."""
     if asset['type'] == 'TABLE':
         collection = ee.FeatureCollection(asset['id'])
         task = ee.batch.Export.table.toDrive(
             collection=collection,
-            description=f"Export_{asset['id'].split('/')[-1]}",
-            folder=folder
+            description=f"{prefix}_{asset['id'].split('/')[-1]}",
+            folder=prefix
         )
     elif asset['type'] == 'IMAGE':
         image = ee.Image(asset['id'])
         task = ee.batch.Export.image.toDrive(
             image=image,
-            description=f"Export_{asset['id'].split('/')[-1]}",
-            folder=folder,
+            description=f"{prefix}_{asset['id'].split('/')[-1]}",
+            folder=prefix,
             scale=30,
             region=image.geometry().bounds(),
             maxPixels=1e13
@@ -207,7 +208,7 @@ def export_assets(params):
     if location == 'Google Drive':
         folder = input("Enter the Google Drive folder name: ")
         for asset in selected_assets:
-            export_to_drive(asset, folder)
+            export_to_drive(params['outputfile_prefix'],asset, folder)
     elif location == 'Google Cloud Storage':
         bucket = input("Enter the Google Cloud Storage bucket name: ")
         path = input("Enter the path within the bucket: ")
@@ -998,6 +999,37 @@ def extract_zonal_stats(image, feature_collection, stat_type, output_field_name)
 
     return zonal_stats
 
+# Define the function to split multi-polygon into individual polygons
+def split_multi_polygon(feature):
+    geometries = feature.geometry().geometries()
+    geometries_list = geometries.getInfo()  # Convert to a list
+    features = [ee.Feature(ee.Geometry(geometry)) for geometry in geometries_list]
+    return ee.FeatureCollection(features)
+
+def calc_attri_fields():
+
+    fields = {
+      'ACRES': 0,
+      'CREATED_DATE': '11-27-2024',
+      'DAMAGE_TYPE_CODE': 0,
+      'DCA_CODE': 0,
+      'HOST_CODE': 0,
+      'HOST_GROUP_CODE': 0,
+      'IDS_DATA_SOURCE': 91,
+      'KEY': 'clarype@oregonstate.edu',
+      'LABEL': 'Default Label',
+      'MODIFIED_DATE': '',
+      'NOTES': '',
+      'PERCENT_AFFECTED_CODE': 2,
+      'REGION_ID': 'Region_06',
+      'SURVEY_YEAR': 2024,
+      'US_AREA': 'CONUS',
+      'count': 14,
+      'label': 1
+    };
+
+    return fields
+
 def buffer_bnet_polygons(param):
 	# check to see if output asset exists
 	exists = asset_exists(param['assetDir'] + param['bnet_buffered_polygons'])
@@ -1005,20 +1037,30 @@ def buffer_bnet_polygons(param):
 	if exists:
 		return
 	fc = ee.FeatureCollection(param['assetDir'] + param['bnet_polygonized'])
+
 	def buffer_f(ft):
 		polygon = ft.buffer(param['bnet_buffer'])
-		area = polygon.geometry().area().divide(1000 * 1000);
-  
-		return polygon.set('area_m2', area);
-	polygons = fc.map(buffer_f)
-	polygons = ee.FeatureCollection(polygons.geometry().dissolve())
+		return polygon;
+
+	fc_buffered = fc.map(buffer_f)
+
+	buffer_dissovled = ee.FeatureCollection(fc_buffered.geometry().dissolve())
+
+	# Apply the function to split the multi-polygon feature
+	polygons_fc = split_multi_polygon(buffer_dissovled.first())
+
 	img = ee.Image(param['assetDir'] + param['predicted'])
+	fc_bnet = extract_zonal_stats(img, polygons_fc, "max", "label")
 
-	polygons = extract_zonal_stats(img, polygons, "max", "label")
+	# Define the function to add fields to each feature
+	def add_fields(feature):
+		return feature.set(calc_attri_fields())
 
+	# Apply the function to each feature in the collection
+	fc_attri = fc_bnet.map(add_fields)
 
 	export_params = {
-		'collection':ee.FeatureCollection(polygons),
+		'collection':fc_attri,
 		'description': param['bnet_buffered_polygons'],
 		'assetId': param['assetDir'] + param['bnet_buffered_polygons']
 	}
