@@ -1,6 +1,6 @@
 
 import ee
-from ltgee import LandTrendr, LandsatComposite, LtCollection
+from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 import os
 import sys
 import time
@@ -145,7 +145,7 @@ def export_to_drive(prefix, asset, folder):
             image=image,
             description=f"{prefix}_{asset['id'].split('/')[-1]}",
             folder=prefix,
-            scale=30,
+            scale=param['pixel_scale'],
             region=image.geometry().bounds(),
             maxPixels=1e13
         )
@@ -173,7 +173,7 @@ def export_to_cloud_storage(asset, bucket, path):
             description=f"Export_{asset['id'].split('/')[-1]}",
             bucket=bucket,
             path=path,
-            scale=30,
+            scale=param['pixel_scale'],
             region=image.geometry().bounds()
         )
     else:
@@ -279,7 +279,7 @@ def CreateTrainingFittedImagery(lt,param):
 
 	else:
 		fitted_img_t = run.get_fitted_stack(lt,'fitted_training',param)
-		task = run.export_image(fitted_img_t,param, param['assetDir_t'],param['fitted_img_t'])
+		task = run.export_image(fitted_img_t,param, param['assetDir_t'],param['fitted_img_t'],param['pixel_scale'])
 		return task
 
 def CreatePredictorFittedImagery(lt,param):
@@ -291,8 +291,9 @@ def CreatePredictorFittedImagery(lt,param):
 		return
 
 	else:
-		fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',param)
-		task = run.export_image(fitted_img_p,param, param['assetDir'],param['fitted_img_p'])
+		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
+		fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',param).mask(treeMask)
+		task = run.export_image(fitted_img_p,param, param['assetDir'],param['fitted_img_p'],param['pixel_scale'])
 		return task
 
 def CreateTrainingChangeImagery(lt,param):
@@ -307,7 +308,7 @@ def CreateTrainingChangeImagery(lt,param):
 
 		param['change_params']['years'] = {'start': 2007, 'end': 2012}
 		change_img_t = lt.get_change_map(param['change_params'])
-		task = run.export_image(change_img_t, param, param['assetDir_t'],param['training_change_img'])
+		task = run.export_image(change_img_t, param, param['assetDir_t'],param['training_change_img'],param['pixel_scale'])
 		return task
 
 def CreatePredictorChangeImagery(lt,param):
@@ -320,8 +321,9 @@ def CreatePredictorChangeImagery(lt,param):
 
 	else:
 		param['change_params']['years'] = {'start': param['composite_params']['end_date'].year-6, 'end': param['composite_params']['end_date'].year}
-		change_img_p = lt.get_change_map(param['change_params'])
-		task = run.export_image(change_img_p,param, param['assetDir'],param['predictor_change_img'])
+		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
+		change_img_p = lt.get_change_map(param['change_params']).mask(treeMask)
+		task = run.export_image(change_img_p,param, param['assetDir'],param['predictor_change_img'],param['pixel_scale'])
 
 		return task
 
@@ -335,7 +337,7 @@ def CreateTrainingDisturbancePolygons(param):
 
 	else:
 
-		change_img_t = ee.Image(param["assetDir_t"]+param['training_change_img'])
+		change_img_t = ee.Image(param["assetDir_t"]+param['training_change_img']) #.unmask().clip(param['aoi'])
 		disturbance_polygons_t = run.vectorize_disturbance(change_img_t,param)
 		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir_t'])
 		return task
@@ -353,32 +355,88 @@ def CreatePredictorDisturbancePolygons(param):
 		go = 1
 		while go:
 			try:
+				raise Exception("Forcing exception for testing")
 				disturbance_polygons_p = run.vectorize_disturbance(change_img_p,param)
 				print(disturbance_polygons_p.size().getInfo())
 				go = 0
+
 			except:
 				print('error: dataset to large. Decrease area or increase magnitude parameter.')
-				print("    1: exit to Decrease area")
-				print("    2: change magnitude parameter")
+				print("    1: exit to adjust")
+				print("    2: add elevation mask (to find elelvation value go here:)")
+				print("    3: splite up region")
 				track = input('    :')
 				if track == '1':
 					sys.exit()
 				elif track == '2':
-					print("old magnitude : ", param['change_params']['mag']['value'])
-					newmag = input('new magnitude : ')
-					param['change_params']['mag']['value'] = int(newmag)
-					new_change_image = change_img_p.mask(change_img_p.select(['mag']).gt(param['change_params']['mag']['value']))
+					newmag = input('enter elevation meters (keep under this value) : ')
+					eleMask = ee.Image('COPERNICUS/DEM/GLO30').select('DEM').mean().lt(int(newmag))
+					new_change_image = change_img_p.mask(eleMask).unmask().clip(param['aoi'])
 					disturbance_polygons_p = run.vectorize_disturbance(new_change_image,param)
 					try:
-						print(disturbance_polygons_p.size().getInfo())
+						#print(disturbance_polygons_p.size().getInfo())
+						go = 0
+					except:
+						go = 1
+				elif track == '3':
+					hucid = param['huc6-id']
+					fc8 = ee.FeatureCollection('USGS/WBD/2017/HUC08')
+					fc6 = ee.FeatureCollection('USGS/WBD/2017/HUC06')
+					#huc6code = fc6.getString('huc6')
+					f8 = fc8.filter(ee.Filter.stringStartsWith('huc8', hucid))
+					number_of_features = f8.size().getInfo()
+					features_list = f8.toList(number_of_features)
+					subregions = []
+					for f in range(number_of_features): 
+						fe = ee.Feature(features_list.get(f))
+						huc8code = fe.getString('huc8');
+						subregions.append(huc8code)
+						new_image_clipped = change_img_p.clip(fe)
+						disturbance_polygons_p = run.vectorize_disturbance(new_image_clipped, param)
+						task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor']+huc8code.getInfo(),param['assetDir'])
+						# Do something with disturbance_polygons_p (e.g., export or merge)
+					try:
+						#print(disturbance_polygons_p.size().getInfo())
 						go = 0
 					except:
 						go = 1
 				else:
 					sys.exit()
+		if track != '3':
+			task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
+			return task
+		else:
+			return [task, subregions]
 
-		task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
-		return task
+
+def merge_selected_feature_collections(asset_folder, id_suffixes, output_asset_id, description="MergedExport"):
+    # List assets in the folder
+    asset_list = ee.data.listAssets({'parent': asset_folder})['assets']
+    # Filter for FeatureCollections whose names end with any suffix in id_suffixes
+    fc_ids = []
+
+    for asset in asset_list:
+        if asset['type'] == 'TABLE':
+            for suffix in id_suffixes:
+                # Convert ee.String to Python string
+                suffix_str = ee.String(suffix).getInfo() if isinstance(suffix, ee.String) else str(suffix)
+                if asset['name'].endswith(suffix_str):
+                    fc_ids.append(asset['name'])
+                    break  # Stop checking other suffixes once a match is found
+    if not fc_ids:
+        raise ValueError("No matching FeatureCollections found for the provided suffixes.")
+
+    # Load and merge FeatureCollections
+    fc_list = [ee.FeatureCollection(fc_id) for fc_id in fc_ids]
+    merged_fc = ee.FeatureCollection(fc_list).flatten()
+    # Prepare export task (to asset)
+    task = ee.batch.Export.table.toAsset(
+        collection=merged_fc,
+        description=description,
+        assetId=asset_folder+output_asset_id
+    )
+    task.start()
+    return task
 ##############################################################################
 # Attribute Disturbance Polygons with Base Imagery 
 ##############################################################################
@@ -419,7 +477,6 @@ def attributePredictorPolygons(param):
 
 	else:
 		gee_attributed_fc = run.attribute_with_reference_data(param,'predictor')
-		print(gee_attributed_fc.size().getInfo)
 		task = run.export_feature_collection(gee_attributed_fc,param['attributed_polygons_predictor'],param['assetDir'] )
 		return task
 
@@ -490,7 +547,7 @@ def rasterize_classed_polygons(param):
 
 	else:
 		fc2 = ee.FeatureCollection(param["assetDir"]+param['buffered_classes'])
-		img = run.rasterize_polygons(fc2, 'classification', 30, region=param['aoi'])
+		img = run.rasterize_polygons(fc2, 'classification', param['pixel_scale'], region=param['aoi'])
 		task = run.export_image(img, param, param['assetDir'],param['rasterize_classes'])
 
 		return task
@@ -511,7 +568,7 @@ def CreateForestMask(param):
 	mtbs = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
 
 	# LCMS forest mask
-	lcms_mask = bnet.lcms_forest_mask(param['target']-5,param['target']).clip(param['aoi'])
+	lcms_mask = bnet.lcms_forest_mask( param['target']-5, param['target'], param).clip(param['aoi'])
 
 	#reflectance mask
 	tassMap = bnet.tasselCapMask(param)
@@ -546,7 +603,7 @@ def CreateForestMask(param):
  		description=param['forestMaskName'],
 		assetId=param["assetDir"]+param['forestMaskName'],
 		region=param['aoi'].geometry(),
-		scale=30,
+		scale=param['pixel_scale'],
 		maxPixels=1e13
 	)
 	task_mask.start()
@@ -576,7 +633,7 @@ def SNIC(param):
 		'description': param['snicName'],
 		'assetId': param['assetDir'] + param['snicName'],
 		'region': param['aoi'].geometry(),
-		'scale': 30,
+		'scale': param['pixel_scale'],
 		'maxPixels': 1e13
 	}
 
@@ -607,7 +664,7 @@ def DecliningSNIC(param):
 		'description': param['declineName'],
 		'assetId': param['assetDir'] + param['declineName'],
 		'region': param['aoi'].geometry(),
-		'scale': 30,
+		'scale': param['pixel_scale'],
 		'maxPixels': 1e13
 	}
 
@@ -630,15 +687,16 @@ def DecliningLTSD(param):
 		return
 
 	# Apply the function
-	ltsd_decline = bnet.LTSD_decline_image(ee.Image(param['assetDir'] + param['fitted_img_p']),param['ltendYear']).updateMask(param['Mask'])
+	#decline = bnet.LTSD_decline_image(ee.Image(param['assetDir'] + param['fitted_img_p']),param['ltendYear']).updateMask(param['Mask'])
+	decline = bnet.decline_image(param).updateMask(param['Mask'])
 
 	# Export the image
 	export_params = {
-		'image': ltsd_decline.toInt16(),
+		'image': decline.toInt16(),
 		'description': param['declineName'],
 		'assetId': param['assetDir'] + param['declineName'],
 		'region': param['aoi'].geometry(),
-		'scale': 30,
+		'scale': param['pixel_scale'],
 		'maxPixels': 1e13
 	}
 
@@ -671,7 +729,7 @@ def buildKMeansSample(param):
 	sample = ee.FeatureCollection(
 		snic_decline.sample(region=
 			param['aoi'], 
-			scale=30, 
+			scale=param['pixel_scale'], 
 			numPixels=param['kmeans_num_sample'], 
 			tileScale=12, 
 			geometries=True)
@@ -684,7 +742,7 @@ def buildKMeansSample(param):
 		sample = ee.FeatureCollection(
 			snic_decline.sampleRegions(
 				collection=param['aoi'],
-				scale=30,
+				scale=param['pixel_scale'],
 				tileScale=12,
 				geometries=True
 			).randomColumn().sort('random').toList(param['kmeans_num_sample'])
@@ -696,6 +754,7 @@ def buildKMeansSample(param):
 		'description': param['kmeansName']+"_sample",
 		'assetId': param['assetDir'] + param['kmeansName']+"_sample"
 	}
+
 
 	task_kmeans_sample = ee.batch.Export.table.toAsset(**export_params)
 	task_kmeans_sample.start()
@@ -740,7 +799,7 @@ def kMeansImage(param):
 		'description': param['kmeansName'],
 		'assetId': param['assetDir'] + param['kmeansName'],
 		'region': param['aoi'].geometry(),
-		'scale': 30,
+		'scale': param['pixel_scale'],
 		'maxPixels': 1e13
 	}
 
@@ -783,7 +842,8 @@ def kMeansProporitonsADSsample(param):
 	export_params = {
 		'collection': proportion_attri,
 		'description': 'kmeansVectorAttr',
-		'assetId': param['assetDir'] + param['KmeansVector']
+		'assetId': param['assetDir'] + param['KmeansVector'],
+
 		#'maxVertices': 100000000
 	}
 
@@ -851,7 +911,7 @@ def proportionCalc(param):
 		numPoints=param['proportion_strat_sample_size'],
 		classBand='label',
 		region= param['aoi'],
-		scale=30,
+		scale=param['pixel_scale'],
 		tileScale=4,
 		geometries=True
 	)
@@ -860,7 +920,7 @@ def proportionCalc(param):
 	export_params = {
 		'collection': sample,
 		'description': param['proportionName']+"_sample",
-		'assetId': param['assetDir'] + param['proportionName']+"_sample",
+		'assetId': param['assetDir'] + param['proportionName']+"_sample"
 		#'maxVertices': 100000000
 	}
 
@@ -873,7 +933,7 @@ def proportionCalc(param):
 		'description':param['proportionName'],
 		'assetId': param['assetDir'] + param['proportionName'],
 		'region': param['aoi'].geometry(),
-		'scale': 30,
+		'scale': param['pixel_scale'],
 		'maxPixels': 1e13
 	}
 
@@ -935,8 +995,9 @@ def predict(param):
 		'description': param['predicted'],
 		'assetId': param['assetDir'] + param['predicted'],
 		'region': states.geometry(),
-		'scale': 30,
-		'maxPixels': 1e13
+		'scale': param['pixel_scale'],
+		'maxPixels': 1e13,
+
 	}
 
 	# Export the classified image to assets
@@ -955,7 +1016,7 @@ def polygonize_bnet(param):
 	if exists:
 		return
 	img = ee.Image(param['assetDir'] + param['predicted'])
-	polygons = img.reduceToVectors(reducer=ee.Reducer.countEvery(), scale=30, maxPixels=1e13).filter(ee.Filter.gt('count',10))
+	polygons = img.reduceToVectors(reducer=ee.Reducer.countEvery(), scale=param['pixel_scale'], maxPixels=1e13).filter(ee.Filter.gt('count',10))
 
 	export_params = {
 		'collection': polygons,
@@ -970,7 +1031,7 @@ def polygonize_bnet(param):
 # buffer Bnet  Polygon
 ##############################################################################
 
-def extract_zonal_stats(image, feature_collection, stat_type, output_field_name):
+def extract_zonal_stats(image, feature_collection, stat_type, output_field_name,param):
     # Define the reducer based on the desired statistic type
     if stat_type == 'mean':
         reducer = ee.Reducer.mean()
@@ -987,7 +1048,7 @@ def extract_zonal_stats(image, feature_collection, stat_type, output_field_name)
     zonal_stats = image.reduceRegions(
         collection=feature_collection,
         reducer=reducer,
-        scale=30  # Adjust the scale as needed
+        scale=param['pixel_scale']  # Adjust the scale as needed
     )
 
     # Rename the output field to the desired name
@@ -1080,10 +1141,13 @@ def gui():
 	print("Welcome to bugnet!")
 	print("How would you like to continue? Enter ...")
 	print("    1 - Run bugnet.")
-	print("    2 - Export.")
-	print("    3 - Clean.")
+	print("    2 - Run bugnet no training.")
+	print("    3 - Export.")
+	print("    4 - Clean.")
 	mode = input(':')
 	if mode == '2':
+		return mode
+	elif mode == '4':
 		return mode
 	elif mode == '3':
 		return mode
@@ -1114,10 +1178,10 @@ def main():
 
 	mode = gui()
 
-	if mode == '2':
+	if mode == '3':
 		export_assets(param)
 		sys.exit()
-	if mode == '3':
+	if mode == '4':
 		run.list_and_delete_assets(param['assetDir'])
 		sys.exit()
 
@@ -1142,6 +1206,81 @@ def main():
 		task7 = attributeTrainingPolygons(param)
 		task8 = attributePredictorPolygons(param)
 		wait_for_task(task7)
+		wait_for_task(task8)
+
+		task9 = classify_polygons(param)
+		wait_for_task(task9)
+
+		task10 = filter_classes(param)
+		wait_for_task(task10)
+
+		task11 = buffer_classed_polygons(param)
+		wait_for_task(task11)
+
+		task12 = rasterize_classed_polygons(param)
+		wait_for_task(task12)
+
+		task_mask = CreateForestMask(param)	
+		wait_for_task(task_mask)
+
+		if '3' in param['configName']:
+
+			task_decline = DecliningLTSD(param)
+			wait_for_task(task_decline)
+
+		else:
+
+			task_snic = SNIC(param)
+			wait_for_task(task_snic)
+
+			task_decline_snic = DecliningSNIC(param)
+			wait_for_task(task_decline_snic)
+
+		task_kmeans_sample = buildKMeansSample(param)
+		wait_for_task(task_kmeans_sample)
+
+		task_kmeans = kMeansImage(param)
+		wait_for_task(task_kmeans)
+
+		task_sample = kMeansProporitonsADSsample(param)
+		wait_for_task(task_sample)
+
+		task_proportion = proportionCalc(param)
+		wait_for_task(task_proportion)
+
+		task_predict = predict(param)
+		wait_for_task(task_predict)
+
+		task_poly = polygonize_bnet(param)
+		wait_for_task(task_poly)
+
+		task_buffer = buffer_bnet_polygons(param)
+		wait_for_task(task_buffer)
+
+		task_params = dict_to_feature_collection(param)
+		wait_for_task(task_params)
+
+	elif mode == '2':
+
+		lt = LandTrendr(**param['lt_params'])
+
+		task2 = CreatePredictorFittedImagery(lt,param)
+		task4 = CreatePredictorChangeImagery(lt,param)
+		wait_for_task(task2)
+		wait_for_task(task4)
+
+		task6 = CreatePredictorDisturbancePolygons(param)
+		print(task6)
+		if isinstance(task6, list):
+			wait_for_task(task6[0])
+			task66 = merge_selected_feature_collections(param['assetDir'],task6[1],param['disturbance_polygons_predictor'],"testing")
+			print(task66)
+			wait_for_task(task66)
+		else:
+			wait_for_task(task6)
+
+
+		task8 = attributePredictorPolygons(param)
 		wait_for_task(task8)
 
 		task9 = classify_polygons(param)

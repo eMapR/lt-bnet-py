@@ -1,5 +1,5 @@
 import ee
-from ltgee import LandTrendr, LandsatComposite, LtCollection
+from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 
 # Function to make start and end dates for composite time stamps --------------------------------------
 def annual_window(start, end):
@@ -67,19 +67,18 @@ def get_lt_last_seg_info(lt, idx):
     
     return getLastSeg(endSeg)
 
-def lcms_forest_mask(start, end):
-    dataset = ee.ImageCollection('USFS/GTAC/LCMS/v2023-9')
+def lcms_forest_mask(start, end, param):
+    dataset = ee.ImageCollection('USFS/GTAC/LCMS/v2024-10')
     ts = ee.List.sequence(start, 2021) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<HARDCODE
     print(ts)
     def query_year(yr):
         img = dataset.filter(ee.Filter.And(
             ee.Filter.eq('system:time_start', ee.Date(ee.String(ee.Number(yr).int().format()).cat(ee.String("-06-01"))).millis()),
-            ee.Filter.eq('study_area', 'CONUS')
+            ee.Filter.eq('study_area', param['study_region'])
         )).first().select('Land_Use')
         return img.expression('band == 3', {'band': img})
     
     lcms_agg = ts.map(query_year)
-    print('Here2')
     col = ee.ImageCollection(lcms_agg).sum().gt(0)
     return col
 
@@ -177,48 +176,87 @@ def dNBR(lt, start, end, indx, ftvLt, roi):
 def snic_image(img):
     return ee.Algorithms.Image.Segmentation.SNIC(image=img, size=5, compactness=1)
 
-def SNIC_decline_image(im,std_end_year):
-    years = {i: str(std_end_year - i) for i in [0, 1, 2, 3, 4]}
-    #expression = 'rate > 50 && rate < 160 && dur < 6 && dur > 1'
-    expression = '((nbr_3 - nbr_4 > 75 ) && (nbr_4 - nbr_5 > 100)) || (((tcg_3 - tcg_4 > 100 ) && (tcg_4 - tcg_5 > 100)) && ((tcw_3 - tcw_4 > 100 ) && (tcw_4 - tcw_5 > 100)))'
-    return im.mask(im.expression(expression, {
-        'nbr_1': im.select('nbr_ftv_' + years[4] + '_mean'),
-        'nbr_2': im.select('nbr_ftv_' + years[3] + '_mean'),
-        'nbr_3': im.select('nbr_ftv_' + years[2] + '_mean'),
-        'nbr_4': im.select('nbr_ftv_' + years[1] + '_mean'),
-        'nbr_5': im.select('nbr_ftv_' + years[0] + '_mean'),
-        'tcg_1': im.select('tcg_ftv_' + years[4] + '_mean'),
-        'tcg_2': im.select('tcg_ftv_' + years[3] + '_mean'),
-        'tcg_3': im.select('tcg_ftv_' + years[2] + '_mean'),
-        'tcg_4': im.select('tcg_ftv_' + years[1] + '_mean'),
-        'tcg_5': im.select('tcg_ftv_' + years[0] + '_mean'),
-        'tcw_1': im.select('tcw_ftv_' + years[4] + '_mean'),
-        'tcw_2': im.select('tcw_ftv_' + years[3] + '_mean'),
-        'tcw_3': im.select('tcw_ftv_' + years[2] + '_mean'),
-        'tcw_4': im.select('tcw_ftv_' + years[1] + '_mean'),
-        'tcw_5': im.select('tcw_ftv_' + years[0] + '_mean')
-    }))
+#def SNIC_decline_image(im,std_end_year):
+#    years = {i: str(std_end_year - i) for i in [0, 1, 2, 3, 4]}
+#    #expression = 'rate > 50 && rate < 160 && dur < 6 && dur > 1'
+#    expression = '((nbr_3 - nbr_4 > 75 ) && (nbr_4 - nbr_5 > 100)) || (((tcg_3 - tcg_4 > 100 ) && (tcg_4 - tcg_5 > 100)) && ((tcw_3 - tcw_4 > 100 ) && (tcw_4 - tcw_5 > 100)))'
+#    return im.mask(im.expression(expression, {
+#        'nbr_1': im.select('nbr_ftv_' + years[4] + '_mean'),
+#        'nbr_2': im.select('nbr_ftv_' + years[3] + '_mean'),
+#        'nbr_3': im.select('nbr_ftv_' + years[2] + '_mean'),
+#        'nbr_4': im.select('nbr_ftv_' + years[1] + '_mean'),
+#        'nbr_5': im.select('nbr_ftv_' + years[0] + '_mean'),
+#        'tcg_1': im.select('tcg_ftv_' + years[4] + '_mean'),
+#        'tcg_2': im.select('tcg_ftv_' + years[3] + '_mean'),
+#        'tcg_3': im.select('tcg_ftv_' + years[2] + '_mean'),
+#        'tcg_4': im.select('tcg_ftv_' + years[1] + '_mean'),
+#        'tcg_5': im.select('tcg_ftv_' + years[0] + '_mean'),
+#        'tcw_1': im.select('tcw_ftv_' + years[4] + '_mean'),
+#        'tcw_2': im.select('tcw_ftv_' + years[3] + '_mean'),
+#        'tcw_3': im.select('tcw_ftv_' + years[2] + '_mean'),
+#        'tcw_4': im.select('tcw_ftv_' + years[1] + '_mean'),
+#        'tcw_5': im.select('tcw_ftv_' + years[0] + '_mean')
+#    }))
 
 def LTSD_decline_image(im,std_end_year):
     years = {i: str(std_end_year - i) for i in [0, 1, 2, 3, 4]}
     expression = '((nbr_3 - nbr_4 > 75 ) && (nbr_4 - nbr_5 > 100)) || (((tcg_3 - tcg_4 > 100 ) && (tcg_4 - tcg_5 > 100)) && ((abs(tcw_3 - tcw_4) > 100 ) && (tcw_4 - tcw_5 > 100))) || ((nbr_4 - nbr_5 > 100) && (tcg_4 - tcg_5 > 100) && (abs(tcw_4 - tcw_5) > 100) )'
     return im.mask(im.expression(expression, {
-        'nbr_1': im.select('nbr_ftv_' + years[4]),
-        'nbr_2': im.select('nbr_ftv_' + years[3]),
-        'nbr_3': im.select('nbr_ftv_' + years[2]),
-        'nbr_4': im.select('nbr_ftv_' + years[1]),
-        'nbr_5': im.select('nbr_ftv_' + years[0]),
-        'tcg_1': im.select('tcg_ftv_' + years[4]),
-        'tcg_2': im.select('tcg_ftv_' + years[3]),
-        'tcg_3': im.select('tcg_ftv_' + years[2]),
-        'tcg_4': im.select('tcg_ftv_' + years[1]),
-        'tcg_5': im.select('tcg_ftv_' + years[0]),
-        'tcw_1': im.select('tcw_ftv_' + years[4]),
-        'tcw_2': im.select('tcw_ftv_' + years[3]),
-        'tcw_3': im.select('tcw_ftv_' + years[2]),
-        'tcw_4': im.select('tcw_ftv_' + years[1]),
-        'tcw_5': im.select('tcw_ftv_' + years[0])
+        'nbr_1': im.select('B1_ftv_' + years[4]),
+        'nbr_2': im.select('B1_ftv_' + years[3]),
+        'nbr_3': im.select('B1_ftv_' + years[2]),
+        'nbr_4': im.select('B1_ftv_' + years[1]),
+        'nbr_5': im.select('B1_ftv_' + years[0]),
+        'tcg_1': im.select('B2_ftv_' + years[4]),
+        'tcg_2': im.select('B2_ftv_' + years[3]),
+        'tcg_3': im.select('B2_ftv_' + years[2]),
+        'tcg_4': im.select('B2_ftv_' + years[1]),
+        'tcg_5': im.select('B2_ftv_' + years[0]),
+        'tcw_1': im.select('B3_ftv_' + years[4]),
+        'tcw_2': im.select('B3_ftv_' + years[3]),
+        'tcw_3': im.select('B3_ftv_' + years[2]),
+        'tcw_4': im.select('B3_ftv_' + years[1]),
+        'tcw_5': im.select('B3_ftv_' + years[0])
     }))
+
+def decline_image(param):
+#def decline_image(im, std_end_year, indices, thresholds, logic_template, num_years=5):
+    """
+    Parameters:
+        im (ee.Image): Input image.
+        std_end_year (int): Latest year in the image series.
+        indices (list): List of index names like ['nbr', 'tcg', 'tcw'].
+        thresholds (dict): Dict of thresholds per index, e.g., {'nbr': (75, 100)}.
+        logic_template (str): Logic string using placeholders, e.g., '{nbr} || ({tcg} && {tcw})'.
+        num_years (int): How many years back to include (default = 5).
+    """
+    im = ee.Image(param['assetDir'] + param['fitted_img_p'])
+    # Build band dictionary
+    band_dict = {}
+    for index in param['fit']:
+        for i in range(param['agent_lookback']):
+            key = f"{index}_{i+1}"
+            year = param['target'] - (param['agent_lookback'] - 1 - i)
+            band_dict[key] = im.select(f"{index}_ftv_{year}")
+
+    # Generate expressions for each index using thresholds
+    def decline_expr(index):
+        t1, t2 = param['decline_thresholds'].get(index, (100, 100))
+        if index == "TCB":
+            return f"(({index}_3 - {index}_4 > {t1}) && ({index}_4 - {index}_5 > {t2}))"
+        elif index == "TCG":
+            return f"(({index}_4 - {index}_3 > {t1}) && ({index}_5 - {index}_4 > {t2}))"
+        elif index == "TCW":
+            return f"(({index}_4 - {index}_3 > {t1}) && ({index}_5 - {index}_4 > {t2}))"
+
+    # Build expression string by filling in the logic template
+    expression = param['decline_template'].format(**{index: decline_expr(index) for index in param['fit']})
+    print(expression)
+    print(im.bandNames().getInfo())
+    #return im.mask(im.expression("((TCW_4 - TCW_5 < 200 ) && (TCW_4 - TCW_5 > 100 )) && ((TCG_4 - TCG_5 < 200 )&&(TCG_4 - TCG_5 > 100 )) || ((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
+    return im.mask(im.expression("((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
+
+
 
 def get_training_points(recovery, disturbances, roi, referImage, ads_in_roi):
     extract_sample_down = referImage.sampleRegions(collection=disturbances, scale=30, geometries=True, tileScale=10)
@@ -245,8 +283,8 @@ def tasselCapMask(bnet):
 
     # Run the LandTrendr algorithm
     targetImage = ee.Image(bnet['LTSDdir']+bnet['fitted_img_p'])
-
-    tcb = targetImage.select(["tcb_ftv_" + str(bnet['target'])])
+    val = [item.upper() for item in bnet['fit'] if item.lower() == "tcb"]
+    tcb = targetImage.select([val[0]+"_ftv_" + str(bnet['target'])])
     
     tcb_mask = tcb.expression('band > 2200 ? 0 : 1', {'band': tcb})
     return tcb_mask

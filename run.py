@@ -1,7 +1,7 @@
 # import 
 #import mod as bnet
 #import main
-from ltgee import LandTrendr, LandsatComposite, LtCollection
+from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 from datetime import date
 import json
 import os
@@ -21,7 +21,7 @@ import ee
 import sys
 from sklearn.utils import resample
 #-------------------------------------------------------------------
-ee.Initialize(project="r6-bugnet")
+#ee.Initialize(project="r6-bugnet")
 #-------------------------------------------------------------------
 ###########################################################################################################################
 ## 
@@ -43,16 +43,17 @@ def get_fitted_stack(lt,prefix,parameters):
 	selection = 10
 	start_date = parameters['composite_params']['start_date']
 	end_date = parameters['composite_params']['end_date']
+	index_list = parameters['fit']
 	if prefix == "fitted_training":
 
 		# Extract fitted data for each index 8 9 10 11 12
-		nbr = rename_bands_by_year(lt.get_fitted_data("nbr", start_date=start_date, end_date=end_date),'nbr',start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
-		tcb = rename_bands_by_year(lt.get_fitted_data("tcb", start_date=start_date, end_date=end_date),'tcb',start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
-		tcg = rename_bands_by_year(lt.get_fitted_data("tcg", start_date=start_date, end_date=end_date),'tcg',start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
-		tcw = rename_bands_by_year(lt.get_fitted_data("tcw", start_date=start_date, end_date=end_date),'tcw',start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		nbr = rename_bands_by_year(lt.get_fitted_data(index_list[0], start_date=start_date, end_date=end_date),index_list[0],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		tcb = rename_bands_by_year(lt.get_fitted_data(index_list[1], start_date=start_date, end_date=end_date),index_list[1],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		tcg = rename_bands_by_year(lt.get_fitted_data(index_list[2], start_date=start_date, end_date=end_date),index_list[2],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		#tcw = rename_bands_by_year(lt.get_fitted_data(index_list[3], start_date=start_date, end_date=end_date),index_list[3],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
 
 		# Merge all predictor data into a final stack
-		stack = nbr.addBands(tcb).addBands(tcg).addBands(tcw)
+		stack = nbr.addBands(tcb).addBands(tcg) #.addBands(tcw)
 
 		return stack
 	else:
@@ -60,13 +61,16 @@ def get_fitted_stack(lt,prefix,parameters):
 		band_count = ((end_year+1) - start_year)
 		last_bands = ee.List.sequence(band_count - selection, band_count - 1)
 		# Extract fitted data for each index
-		nbr = rename_bands_by_year(lt.get_fitted_data("nbr", start_date=start_date, end_date=end_date),'nbr',start_year, end_year).select(last_bands)
-		tcb = rename_bands_by_year(lt.get_fitted_data("tcb", start_date=start_date, end_date=end_date),'tcb',start_year, end_year).select(last_bands)
-		tcg = rename_bands_by_year(lt.get_fitted_data("tcg", start_date=start_date, end_date=end_date),'tcg',start_year, end_year).select(last_bands)
-		tcw = rename_bands_by_year(lt.get_fitted_data("tcw", start_date=start_date, end_date=end_date),'tcw',start_year, end_year).select(last_bands)
+		nbr = rename_bands_by_year(lt.get_fitted_data(index_list[0], start_date=start_date, end_date=end_date),index_list[0],start_year, end_year).select(last_bands)
+		tcb = rename_bands_by_year(lt.get_fitted_data(index_list[1], start_date=start_date, end_date=end_date),index_list[1],start_year, end_year).select(last_bands)
+		tcg = rename_bands_by_year(lt.get_fitted_data(index_list[2], start_date=start_date, end_date=end_date),index_list[2],start_year, end_year).select(last_bands)
+		#nbr = rename_bands_by_year(lt.get_fitted_data("nbr", start_date=start_date, end_date=end_date),'nbr',start_year, end_year).select(last_bands)
+		#tcb = rename_bands_by_year(lt.get_fitted_data("tcb", start_date=start_date, end_date=end_date),'tcb',start_year, end_year).select(last_bands)
+		#tcg = rename_bands_by_year(lt.get_fitted_data("tcg", start_date=start_date, end_date=end_date),'tcg',start_year, end_year).select(last_bands)
+		#tcw = rename_bands_by_year(lt.get_fitted_data("tcw", start_date=start_date, end_date=end_date),'tcw',start_year, end_year).select(last_bands)
 
 		# Merge all predictor data into a final stack
-		stack = nbr.addBands(tcb).addBands(tcg).addBands(tcw)
+		stack = nbr.addBands(tcb).addBands(tcg) #.addBands(tcw)
 
 		return stack
 
@@ -105,7 +109,6 @@ def vectorize_disturbance(change_image,params):
 
 
 
-
 ###########################################################################################################################
 ## 
 ###########################################################################################################################
@@ -117,7 +120,11 @@ def attribute_with_reference_data(params,who):
 		yod = ee.Number(polygon.get('yod'))
 		years = ee.List.sequence(yod.subtract(3), yod)
 		yrs_int = ee.List.sequence(1,4)
-		indices = ee.List(['nbr_ftv', 'tcb_ftv', 'tcg_ftv', 'tcw_ftv'])
+		indexList = params['fit']
+		indexList2 = [item.lower() for item in indexList if item != params['index']]
+		to_append = '_ftv'
+		new_list = [item + to_append for item in indexList2]
+		indices = ee.List(new_list)
 
 		def make_band_names(year):
 			year = ee.Number(year).format('%d')
@@ -144,15 +151,22 @@ def attribute_with_reference_data(params,who):
 
 		return polygon.set(raster_values).set({'area_km2': area,'perimeter_km': perimeter, 'mode_value': 0})
 
+	def renameLower(in_string):
+		return ee.String(in_string).toLowerCase()
+
 	if who == 'training':
 		in_img = ee.Image(params['assetDir_t'] + params['fitted_img_t']).addBands(ee.Image(params['assetDir_t'] + params['training_change_img']))
+		bandnameslower = in_img.bandNames().map(renameLower) 
+		in_img = in_img.rename(bandnameslower)
 		in_fc = ee.FeatureCollection(params['assetDir_t'] + params['disturbance_polygons_training'])
 		out_fc = in_fc.filter(ee.Filter.And(ee.Filter.gt('count',params['trainingMin']),ee.Filter.lt('count',params['trainingMax']))).map(_process_polygon) 
 		return out_fc 
 	else:
-                in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
-                in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor'])
-                return in_fc.map(_process_polygon)
+		in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
+		bandnameslower = in_img.bandNames().map(renameLower) 
+		in_img = in_img.rename(bandnameslower)
+		in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor']).filter(ee.Filter.gte('yod', 2000))
+		return in_fc.map(_process_polygon)
 
 
 ###########################################################################################################################
