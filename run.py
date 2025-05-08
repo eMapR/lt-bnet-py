@@ -165,7 +165,7 @@ def attribute_with_reference_data(params,who):
 		in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
 		bandnameslower = in_img.bandNames().map(renameLower) 
 		in_img = in_img.rename(bandnameslower)
-		in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor']).filter(ee.Filter.gte('yod', 2000))
+		in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor']).filter(ee.Filter.gte('yod', params['target']-6))
 		return in_fc.map(_process_polygon)
 
 

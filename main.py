@@ -342,6 +342,40 @@ def CreateTrainingDisturbancePolygons(param):
 		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir_t'])
 		return task
 
+# Function to split a feature vertically into N parts
+def split_feature_vertically_n(feature, n_splits):
+    bounds = feature.geometry().bounds()
+    coords = bounds.coordinates().get(0)
+
+    ll = ee.List(coords).get(0)  # lower-left
+    lr = ee.List(coords).get(1)  # lower-right
+    ul = ee.List(coords).get(3)  # upper-left
+
+    min_x = ee.Number(ee.List(ll).get(0))
+    max_x = ee.Number(ee.List(lr).get(0))
+    min_y = ee.Number(ee.List(ll).get(1))
+    max_y = ee.Number(ee.List(ul).get(1))
+
+    width = max_x.subtract(min_x).divide(n_splits)
+
+    def make_split(i):
+        i = ee.Number(i)
+        x1 = min_x.add(width.multiply(i))
+        x2 = x1.add(width)
+        box = ee.Geometry.Rectangle([x1, min_y, x2, max_y])
+        part = feature.intersection(box, ee.ErrorMargin(1))
+        return part.set('split_id', ee.String('split_').cat(i.format('%d')))
+
+    splits = ee.List.sequence(0, n_splits.subtract(1)).map(make_split)
+    return ee.FeatureCollection(splits)
+
+# Function to apply split to a collection and flatten result
+def split_collection_vertically_n(fc, n_splits):
+    def split_and_collect(feature):
+        return split_feature_vertically_n(feature, ee.Number(n_splits))
+    return fc.map(split_and_collect).flatten()
+
+
 def CreatePredictorDisturbancePolygons(param):
 	# check to see if output asset exists
 	exists = asset_exists(param["assetDir"]+param['disturbance_polygons_predictor'])
@@ -364,7 +398,8 @@ def CreatePredictorDisturbancePolygons(param):
 				print('error: dataset to large. Decrease area or increase magnitude parameter.')
 				print("    1: exit to adjust")
 				print("    2: add elevation mask (to find elelvation value go here:)")
-				print("    3: splite up region")
+				print("    3: splite up region for Alaska")
+				print("    4: splite up region for CONUS")
 				track = input('    :')
 				if track == '1':
 					sys.exit()
@@ -394,9 +429,25 @@ def CreatePredictorDisturbancePolygons(param):
 						new_image_clipped = change_img_p.clip(fe)
 						disturbance_polygons_p = run.vectorize_disturbance(new_image_clipped, param)
 						task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor']+huc8code.getInfo(),param['assetDir'])
-						# Do something with disturbance_polygons_p (e.g., export or merge)
 					try:
-						#print(disturbance_polygons_p.size().getInfo())
+						go = 0
+					except:
+						go = 1
+				elif track == '4':
+					aoi = param['aoi']
+					# Split the dataset
+					split_fc = split_collection_vertically_n(aoi, 4)
+					number_of_features = split_fc.size().getInfo()
+					features_list = split_fc.toList(number_of_features)
+					subregions = []
+					for f in range(number_of_features): 
+						fe = ee.Feature(features_list.get(f))
+						split_code = fe.getString('split_id');
+						subregions.append(split_code)
+						new_image_clipped = change_img_p.clip(fe)
+						disturbance_polygons_p = run.vectorize_disturbance(new_image_clipped, param)
+						task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor']+split_code.getInfo(),param['assetDir'])
+					try:
 						go = 0
 					except:
 						go = 1
@@ -736,18 +787,22 @@ def buildKMeansSample(param):
 		.randomColumn().sort('random')
 	)
 	
-	if sample.size().getInfo() < 10:
+	try:
+		if sample.size().getInfo() < 10:
 
-		# Get random sample of point attributes for KMeans	
-		sample = ee.FeatureCollection(
-			snic_decline.sampleRegions(
-				collection=param['aoi'],
-				scale=param['pixel_scale'],
-				tileScale=12,
-				geometries=True
-			).randomColumn().sort('random').toList(param['kmeans_num_sample'])
-		)
+			# Get random sample of point attributes for KMeans	
+			sample = ee.FeatureCollection(
+				snic_decline.sampleRegions(
+					collection=param['aoi'],
+					scale=param['pixel_scale'],
+					tileScale=12,
+					geometries=True
+				).randomColumn().sort('random').toList(param['kmeans_num_sample'])
+			)
 
+	except:
+
+		print('sample must be large')
 
 	export_params = {
 		'collection': sample,
