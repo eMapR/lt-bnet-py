@@ -5,6 +5,7 @@ import datetime
 
 
 param = {}
+param['bnet_polygon_mmu'] = 150
 param['huc6-id'] = '190804'
 param['study_region'] = "AK" # AK or CONUS
 param['project_name'] = 'beaver-yukon-river-bugnet'
@@ -45,10 +46,10 @@ param['change_params'] = {
                     'mmu': {'value': 10}
                 }
 
-param['pixel_scale'] = 10
-param['region']= 'ak'
-param['subregion']= 'bluemts'
-param['version'] = "1"
+param['pixel_scale'] = 30
+param['region']= 'R10'
+param['subregion']= 'beaver-yukon-river'
+param['version'] = "3"
 param['outputfile_prefix'] = f"Bugnet_{param['region']}_v{param['target']}-{param['version']}_Annual_Change_{param['target']}_{param['subregion']}" 
 param['assetDir_t'] = f"projects/{param['project_name']}/assets/" 
 param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}/" 

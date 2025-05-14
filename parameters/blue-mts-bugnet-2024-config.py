@@ -6,6 +6,7 @@ import datetime
 
 param = {}
 param['study_region'] = "CONUS" # AK or CONUS
+param['bnet_polygon_mmu'] = 100
 
 param['project_name'] = 'blue-mts-bugnet'
 ee.Initialize(project=param['project_name'])
@@ -45,9 +46,9 @@ param['change_params'] = {
                 }
 
 param['pixel_scale'] = 10
-param['region']= 'or'
-param['subregion']= 'bluemts'
-param['version'] = "1"
+param['region']= 'R6'
+param['subregion']= 'blue-mts'
+param['version'] = "3"
 param['outputfile_prefix'] = f"Bugnet_{param['region']}_v{param['target']}-{param['version']}_Annual_Change_{param['target']}_{param['subregion']}" 
 param['assetDir_t'] = f"projects/{param['project_name']}/assets/" 
 param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}/" 

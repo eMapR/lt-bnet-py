@@ -43,8 +43,17 @@ def flatten_dict(d, parent_key='', sep='_'):
 
     transformed_list = []
     for key, value in items:
+        print(key,value)
         if isinstance(value, list):  # Convert list to comma-separated string
+            if isinstance(value[0], int):
+                value = [str(element) for element in value]
             transformed_list.append((key, ', '.join(value)))
+        elif isinstance(value, tuple):  # Convert tuple to list then string
+            value = list(value)
+            if isinstance(value[0], int):
+                value = [str(element) for element in value]
+            transformed_list.append((key, ', '.join(value)))
+
         elif isinstance(value, datetime.date):  # Convert date object to string
             transformed_list.append((key, value.strftime('%Y-%m-%d')))
         else:  # Keep other types as they are
@@ -78,7 +87,7 @@ def dict_to_feature_collection(param):
         flattened_data = flatten_dict(param)
 
         # Create a single feature with the flattened data
-        feature = ee.Feature(ee.Geometry.Point([-119.018359375, 44.60978736008787]), flattened_data)
+        feature = ee.Feature(param['aoi'].first().geometry().centroid(1), flattened_data)
 
         # Create a FeatureCollection
         feature_collection = ee.FeatureCollection([feature])
@@ -130,25 +139,48 @@ def get_user_input(prompt, options):
     return options[int(choice) - 1]
 
 
-def export_to_drive(prefix, asset, folder):
+def export_to_drive(prefix, asset, folder,param):
     """Exports an asset to Google Drive."""
     if asset['type'] == 'TABLE':
         collection = ee.FeatureCollection(asset['id'])
-        task = ee.batch.Export.table.toDrive(
-            collection=collection,
-            description=f"{prefix}_{asset['id'].split('/')[-1]}",
-            folder=prefix
-        )
+        if "parameter" in asset['id']:
+            task = ee.batch.Export.table.toDrive(
+                collection=collection,
+                description=f"{prefix}_{asset['id'].split('/')[-1]}",
+                folder=prefix,
+                fileFormat="CSV"
+            )
+        else:
+            task = ee.batch.Export.table.toDrive(
+                collection=collection,
+                description=f"{prefix}_{asset['id'].split('/')[-1]}",
+                folder=prefix,
+                fileFormat="SHP"
+            )
     elif asset['type'] == 'IMAGE':
         image = ee.Image(asset['id'])
-        task = ee.batch.Export.image.toDrive(
-            image=image,
-            description=f"{prefix}_{asset['id'].split('/')[-1]}",
-            folder=prefix,
-            scale=param['pixel_scale'],
-            region=image.geometry().bounds(),
-            maxPixels=1e13
-        )
+        if "fitted" in asset['id']:
+            band_names = image.bandNames()
+            count = band_names.size()
+            last_three = band_names.slice(count.subtract(3), count)
+            last_three_bands = image.select(last_three)
+            task = ee.batch.Export.image.toDrive(
+                image=last_three_bands,
+                description=f"{prefix}_{asset['id'].split('/')[-1]}",
+                folder=prefix,
+                scale=param['pixel_scale'],
+                region=image.geometry().bounds(),
+                maxPixels=1e13
+            )
+        else:
+            task = ee.batch.Export.image.toDrive(
+                image=image,
+                description=f"{prefix}_{asset['id'].split('/')[-1]}",
+                folder=prefix,
+                scale=param['pixel_scale'],
+                region=image.geometry().bounds(),
+                maxPixels=1e13
+            )
     else:
         print(f"Unsupported asset type: {asset['type']}")
         return
@@ -208,7 +240,7 @@ def export_assets(params):
     if location == 'Google Drive':
         folder = input("Enter the Google Drive folder name: ")
         for asset in selected_assets:
-            export_to_drive(params['outputfile_prefix'],asset, folder)
+            export_to_drive(params['outputfile_prefix'],asset, folder,params)
     elif location == 'Google Cloud Storage':
         bucket = input("Enter the Google Cloud Storage bucket name: ")
         path = input("Enter the path within the bucket: ")
@@ -786,23 +818,24 @@ def buildKMeansSample(param):
 			geometries=True)
 		.randomColumn().sort('random')
 	)
-	
-	try:
-		if sample.size().getInfo() < 10:
+	if  1==0:
+		try:
+			if sample.size().getInfo() < 10:
 
-			# Get random sample of point attributes for KMeans	
-			sample = ee.FeatureCollection(
-				snic_decline.sampleRegions(
-					collection=param['aoi'],
-					scale=param['pixel_scale'],
-					tileScale=12,
-					geometries=True
-				).randomColumn().sort('random').toList(param['kmeans_num_sample'])
-			)
+				# Get random sample of point attributes for KMeans	
+				sample = ee.FeatureCollection(
+					snic_decline.sampleRegions(
+						collection=param['aoi'],
+						scale=param['pixel_scale'],
+						tileScale=12,
+						geometries=True
+					).randomColumn().sort('random').toList(param['kmeans_num_sample'])
+				)
 
-	except:
-
-		print('sample must be large')
+		except:
+			print('sample must be large')
+	else:
+		print(1)
 
 	export_params = {
 		'collection': sample,
@@ -1062,6 +1095,111 @@ def predict(param):
 	return export_task 
 
 ##############################################################################
+# Reclass Kmeans 
+##############################################################################
+def get_unique_pixel_values(param, region=None, scale=30):
+    """
+    Returns a list of unique pixel values in a given image band.
+
+    Args:
+        image (ee.Image): The input image.
+        band_name (str): The name of the band to analyze.
+        region (ee.Geometry, optional): The region to analyze. Defaults to image geometry.
+        scale (int): The scale in meters for the reducer. Defaults to 30.
+
+    Returns:
+        List of unique pixel values.
+    """
+    # check to see if output asset exists
+    exists = asset_exists(param['assetDir'] + param['predicted'])
+
+    if exists:
+        return
+
+
+    # check to see if output asset exists
+    image = ee.Image(param['assetDir'] + param['kmeansName'])
+    if region is None:
+        region = image.geometry()
+
+    # Reduce the region to get a histogram of pixel values
+    histogram_dict = image.select('cluster').reduceRegion(
+        reducer=ee.Reducer.frequencyHistogram(),
+        geometry=region,
+        scale=scale,
+        maxPixels=1e13
+    ).get('cluster')
+
+    # Convert to client-side dictionary and extract keys
+    histogram = ee.Dictionary(histogram_dict).getInfo()
+    unique_values = list(histogram.keys())
+
+    # Convert keys to the appropriate type (e.g., int if they’re numbers)
+    try:
+        unique_values = [int(v) for v in unique_values]
+    except ValueError:
+        pass  # If not convertible to int, leave as strings
+
+    return unique_values
+
+
+def prompt_reclassification_mapping(unique_values):
+    """
+    Prompts user to enter new values for each unique pixel value.
+
+    Args:
+        unique_values (list): List of unique pixel values.
+
+    Returns:
+        Tuple of two lists: (original values, new values)
+    """
+    print("Original values found in image:", unique_values)
+    print(f"Enter {len(unique_values)} new values (in order), separated by commas.")
+    
+    while True:
+        input_str = input("New values: ")
+        new_values = [v.strip() for v in input_str.split(',')]
+        
+        if len(new_values) != len(unique_values):
+            print(f"Error: Expected {len(unique_values)} values, but got {len(new_values)}. Try again.")
+        else:
+            try:
+                new_values = [int(v) for v in new_values]
+                break
+            except ValueError:
+                print("Error: Please enter valid integer values.")
+    
+    return unique_values, new_values
+
+
+def reclassify_image(params, from_values, to_values):
+    """
+    Reclassifies pixel values in a band using remap().
+
+    Args:
+        image (ee.Image): Input image.
+        band_name (str): Name of band to reclassify.
+        from_values (list): Original values.
+        to_values (list): New values.
+
+    Returns:
+        ee.Image: Reclassified image.
+    """
+    image = ee.Image(params['assetDir'] + params['kmeansName'])
+
+    outimg = image.select('cluster').remap(from_values, to_values).rename(f'classified')
+    task = ee.batch.Export.image.toAsset(
+            image=outimg.toInt8(),
+            description=params['predicted'],
+            assetId=params['assetDir'] + params['predicted'],
+            region=params['aoi'].geometry(),
+            scale=params['pixel_scale'],
+            maxPixels=1e13
+    )
+    task.start()
+    return task
+
+##############################################################################
 # Polygonize
 ##############################################################################
 def polygonize_bnet(param):
@@ -1071,7 +1209,7 @@ def polygonize_bnet(param):
 	if exists:
 		return
 	img = ee.Image(param['assetDir'] + param['predicted'])
-	polygons = img.reduceToVectors(reducer=ee.Reducer.countEvery(), scale=param['pixel_scale'], maxPixels=1e13).filter(ee.Filter.gt('count',10))
+	polygons = img.reduceToVectors(reducer=ee.Reducer.countEvery(), scale=param['pixel_scale'], maxPixels=1e13).filter(ee.Filter.gt('count',param['bnet_polygon_mmu']))
 
 	export_params = {
 		'collection': polygons,
@@ -1096,6 +1234,8 @@ def extract_zonal_stats(image, feature_collection, stat_type, output_field_name,
         reducer = ee.Reducer.min()
     elif stat_type == 'max':
         reducer = ee.Reducer.max()
+    elif stat_type == 'mode':
+        reducer = ee.Reducer.mode()
     else:
         raise ValueError('Unsupported stat_type: ' + stat_type)
 
@@ -1122,11 +1262,11 @@ def split_multi_polygon(feature):
     features = [ee.Feature(ee.Geometry(geometry)) for geometry in geometries_list]
     return ee.FeatureCollection(features)
 
-def calc_attri_fields():
+def calc_attri_fields(param):
 
     fields = {
       'ACRES': 0,
-      'CREATED_DATE': '11-27-2024',
+      'CREATED_DATE': '12-05-2025',
       'DAMAGE_TYPE_CODE': 0,
       'DCA_CODE': 0,
       'HOST_CODE': 0,
@@ -1137,11 +1277,11 @@ def calc_attri_fields():
       'MODIFIED_DATE': '',
       'NOTES': '',
       'PERCENT_AFFECTED_CODE': 2,
-      'REGION_ID': 'Region_06',
-      'SURVEY_YEAR': 2024,
+      'REGION_ID': param['study_region'],
+      'SURVEY_YEAR': param['target'],
       'US_AREA': 'CONUS',
-      'count': 14,
-      'label': 1
+      #'count': 14,
+      #'bugnet_label': 1
     };
 
     return fields
@@ -1152,7 +1292,7 @@ def buffer_bnet_polygons(param):
 
 	if exists:
 		return
-	fc = ee.FeatureCollection(param['assetDir'] + param['bnet_polygonized'])
+	fc = ee.FeatureCollection(param['assetDir'] + param['bnet_polygonized']).filter(ee.Filter.gt('count',param['bnet_polygon_mmu']))
 
 	def buffer_f(ft):
 		polygon = ft.buffer(param['bnet_buffer'])
@@ -1166,11 +1306,11 @@ def buffer_bnet_polygons(param):
 	polygons_fc = split_multi_polygon(buffer_dissovled.first())
 
 	img = ee.Image(param['assetDir'] + param['predicted'])
-	fc_bnet = extract_zonal_stats(img, polygons_fc, "max", "label")
+	fc_bnet = extract_zonal_stats(img, polygons_fc, "mode", "bnet_label",param)
 
 	# Define the function to add fields to each feature
 	def add_fields(feature):
-		return feature.set(calc_attri_fields())
+		return feature.set(calc_attri_fields(param))
 
 	# Apply the function to each feature in the collection
 	fc_attri = fc_bnet.map(add_fields)
@@ -1372,23 +1512,45 @@ def main():
 		task_kmeans = kMeansImage(param)
 		wait_for_task(task_kmeans)
 
-		task_sample = kMeansProporitonsADSsample(param)
-		wait_for_task(task_sample)
+		# if ADS exists do this
+		onon = 0 
+		print(onon)
+		if onon == 1:
+			task_sample = kMeansProporitonsADSsample(param)
+			wait_for_task(task_sample)
 
-		task_proportion = proportionCalc(param)
-		wait_for_task(task_proportion)
+			task_proportion = proportionCalc(param)
+			wait_for_task(task_proportion)
 
-		task_predict = predict(param)
-		wait_for_task(task_predict)
+			task_predict = predict(param)
+			wait_for_task(task_predict)
+		
+			task_poly = polygonize_bnet(param)
+			wait_for_task(task_poly)
 
-		task_poly = polygonize_bnet(param)
-		wait_for_task(task_poly)
+			task_buffer = buffer_bnet_polygons(param)
+			wait_for_task(task_buffer)
 
-		task_buffer = buffer_bnet_polygons(param)
-		wait_for_task(task_buffer)
+			task_params = dict_to_feature_collection(param)
+			wait_for_task(task_params)
+		else:
+			
+			unique_vals = get_unique_pixel_values(param)
+			if unique_vals:  
+				from_vals, to_vals = prompt_reclassification_mapping(unique_vals)
+				task_p = reclassify_image(param, from_vals, to_vals)
+				wait_for_task(task_p)
+				task_poly = polygonize_bnet(param)
+				wait_for_task(task_poly)
 
-		task_params = dict_to_feature_collection(param)
-		wait_for_task(task_params)
+			task_poly = polygonize_bnet(param)
+			wait_for_task(task_poly)
+
+			task_buffer = buffer_bnet_polygons(param)
+			wait_for_task(task_buffer)
+
+			task_params = dict_to_feature_collection(param)
+			wait_for_task(task_params)
 	else:
 		print('bye')
 
