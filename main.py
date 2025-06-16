@@ -374,6 +374,39 @@ def CreateTrainingDisturbancePolygons(param):
 		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir_t'])
 		return task
 
+# Function to split a feature horizontally into N parts
+def split_feature_horizontally_n(feature, n_splits):
+    bounds = feature.geometry().bounds()
+    coords = bounds.coordinates().get(0)
+
+    ll = ee.List(coords).get(0)  # lower-left
+    ul = ee.List(coords).get(3)  # upper-left
+    lr = ee.List(coords).get(1)  # lower-right
+
+    min_x = ee.Number(ee.List(ll).get(0))
+    max_x = ee.Number(ee.List(lr).get(0))
+    min_y = ee.Number(ee.List(ll).get(1))
+    max_y = ee.Number(ee.List(ul).get(1))
+
+    height = max_y.subtract(min_y).divide(n_splits)
+
+    def make_split(i):
+        i = ee.Number(i)
+        y1 = min_y.add(height.multiply(i))
+        y2 = y1.add(height)
+        box = ee.Geometry.Rectangle([min_x, y1, max_x, y2])
+        part = feature.intersection(box, ee.ErrorMargin(1))
+        return part.set('split_id', ee.String('split_').cat(i.format('%d')))
+
+    splits = ee.List.sequence(0, n_splits.subtract(1)).map(make_split)
+    return ee.FeatureCollection(splits)
+
+# Function to apply horizontal split to a collection and flatten result
+def split_collection_horizontally_n(fc, n_splits):
+    def split_and_collect(feature):
+        return split_feature_horizontally_n(feature, ee.Number(n_splits))
+    return fc.map(split_and_collect).flatten()
+
 # Function to split a feature vertically into N parts
 def split_feature_vertically_n(feature, n_splits):
     bounds = feature.geometry().bounds()
@@ -420,11 +453,14 @@ def CreatePredictorDisturbancePolygons(param):
 		change_img_p = ee.Image(param["assetDir"]+param['predictor_change_img'])
 		go = 1
 		while go:
+			print('go')
 			try:
 				raise Exception("Forcing exception for testing")
 				disturbance_polygons_p = run.vectorize_disturbance(change_img_p,param)
 				print(disturbance_polygons_p.size().getInfo())
 				go = 0
+				task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
+				return task
 
 			except:
 				print('error: dataset to large. Decrease area or increase magnitude parameter.')
@@ -440,9 +476,11 @@ def CreatePredictorDisturbancePolygons(param):
 					eleMask = ee.Image('COPERNICUS/DEM/GLO30').select('DEM').mean().lt(int(newmag))
 					new_change_image = change_img_p.mask(eleMask).unmask().clip(param['aoi'])
 					disturbance_polygons_p = run.vectorize_disturbance(new_change_image,param)
+					task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
 					try:
 						#print(disturbance_polygons_p.size().getInfo())
 						go = 0
+						return task
 					except:
 						go = 1
 				elif track == '3':
@@ -454,6 +492,8 @@ def CreatePredictorDisturbancePolygons(param):
 					number_of_features = f8.size().getInfo()
 					features_list = f8.toList(number_of_features)
 					subregions = []
+					counter = 0
+					subtasks = []
 					for f in range(number_of_features): 
 						fe = ee.Feature(features_list.get(f))
 						huc8code = fe.getString('huc8');
@@ -461,35 +501,53 @@ def CreatePredictorDisturbancePolygons(param):
 						new_image_clipped = change_img_p.clip(fe)
 						disturbance_polygons_p = run.vectorize_disturbance(new_image_clipped, param)
 						task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor']+huc8code.getInfo(),param['assetDir'])
+						subtasks.append(task)
+						counter += 1
 					try:
 						go = 0
+						return [3,subtasks,subregions]
 					except:
 						go = 1
 				elif track == '4':
 					aoi = param['aoi']
+					print(" Split direction?")
+					print(" 	1-vertically")
+					print(" 	2-horizontally")
+					split_d = input('    :')
 					# Split the dataset
-					split_fc = split_collection_vertically_n(aoi, 4)
+					if split_d == '1':
+						split_fc = split_collection_vertically_n(aoi, 4)
+					elif split_d =='2':
+						split_fc = split_collection_horizontally_n(aoi, 4)
+					else:
+						sys.exit()
 					number_of_features = split_fc.size().getInfo()
 					features_list = split_fc.toList(number_of_features)
 					subregions = []
+					subtasks = []
+					counter = 0
 					for f in range(number_of_features): 
 						fe = ee.Feature(features_list.get(f))
-						split_code = fe.getString('split_id');
+						split_code = fe.getString('split_id').cat(ee.String(str(counter)));
 						subregions.append(split_code)
 						new_image_clipped = change_img_p.clip(fe)
 						disturbance_polygons_p = run.vectorize_disturbance(new_image_clipped, param)
 						task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor']+split_code.getInfo(),param['assetDir'])
+						subtasks.append(task)
+						counter += 1
+					print(subregions)
 					try:
 						go = 0
+						return [4,subtasks,subregions]
 					except:
 						go = 1
 				else:
 					sys.exit()
-		if track != '3':
-			task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
-			return task
-		else:
-			return [task, subregions]
+				#if track != '3':
+				#	task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
+				#	return task
+				#else:
+				#	return [task, subregions]
 
 
 def merge_selected_feature_collections(asset_folder, id_suffixes, output_asset_id, description="MergedExport"):
@@ -508,7 +566,8 @@ def merge_selected_feature_collections(asset_folder, id_suffixes, output_asset_i
                     break  # Stop checking other suffixes once a match is found
     if not fc_ids:
         raise ValueError("No matching FeatureCollections found for the provided suffixes.")
-
+    print("fc_ids")
+    print(fc_ids)
     # Load and merge FeatureCollections
     fc_list = [ee.FeatureCollection(fc_id) for fc_id in fc_ids]
     merged_fc = ee.FeatureCollection(fc_list).flatten()
@@ -580,11 +639,11 @@ def classify_polygons(param):
 		unlabeled_fc = ee.FeatureCollection(param['assetDir']+param['attributed_polygons_predictor'])
 
 		predictor_variables = unlabeled_fc.first().propertyNames()
-		labeled_fc = run.drop_null_features(labeled_fc,predictor_variables)
+		labeled_fc = run.drop_null_features(labeled_fc,predictor_variables).filter(ee.Filter.neq('mode_value', 160))
 		unlabeled_fc = run.drop_null_features(unlabeled_fc,predictor_variables)
 
 		trained_classifier = run.train_classifier(labeled_fc,"mode_value",predictor_variables,param['num_trees'])
-		classified_fc = run.classify_features(unlabeled_fc, trained_classifier)
+		classified_fc = run.classify_features(unlabeled_fc, trained_classifier,param['class_heavy'])
 
 		task = run.export_feature_collection(classified_fc,param['classified_fc'],param['assetDir'])
 		return task
@@ -818,7 +877,7 @@ def buildKMeansSample(param):
 			geometries=True)
 		.randomColumn().sort('random')
 	)
-	if  1==0:
+	if  1==1:
 		try:
 			if sample.size().getInfo() < 10:
 
@@ -1396,7 +1455,14 @@ def main():
 		task5 = CreateTrainingDisturbancePolygons(param)
 		task6 = CreatePredictorDisturbancePolygons(param)
 		wait_for_task(task5)
-		wait_for_task(task6)
+
+		if isinstance(task6, list):
+			for t in task6[1]:
+				wait_for_task(t)
+			task66 = merge_selected_feature_collections(param['assetDir'],task6[2],param['disturbance_polygons_predictor'],"testing")
+			wait_for_task(task66)
+		else:
+			wait_for_task(task6)
 
 		task7 = attributeTrainingPolygons(param)
 		task8 = attributePredictorPolygons(param)
@@ -1447,6 +1513,7 @@ def main():
 		wait_for_task(task_predict)
 
 		task_poly = polygonize_bnet(param)
+
 		wait_for_task(task_poly)
 
 		task_buffer = buffer_bnet_polygons(param)
@@ -1466,10 +1533,11 @@ def main():
 
 		task6 = CreatePredictorDisturbancePolygons(param)
 		print(task6)
+
 		if isinstance(task6, list):
-			wait_for_task(task6[0])
-			task66 = merge_selected_feature_collections(param['assetDir'],task6[1],param['disturbance_polygons_predictor'],"testing")
-			print(task66)
+			for t in task6[1]:
+				wait_for_task(t)
+			task66 = merge_selected_feature_collections(param['assetDir'],task6[2],param['disturbance_polygons_predictor'],"testing")
 			wait_for_task(task66)
 		else:
 			wait_for_task(task6)

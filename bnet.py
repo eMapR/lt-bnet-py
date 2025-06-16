@@ -286,7 +286,8 @@ def tasselCapMask(bnet):
     val = [item.upper() for item in bnet['fit'] if item.lower() == "tcb"]
     tcb = targetImage.select([val[0]+"_ftv_" + str(bnet['target'])])
     
-    tcb_mask = tcb.expression('band > 2200 ? 0 : 1', {'band': tcb})
+    tcb_mask = tcb.expression('band > '+bnet['brightness_value']+' ? 0 : 1', {'band': tcb}) # 2200
+
     return tcb_mask
 
 def rename_img(img, target_year):
@@ -363,7 +364,7 @@ def ltcalc(year, feat):
     target = target.map(lambda fe: fe.set('rati', fe.getNumber('area').divide(fe.getNumber('perimeter'))))
     return target.filter(ee.Filter.Or(ee.Filter.gt('rati', 20), ee.Filter.gt('area', 9500000)))
 
-def get_canopy_cover(clip):
-    dataset = ee.ImageCollection('USGS/NLCD_RELEASES/2021_REL/TCC/v2021-4')
-    tcc = dataset.filter(ee.Filter.calendarRange(2021, 2021, 'year')).select('Science_Percent_Tree_Canopy_Cover').filter(ee.Filter.eq("study_area", "CONUS")).first().gt(65).selfMask()
-    return tcc.clip(clip)
+#def get_canopy_cover(clip):
+#    dataset = ee.ImageCollection('USGS/NLCD_RELEASES/2021_REL/TCC/v2021-4')
+#    tcc = dataset.filter(ee.Filter.calendarRange(2021, 2021, 'year')).select('Science_Percent_Tree_Canopy_Cover').filter(ee.Filter.eq("study_area", "CONUS")).first().gt(65).selfMask()
+#    return tcc.clip(clip)

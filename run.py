@@ -411,24 +411,46 @@ def train_classifier(_labeled_fc,_label_property,_predictor_variables,_num_trees
 ###########################################################################################################################
 ## 
 ###########################################################################################################################
-def classify_features(_unlabeled_fc,_classifier):
+def classify_features(_unlabeled_fc,_classifier,heavy=0):
 	"""
 	Classify the unlabeled feature collection.
 
 	:param classifier: The trained classifier to use for classifying features
 	:return: The classified feature collection
 	"""
+	if heavy == 1:
+		def cast_fire(f):
+			count = ee.Number(f.get('count'))
+			mag = ee.Number(f.get('mag'))
 
-	def cast_fire(f):
-		#count = f.get('count').getInfo()		
-		count = ee.Number(f.get('count'))
-		# Use ee.Algorithms.If to perform conditional logic
-		_result = ee.Algorithms.If(
-			count.gt(4000),    # Condition to check
-			f.set({"classification":40}),            # Expression if condition is true
-			f      # Expression if condition is false
-		)
-		return _result
+			# First condition: mag > 400 → classification = 21
+			f = ee.Feature(ee.Algorithms.If(
+				mag.gt(400),
+				f.set({"classification": 21}),
+				f
+			))
+
+			# Second condition: count > 4000 → classification = 40
+			f = ee.Feature(ee.Algorithms.If(
+				count.gt(4000),
+				f.set({"classification": 40}),
+				f
+			))
+
+			return f
+
+	else:
+		def cast_fire(f):
+			count = ee.Number(f.get('count'))
+
+			# Second condition: count > 4000 → classification = 40
+			f = ee.Feature(ee.Algorithms.If(
+				count.gt(4000),
+				f.set({"classification": 40}),
+				f
+			))
+
+			return f
 
 	classified = _unlabeled_fc.classify(_classifier)
 	return classified.map(cast_fire)
