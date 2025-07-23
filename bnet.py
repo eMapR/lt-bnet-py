@@ -69,7 +69,7 @@ def get_lt_last_seg_info(lt, idx):
 
 def lcms_forest_mask(start, end, param):
     dataset = ee.ImageCollection('USFS/GTAC/LCMS/v2024-10')
-    ts = ee.List.sequence(start, 2021) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<HARDCODE
+    ts = ee.List.sequence(start, 2024) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<HARDCODE TO END YEAR OF LCMS DATASET
     print(ts)
     def query_year(yr):
         img = dataset.filter(ee.Filter.And(
@@ -198,26 +198,26 @@ def snic_image(img):
 #        'tcw_5': im.select('tcw_ftv_' + years[0] + '_mean')
 #    }))
 
-def LTSD_decline_image(im,std_end_year):
-    years = {i: str(std_end_year - i) for i in [0, 1, 2, 3, 4]}
-    expression = '((nbr_3 - nbr_4 > 75 ) && (nbr_4 - nbr_5 > 100)) || (((tcg_3 - tcg_4 > 100 ) && (tcg_4 - tcg_5 > 100)) && ((abs(tcw_3 - tcw_4) > 100 ) && (tcw_4 - tcw_5 > 100))) || ((nbr_4 - nbr_5 > 100) && (tcg_4 - tcg_5 > 100) && (abs(tcw_4 - tcw_5) > 100) )'
-    return im.mask(im.expression(expression, {
-        'nbr_1': im.select('B1_ftv_' + years[4]),
-        'nbr_2': im.select('B1_ftv_' + years[3]),
-        'nbr_3': im.select('B1_ftv_' + years[2]),
-        'nbr_4': im.select('B1_ftv_' + years[1]),
-        'nbr_5': im.select('B1_ftv_' + years[0]),
-        'tcg_1': im.select('B2_ftv_' + years[4]),
-        'tcg_2': im.select('B2_ftv_' + years[3]),
-        'tcg_3': im.select('B2_ftv_' + years[2]),
-        'tcg_4': im.select('B2_ftv_' + years[1]),
-        'tcg_5': im.select('B2_ftv_' + years[0]),
-        'tcw_1': im.select('B3_ftv_' + years[4]),
-        'tcw_2': im.select('B3_ftv_' + years[3]),
-        'tcw_3': im.select('B3_ftv_' + years[2]),
-        'tcw_4': im.select('B3_ftv_' + years[1]),
-        'tcw_5': im.select('B3_ftv_' + years[0])
-    }))
+#def LTSD_decline_image(im,std_end_year):
+#    years = {i: str(std_end_year - i) for i in [0, 1, 2, 3, 4]}
+#    expression = '((nbr_3 - nbr_4 > 75 ) && (nbr_4 - nbr_5 > 100)) || (((tcg_3 - tcg_4 > 100 ) && (tcg_4 - tcg_5 > 100)) && ((abs(tcw_3 - tcw_4) > 100 ) && (tcw_4 - tcw_5 > 100))) || ((nbr_4 - nbr_5 > 100) && (tcg_4 - tcg_5 > 100) && (abs(tcw_4 - tcw_5) > 100) )'
+#    return im.mask(im.expression(expression, {
+#        'nbr_1': im.select('B1_ftv_' + years[4]),
+#        'nbr_2': im.select('B1_ftv_' + years[3]),
+#        'nbr_3': im.select('B1_ftv_' + years[2]),
+#        'nbr_4': im.select('B1_ftv_' + years[1]),
+#        'nbr_5': im.select('B1_ftv_' + years[0]),
+#        'tcg_1': im.select('B2_ftv_' + years[4]),
+#        'tcg_2': im.select('B2_ftv_' + years[3]),
+#        'tcg_3': im.select('B2_ftv_' + years[2]),
+#        'tcg_4': im.select('B2_ftv_' + years[1]),
+#        'tcg_5': im.select('B2_ftv_' + years[0]),
+#        'tcw_1': im.select('B3_ftv_' + years[4]),
+#        'tcw_2': im.select('B3_ftv_' + years[3]),
+#        'tcw_3': im.select('B3_ftv_' + years[2]),
+#        'tcw_4': im.select('B3_ftv_' + years[1]),
+#        'tcw_5': im.select('B3_ftv_' + years[0])
+#    }))
 
 def decline_image(param):
 #def decline_image(im, std_end_year, indices, thresholds, logic_template, num_years=5):
@@ -256,6 +256,55 @@ def decline_image(param):
     #return im.mask(im.expression("((TCW_4 - TCW_5 < 200 ) && (TCW_4 - TCW_5 > 100 )) && ((TCG_4 - TCG_5 < 200 )&&(TCG_4 - TCG_5 > 100 )) || ((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
     return im.mask(im.expression("((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
 
+def LTSD_decline_score(param,
+                       base_thresholds={'tcb': 70, 'tcg': 70, 'tcw': 70},
+                       taper_step=10,
+                       min_years_declining=2,
+                       return_score=False):
+    im = ee.Image(param['assetDir'] + param['fitted_img_p'])
+    std_end_year = param['target']
+
+    # Generate 5 consecutive years: oldest (1) to most recent (5)
+    years = {i: str(std_end_year - (5 - i)) for i in range(1, 6)}
+
+    # Select bands (note: you're using TCB for "nbr" equivalent here)
+    bands = {
+        f'tcb_{i}': im.select(f'TCB_ftv_{years[i]}') for i in range(1, 6)
+    } | {
+        f'tcg_{i}': im.select(f'TCG_ftv_{years[i]}') for i in range(1, 6)
+    } | {
+        f'tcw_{i}': im.select(f'TCW_ftv_{years[i]}') for i in range(1, 6)
+    }
+
+    # Calculate decline per year-pair with tapered thresholds
+    diffs = []
+    for i in range(1, 5):  # year-pairs: 1-2, 2-3, 3-4, 4-5
+        taper = taper_step * (4 - i)  # newest gets 0, oldest gets highest taper
+
+        t_tcb = base_thresholds['tcb'] - taper
+        t_tcg = base_thresholds['tcg'] - taper
+        t_tcw = base_thresholds['tcw'] - taper
+
+        diff_tcb = bands[f'tcb_{i}'].subtract(bands[f'tcb_{i+1}']).gt(t_tcb)
+        diff_tcg = bands[f'tcg_{i}'].subtract(bands[f'tcg_{i+1}']).gt(t_tcg)
+        diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i+1}']).abs().gt(t_tcw)
+
+
+        #year_decline = diff_tcb.And(diff_tcg).And(diff_tcw)
+        year_decline = diff_tcg.And(diff_tcw)
+        diffs.append(year_decline)
+
+    # Sum yearly decline flags into a score
+    decline_score = diffs[0]
+    for d in diffs[1:]:
+        decline_score = decline_score.add(d)
+
+    # Output: either just the score band, or mask + band
+    if return_score:
+        return decline_score.rename('decline_score')
+    else:
+        return im.updateMask(decline_score.gte(min_years_declining)) \
+                 .addBands(decline_score.rename('decline_score'))
 
 
 def get_training_points(recovery, disturbances, roi, referImage, ads_in_roi):

@@ -12,6 +12,7 @@ ee.Initialize(project=param['project_name'])
 param["platform"] = 'LS' 
 param['ltstartYear'] = 2000
 param['ltendYear'] = 2024
+param['target'] = 2024
 param['aoi'] = ee.FeatureCollection("USGS/WBD/2017/HUC06").filter(ee.Filter.eq('name','Knik Arm'))
 param['composite_params'] = {
     "start_date": date(param['ltstartYear'], 6,1),
@@ -22,7 +23,6 @@ param['composite_params'] = {
 }
 param['index'] = "NBR"
 param['fit'] = ["TCB", "TCG", "TCW","NBR"]
-param['target'] = 2024
 param['version'] = "3"
 param['pixel_scale'] = 30
 param['change_params'] = {
@@ -34,83 +34,70 @@ param['change_params'] = {
                     'preval': {'value': 300, 'operator': '>'},
                     'mmu': {'value': 10}
                 }
-### 1 ###
+param['huc6-id'] = '190803'
+#classify high mag polygons
+param['num_trees']= 200
+param['class_heavy']=0
 
+param['study_region'] = "AK" # AK or CONUS
+param['brightness_value']='2500'
+#decline
+param['configName'] = 'option3'
+param['agent_lookback'] = 5
+param['decline_template'] = '{TCB} && {TCG} || {TCW} && {NBR}'
+param['decline_thresholds'] = {'TCB':(0,0),'TCG':(5,5), 'TCW':(10,10), 'NBR':(15,15)}
+
+#kmeans
+param['kmeans_num_sample'] = 5000
+param['num_of_clusters'] = 3
+
+#polygonization
+param['bnet_polygon_mmu'] = 100
+param['bnet_buffer'] = 100
 
 #################### automated parameters ################################
 param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 
 param['fitted_img_p'] = f"predictor_fitted_img_{param['composite_params']['end_date'].year-5}_{param['composite_params']['end_date'].year}" # hardcoded -5
 param['predictor_change_img'] = f"predictor_change_img_{param['composite_params']['end_date'].year}"
-#### 1 ###
+param['disturbance_polygons_predictor']= f"predictor_disturbance_polygons_{param['composite_params']['end_date'].year}"
 
-#######################################################################
+param['attributed_polygons_predictor']= f"attributed_predictor_polygons_{param['composite_params']['end_date'].year}"
 
-#param['study_region'] = "AK" # AK or CONUS
-#param['bnet_polygon_mmu'] = 100
+param['classified_fc']= f"classified_polygons_{param['composite_params']['end_date'].year}"
+param['assetDir_t'] = f"projects/{param['project_name']}/assets/" 
+param['attributed_polygons_training']= f"attributed_training_polygons_2012"
+# classifcation high mag
+param['filtered_classes'] = f"classified_polygons_filtered_{param['composite_params']['end_date'].year}"
+param['buffered_classes'] = f"classified_polygons_buffered_{param['composite_params']['end_date'].year}"
+param['rasterize_classes'] = f"classed_img_{param['composite_params']['end_date'].year}"
 
-#param['configName'] = 'option3'
-#param['parameter_file'] = f"{param['project_name']}_parameter_file"
-#param['trainingMin'] = 75
-#param['trainingMax'] = 50000 
-#param['start_date'] = '06-01'
-#param['end_date'] = '09-01'
+# forest masking
+param['forestMaskName'] = f"bugnet_forest_mask_{param['target']}"
+param['LTSDdir'] = param['assetDir']  
+param['ltchange'] = ee.Image(f"{param['assetDir']}classed_img_{param['target']}")
+targetPlus5 = param['target']-5
+param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 1000)
+param['maskEndTime'] = int(datetime.datetime(param['target'],12,30).timestamp() * 1000)
 
-# parameters used in decline 
-#param['decline_thresholds'] = {'TCB':(0,0),'TCG':(5,5), 'TCW':(10,10), 'NBR':(15,15)}
-#param['decline_template'] = '{TCB} && {TCG} || {TCW} && {NBR}'
-#param['agent_lookback'] = 5
+#decline
+param['declineName'] = f"Decline_{param['configName']}_{param['target']}"
+param['Mask'] = ee.Image(f"{param['assetDir']}{param['forestMaskName']}")
 
-#param['trainingYear'] = 2023
-
-#param['region']= 'R10'
-#param['subregion']= 'knik-arm'
-
-#param['outputfile_prefix'] = f"Bugnet_{param['region']}_v{param['target']}-{param['version']}_Annual_Change_{param['target']}_{param['subregion']}" 
-#param['assetDir_t'] = f"projects/{param['project_name']}/assets/" 
-#param['LTSDdir'] = param['assetDir']  
-#targetPlus5 = param['target']-5
-#param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 1000)
-#param['maskEndTime'] = int(datetime.datetime(param['target'],12,30).timestamp() * 1000)
-#param['fitted_img_t'] = f"training_fitted_img_2008_2012"
-#param['training_change_img'] = f"training_change_img_2012"
-#param['disturbance_polygons_training']= f"training_disturbance_polygons_2012"
-#param['disturbance_polygons_predictor']= f"predictor_disturbance_polygons_{param['composite_params']['end_date'].year}"
-#param['attributed_polygons_training']= f"attributed_training_polygons_2012"
-#param['attributed_polygons_predictor']= f"attributed_predictor_polygons_{param['composite_params']['end_date'].year}"
-#param['source_epsg'] = 'EPSG:4326'
-#param['target_epsg'] = 'EPSG:5070'
-#param['cMonster_img_path']= "/vol/v1/lt-bnet-py/assets/aggregated_attributions.tif" 
-#param['classified_fc']= f"classified_polygons_{param['composite_params']['end_date'].year}"
-#param['num_trees']= 200
-#param['filtered_classes'] = f"classified_polygons_filtered_{param['composite_params']['end_date'].year}"
-#param['buffered_classes'] = f"classified_polygons_buffered_{param['composite_params']['end_date'].year}"
-#param['rasterize_classes'] = f"classed_img_{param['composite_params']['end_date'].year}"
-#param['direction_disturbance'] = [-1, 1, 1, 1] # -1-flips by multiplying by -1 so if disturbance need to decline with disturbance event use -1 if it already does use 1 
-#param['ads'] = ee.FeatureCollection('projects/r6-bugnet/assets/ads-r6-2023') 
-#param['LTSDname'] = param['fitted_img_p']
-#param['snicName'] = f"SNIC_{param['configName']}_{param['target']}"
-#param['declineName'] = f"Decline_{param['configName']}_{param['target']}"
-#param['kmeansNameSample'] =  f"KMeans_{param['configName']}_{param['target']}_sample" 
-#param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}"
+#kmeans
+param['kmeansNameSample'] =  f"KMeans_{param['configName']}_{param['target']}_sample" 
+param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}"
 #param['KmeansVector'] = f"KMeans_{param['configName']}_{param['target']}_vector"
-#param['kmeans_num_sample'] = 5000
-#param['num_of_clusters'] = 3
-#if param['trainingYear'] == param['target']:
-#    param['proportionName'] = f"proportions_{param['configName']}_{param['target']}_sample"
-#else:
-#    param['proportionName'] = f"proportions_{param['configName']}_{param['trainingYear']}_sample"
-#param['num_of_trainers'] = '1' 
-#param['predicted'] = f"labeled_{param['configName']}_{param['target']}"
-#param['forestMaskName'] = f"bugnet_forest_mask_{param['target']}"
-#param['maskThese'] = ['cloud', 'shadow']
-#param['Mask'] = ee.Image(f"{param['assetDir']}{param['forestMaskName']}")
-#param['buffer'] = 50
-#param['ltchange'] = ee.Image(f"{param['assetDir']}classed_img_{param['target']}")
-#param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}"
-#param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}"
-#param['bnet_buffer'] = 100
-#param['agent_distance'] = 10000
-#param['proportion_strat_sample_size'] = 5000
+
+#bugnet labeling
+param['predicted'] = f"labeled_{param['configName']}_{param['target']}"
+
+#polygonization
+param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}"
+param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}"
+
+#parameters export
+param['parameter_file'] = f"{param['project_name']}_parameter_file"
+
 if param["platform"] == 'HlS':
     param['lt_collection_params'] = {
         "sr_collection": bnet.build_sr_collection(param["ltstartYear"], param["ltendYear"],param["start_date"],param["end_date"], param["aoi"]),

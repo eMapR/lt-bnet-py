@@ -1,4 +1,3 @@
-
 import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 import os
@@ -455,7 +454,7 @@ def CreatePredictorDisturbancePolygons(param):
 		while go:
 			print('go')
 			try:
-				raise Exception("Forcing exception for testing")
+				#raise Exception("Forcing exception for testing")
 				disturbance_polygons_p = run.vectorize_disturbance(change_img_p,param)
 				print(disturbance_polygons_p.size().getInfo())
 				go = 0
@@ -710,7 +709,8 @@ def CreateForestMask(param):
 	mtbs = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
 
 	# LCMS forest mask
-	lcms_mask = bnet.lcms_forest_mask( param['target']-5, param['target'], param).clip(param['aoi'])
+	#lcms_mask = bnet.lcms_forest_mask( param['target']-5, param['target'], param).clip(param['aoi'])
+	lcms_mask = bnet.lcms_forest_mask( 2024, param['target'], param).clip(param['aoi'])
 
 	#reflectance mask
 	tassMap = bnet.tasselCapMask(param)
@@ -732,12 +732,12 @@ def CreateForestMask(param):
                 	.unmask() \
                 	.Not()
 
-		# takes the product of all the  mask
-	mask = lcms_mask.multiply(highMagChange_img) \
+	# takes the product of all the  mask
+	mask = lcms_mask.clip(param['aoi']) \
+			.multiply(highMagChange_img) \
 			.multiply(fire_img) \
 			.multiply(tassMap) \
-			.clip(param['aoi'])
-
+			.updateMask(ee.ImageCollection('JRC/GFC2020/V2').mosaic()) \
 	# export image mask
 	task_mask = ee.batch.Export.image.toAsset(
 		#image=ee.Image(param['LTSDdir'] + param['LTSDname']).select([0]).multiply(0).add(1).byte(),
@@ -830,7 +830,8 @@ def DecliningLTSD(param):
 
 	# Apply the function
 	#decline = bnet.LTSD_decline_image(ee.Image(param['assetDir'] + param['fitted_img_p']),param['ltendYear']).updateMask(param['Mask'])
-	decline = bnet.decline_image(param).updateMask(param['Mask'])
+	#decline = bnet.decline_image(param).updateMask(param['Mask'])
+	decline = bnet.LTSD_decline_score(param).updateMask(param['Mask'])
 
 	# Export the image
 	export_params = {
@@ -860,41 +861,52 @@ def buildKMeansSample(param):
 		return
 
 	# Import SNIC decline image
-	snic_decline_path = param['assetDir'] + param['declineName']
-	snic_decline = ee.Image(snic_decline_path)
+	decline_path = param['assetDir'] + param['declineName']
+	decline = ee.Image(decline_path)
 
 	# Get band names from the SNIC decline image -- slice first and last (SNIC seed and cluster bands)
-	snic_bands = snic_decline.bandNames().slice(1, -1)
+	snic_bands = decline.bandNames().slice(1, -1)
 
+	if  1==0: #untested 
+		sample = decline.reduceToVectors({
+			geometry=param['aoi'],
+			scale=param['pixel_scale'],
+			geometryType='centroid',
+			labelProperty='zone',
+			maxPixels=1e13,
+			reducer=ee.Reducer.first(),
+		});
+	if  1==0: # untested
+		sample = decline.stratifiedSample({
+			numPoints: 300,
+			classBand: 'your_band',  // could be a constant band
+			region: region,
+			scale: 30,
+			geometries: true
+		});
 
-	# Get random sample of point attributes for KMeans
-	sample = ee.FeatureCollection(
-		snic_decline.sample(region=
-			param['aoi'], 
-			scale=param['pixel_scale'], 
-			numPixels=param['kmeans_num_sample'], 
-			tileScale=12, 
-			geometries=True)
-		.randomColumn().sort('random')
-	)
 	if  1==1:
-		try:
-			if sample.size().getInfo() < 10:
+		# Get random sample of point attributes for KMeans
+		sample = ee.FeatureCollection(
+			decline.sample(region=
+				param['aoi'], 
+				scale=param['pixel_scale'], 
+				numPixels=param['kmeans_num_sample'], 
+				tileScale=12, 
+				geometries=True)
+			.randomColumn().sort('random')
+		)
+	if 1==0:
+		# Get random sample of point attributes for KMeans	
+		sample = ee.FeatureCollection(
+			decline.sampleRegions(
+				collection=param['aoi'],
+				scale=param['pixel_scale'],
+				tileScale=12,
+				geometries=True
+			).randomColumn().sort('random').toList(param['kmeans_num_sample'])
+		)
 
-				# Get random sample of point attributes for KMeans	
-				sample = ee.FeatureCollection(
-					snic_decline.sampleRegions(
-						collection=param['aoi'],
-						scale=param['pixel_scale'],
-						tileScale=12,
-						geometries=True
-					).randomColumn().sort('random').toList(param['kmeans_num_sample'])
-				)
-
-		except:
-			print('sample must be large')
-	else:
-		print(1)
 
 	export_params = {
 		'collection': sample,
@@ -918,11 +930,11 @@ def kMeansImage(param):
 		return
 
 	# Import SNIC decline image
-	snic_decline_path = param['assetDir'] + param['declineName']
-	snic_decline = ee.Image(snic_decline_path)
+	decline_path = param['assetDir'] + param['declineName']
+	decline = ee.Image(decline_path)
 
 	# Get band names from the SNIC decline image -- slice first and last (SNIC seed and cluster bands)
-	snic_bands = snic_decline.bandNames().slice(1, -1)
+	snic_bands = decline.bandNames().slice(1, -1)
 
 
 	# Train KMeans on random sample across selected bands and number of clusters
@@ -938,7 +950,7 @@ def kMeansImage(param):
 	)
 
 	# Apply KMeans clustering to the SNIC decline image and clip to AOI
-	snic_decline_kmeans = snic_decline.cluster(training).clip(param['aoi'])
+	snic_decline_kmeans = decline.cluster(training).clip(param['aoi'])
 
 	# Export image to assets
 	export_params = {
@@ -1103,15 +1115,15 @@ def predict(param):
 
 	# Define variables
 	states = param['aoi']
-	snic_decline = ee.Image(param['assetDir'] + param['declineName'])
+	decline = ee.Image(param['assetDir'] + param['declineName'])
 	kmeans_decline = ee.Image(param['assetDir'] + param['kmeansName'])
 	sample = ee.FeatureCollection(param['assetDir'] + param['proportionName']+'_sample')
 
 	# Rename the bands in the reference image
 	if '2' in param['configName']:
-		refer_image = bnet.rename_img(snic_decline, param['target'])
+		refer_image = bnet.rename_img(decline, param['target'])
 	else:
-		refer_image = bnet.rename_img_opt3(snic_decline, param['target'])
+		refer_image = bnet.rename_img_opt3(decline, param['target'])
 
 
 	# Get property names and band names
@@ -1325,7 +1337,7 @@ def calc_attri_fields(param):
 
     fields = {
       'ACRES': 0,
-      'CREATED_DATE': '12-05-2025',
+      'CREATED_DATE': '07-21-2025',
       'DAMAGE_TYPE_CODE': 0,
       'DCA_CODE': 0,
       'HOST_CODE': 0,
@@ -1336,6 +1348,7 @@ def calc_attri_fields(param):
       'MODIFIED_DATE': '',
       'NOTES': '',
       'PERCENT_AFFECTED_CODE': 2,
+      'SUB_REGION': param['sub_region'],
       'REGION_ID': param['study_region'],
       'SURVEY_YEAR': param['target'],
       'US_AREA': 'CONUS',

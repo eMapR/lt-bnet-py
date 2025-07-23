@@ -20,7 +20,7 @@ param['start_date'] = '06-01'
 param['end_date'] = '09-01'
 param['ltstartYear'] = 2000
 param['ltendYear'] = 2024
-
+param['class_heavy']=1
 # parameters used in decline 
 param['target'] = 2024
 param['decline_thresholds'] = {'TCB':(0,0),'TCG':(5,5), 'TCW':(10,10), 'NBR':(15,15)}
@@ -44,7 +44,7 @@ param['change_params'] = {
                     'preval': {'value': 300, 'operator': '>'},
                     'mmu': {'value': 10}
                 }
-param['brightness_value']='3500'
+param['brightness_value']='2200'
 param['pixel_scale'] = 30
 param['region']= 'R6'
 param['subregion']= 'columbia-mts'

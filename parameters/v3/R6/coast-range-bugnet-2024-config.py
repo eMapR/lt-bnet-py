@@ -39,10 +39,10 @@ param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
                     'years': {'start': param['composite_params']["end_date"].year-6, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 200, 'operator': '>' },
+                    'mag': {'value': 100, 'operator': '>' },
                     'dur': {'value': 4, 'operator': '<'},
-                    'preval': {'value': 300, 'operator': '>'},
-                    'mmu': {'value': 10}
+                    'preval': {'value': 100, 'operator': '>'},
+                    'mmu': {'value': 8}
                 }
 
 param['brightness_value']='3500'

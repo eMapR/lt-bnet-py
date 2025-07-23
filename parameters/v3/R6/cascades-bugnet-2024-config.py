@@ -45,7 +45,7 @@ param['change_params'] = {
                     'preval': {'value': 300, 'operator': '>'},
                     'mmu': {'value': 10}
                 }
-param['brightness_value']='3500'
+param['brightness_value']='2200'
 param['pixel_scale'] = 30
 param['region']= 'R6'
 param['subregion']= 'cascades'
