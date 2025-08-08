@@ -452,13 +452,13 @@ def CreatePredictorDisturbancePolygons(param):
 		change_img_p = ee.Image(param["assetDir"]+param['predictor_change_img'])
 		go = 1
 		while go:
-			print('go')
 			try:
-				#raise Exception("Forcing exception for testing")
 				disturbance_polygons_p = run.vectorize_disturbance(change_img_p,param)
 				print(disturbance_polygons_p.size().getInfo())
+				if disturbance_polygons_p.size().getInfo() > 50000:
+					raise Exception("Forcing exception for testing")
 				go = 0
-				task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
+				task = run.export_feature_collection(fc_simplified,param['disturbance_polygons_predictor'],param['assetDir'])
 				return task
 
 			except:
