@@ -3,15 +3,15 @@ from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 from datetime import date
 import datetime 
 param = {}
-param['project_name'] = 'blue-mts-bugnet'
+param['project_name'] = 'eastern-cascades-wa-bugnet'
 ee.Initialize(project=param['project_name'])
-param["platform"] = 'LS'
+param["platform"] = 'S2-10'
 param['ltstartYear'] = 2000
-param['ltendYear'] = 2024
-param['target'] = 2024
-param['aoi'] = ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name','Blue Mountains'))
+param['ltendYear'] = 2025
+param['target'] = 2025
+param['aoi'] = ee.FeatureCollection(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name', 'Eastern Cascades Slopes and Foothills')).geometry().intersection(ee.FeatureCollection("TIGER/2018/States").filter(ee.Filter.eq('NAME', 'Washington')).geometry(), ee.ErrorMargin(1)))
 param['composite_params'] = {
-    "start_date": date(param['ltstartYear'], 5,1),
+    "start_date": date(param['ltstartYear'], 7,15),
     "end_date": date(param['ltendYear'], 9,20),
     "area_of_interest": param['aoi'],
     #"mask_labels": ['cloud', 'shadow', 'snow', 'water'],
@@ -19,19 +19,20 @@ param['composite_params'] = {
 }
 param['index'] = "NBR"
 param['fit'] = ["TCB", "TCG", "TCW","NBR"]
-param['version'] = "3"
+param['version'] = "1"
 param['pixel_scale'] = 30
 param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
                     'years': {'start': param['composite_params']["end_date"].year-6, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 200, 'operator': '>' },
-                    'dur': {'value': 4, 'operator': '<'},
+                    'mag': {'value': 150, 'operator': '>' },
+                    'dur': {'value': 3, 'operator': '<'},
                     'preval': {'value': 300, 'operator': '>'},
                     'mmu': {'value': 10}
                 }
 
-param['subregion']= 'blue-mts'
+param['subregion']= 'easternCascadesWA'
+param['sub_region']="easternCascadesWA"
 
 #classify high mag polygons
 param['num_trees']= 200
@@ -48,7 +49,7 @@ param['kmeans_num_sample'] = 5000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 100
+param['bnet_polygon_mmu'] = 15
 param['bnet_buffer'] = 100
 
 #################### automated parameters ################################
@@ -88,8 +89,8 @@ param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}"
 param['predicted'] = f"labeled_{param['configName']}_{param['target']}"
 
 #polygonization
-param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}"
-param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}"
+param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}_{param['bnet_polygon_mmu']}mmu"
+param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_{param['bnet_polygon_mmu']}mmu"
 
 #parameters export
 param['parameter_file'] = f"{param['project_name']}_parameter_file"

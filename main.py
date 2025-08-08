@@ -867,25 +867,25 @@ def buildKMeansSample(param):
 	# Get band names from the SNIC decline image -- slice first and last (SNIC seed and cluster bands)
 	snic_bands = decline.bandNames().slice(1, -1)
 
-	if  1==0: #untested 
-		sample = decline.reduceToVectors({
+	if  1==1: #untested 
+		sample = decline.reduceToVectors(
 			geometry=param['aoi'],
 			scale=param['pixel_scale'],
 			geometryType='centroid',
 			labelProperty='zone',
 			maxPixels=1e13,
 			reducer=ee.Reducer.first(),
-		});
+		);
 	if  1==0: # untested
-		sample = decline.stratifiedSample({
-			numPoints: 300,
-			classBand: 'your_band',  // could be a constant band
-			region: region,
-			scale: 30,
-			geometries: true
-		});
+		sample = decline.stratifiedSample(
+			numPoints=300,
+			classBand='your_band', 
+			region=region,
+			scale=30,
+			geometries=true
+		);
 
-	if  1==1:
+	if  1==0:
 		# Get random sample of point attributes for KMeans
 		sample = ee.FeatureCollection(
 			decline.sample(region=
@@ -1352,6 +1352,7 @@ def calc_attri_fields(param):
       'REGION_ID': param['study_region'],
       'SURVEY_YEAR': param['target'],
       'US_AREA': 'CONUS',
+      'MMU': param['bnet_polygon_mmu'], 
       #'count': 14,
       #'bugnet_label': 1
     };
