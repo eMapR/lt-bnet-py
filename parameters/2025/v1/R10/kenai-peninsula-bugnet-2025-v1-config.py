@@ -2,55 +2,61 @@ import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 from datetime import date
 import datetime 
+
+
 param = {}
-param['project_name'] = 'eastern-cascades-wa-bugnet'
+
+param['project_name'] = 'kenai-peninsula-bugnet'
 ee.Initialize(project=param['project_name'])
-param["platform"] = 'S2-10'
+
+param["platform"] = 'LS' 
 param['ltstartYear'] = 2000
-param['ltendYear'] = 2025
-param['target'] = 2025
-param['aoi'] = ee.FeatureCollection(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name', 'Eastern Cascades Slopes and Foothills')).geometry().intersection(ee.FeatureCollection("TIGER/2018/States").filter(ee.Filter.eq('NAME', 'Washington')).geometry(), ee.ErrorMargin(1)))
+param['ltendYear'] = 2024
+param['target'] = 2024
+param['aoi'] = ee.FeatureCollection("USGS/WBD/2017/HUC06").filter(ee.Filter.eq('name','Kenai Peninsula'))
 param['composite_params'] = {
-    "start_date": date(param['ltstartYear'], 7,15),
+    "start_date": date(param['ltstartYear'], 6,1),
     "end_date": date(param['ltendYear'], 9,20),
     "area_of_interest": param['aoi'],
-    #"mask_labels": ['cloud', 'shadow', 'snow', 'water'],
-    #"debug": True
+    "mask_labels": ['cloud', 'shadow', 'snow', 'water'],
+    "debug": True
 }
 param['index'] = "NBR"
 param['fit'] = ["TCB", "TCG", "TCW","NBR"]
-param['version'] = "1"
-param['pixel_scale'] = 10
+param['version'] = "3"
+param['pixel_scale'] = 30
 param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
                     'years': {'start': param['composite_params']["end_date"].year-6, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 150, 'operator': '>' },
-                    'dur': {'value': 3, 'operator': '<'},
+                    'mag': {'value': 200, 'operator': '>' },
+                    'dur': {'value': 4, 'operator': '<'},
                     'preval': {'value': 300, 'operator': '>'},
                     'mmu': {'value': 10}
                 }
-
-param['subregion']= 'easternCascadesWA'
-param['sub_region']="easternCascadesWA"
-
+param['huc6-id'] = '190803'
+param['subregion']= 'kenai-peninsula'
 #classify high mag polygons
 param['num_trees']= 200
 param['class_heavy']=0
 
-param['study_region'] = "CONUS" # AK or CONUS
+param['study_region'] = "AK" # AK or CONUS
 param['brightness_value']='2500'
+#decline
 param['configName'] = 'option3'
 param['agent_lookback'] = 5
 param['decline_template'] = '{TCB} && {TCG} || {TCW} && {NBR}'
 param['decline_thresholds'] = {'TCB':(0,0),'TCG':(5,5), 'TCW':(10,10), 'NBR':(15,15)}
 
+#kmeans
 param['kmeans_num_sample'] = 5000
 param['num_of_clusters'] = 3
+param['ads'] = ee.FeatureCollection('projects/r6-bugnet/assets/ads-r6-2023') 
 
 #polygonization
-param['bnet_polygon_mmu'] = 15
+param['bnet_polygon_mmu'] = 100
 param['bnet_buffer'] = 100
+
 
 #################### automated parameters ################################
 param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 
@@ -89,11 +95,12 @@ param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}"
 param['predicted'] = f"labeled_{param['configName']}_{param['target']}"
 
 #polygonization
-param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}_{param['bnet_polygon_mmu']}mmu"
-param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_{param['bnet_polygon_mmu']}mmu"
+param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}"
+param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}"
 
 #parameters export
 param['parameter_file'] = f"{param['project_name']}_parameter_file"
+
 
 if param["platform"] == 'HlS':
     param['lt_collection_params'] = {
@@ -153,5 +160,5 @@ else:
         }
     }
 
-
+#print(param)
 

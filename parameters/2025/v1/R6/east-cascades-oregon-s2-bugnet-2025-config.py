@@ -3,13 +3,13 @@ from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 from datetime import date
 import datetime 
 param = {}
-param['project_name'] = 'eastern-cascades-wa-bugnet'
+param['project_name'] = 'eastern-cascades-bugnet'
 ee.Initialize(project=param['project_name'])
 param["platform"] = 'S2-10'
 param['ltstartYear'] = 2000
 param['ltendYear'] = 2025
 param['target'] = 2025
-param['aoi'] = ee.FeatureCollection(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name', 'Eastern Cascades Slopes and Foothills')).geometry().intersection(ee.FeatureCollection("TIGER/2018/States").filter(ee.Filter.eq('NAME', 'Washington')).geometry(), ee.ErrorMargin(1)))
+param['aoi'] = ee.FeatureCollection(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name', 'Eastern Cascades Slopes and Foothills')).geometry().intersection(ee.FeatureCollection("TIGER/2018/States").filter(ee.Filter.eq('NAME', 'Oregon')).geometry(), ee.ErrorMargin(1)))
 param['composite_params'] = {
     "start_date": date(param['ltstartYear'], 7,15),
     "end_date": date(param['ltendYear'], 9,20),
