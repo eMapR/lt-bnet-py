@@ -987,78 +987,67 @@ def DecliningLTSD(param):
 # Sample for Kmeans build 
 ##############################################################################
 def buildKMeansSample(param):
-	# check to see if output asset exists
-	exists = asset_exists(param['assetDir'] + param['kmeansName']+"_sample")
+    # Bail if it already exists
+    if asset_exists(param['assetDir'] + param['kmeansName'] + "_sample"):
+        return
 
-	if exists:
-		return
+    decline = ee.Image(param['assetDir'] + param['declineName'])
 
-	# Import SNIC decline image
-	decline_path = param['assetDir'] + param['declineName']
-	decline = ee.Image(decline_path)
+    attempts = [
+        ("reduceToVectors-centroids", lambda: decline.reduceToVectors(
+            geometry=param['aoi'],
+            scale=param['pixel_scale'],
+            geometryType='centroid',
+            labelProperty='zone',
+            maxPixels=1e13,
+            reducer=ee.Reducer.first(),
+        )),
+        ("stratifiedSample", lambda: decline.stratifiedSample(
+            numPoints=param['kmeans_num_sample'],
+            classBand=param['class_band'],    # must exist in `decline`
+            region=param['aoi'],
+            scale=param['pixel_scale'],
+            geometries=True
+        )),
+        ("sample", lambda: ee.FeatureCollection(
+            decline.sample(
+                region=param['aoi'],
+                scale=param['pixel_scale'],
+                numPixels=param['kmeans_num_sample'],
+                tileScale=12,
+                geometries=True
+            ).randomColumn().sort('random')
+        )),
+        ("sampleRegions", lambda: ee.FeatureCollection(
+            decline.sampleRegions(
+                collection=param['aoi'],        # must be a FeatureCollection
+                scale=param['pixel_scale'],
+                geometries=True
+            ).randomColumn().sort('random').toList(param['kmeans_num_sample'])
+        )),
+    ]
 
-	# Get band names from the SNIC decline image -- slice first and last (SNIC seed and cluster bands)
-	snic_bands = decline.bandNames().slice(1, -1)
+    sample = None
+    for name, fn in attempts:
+        try:
+            sample = fn()
+            # Validate it's non-empty if you want:
+            # if ee.Number(sample.size()).getInfo() == 0: raise ValueError("Empty sample")
+            print(f"Using method: {name}")
+            break
+        except Exception as e:
+            print(f"{name} failed: {e}")
 
-	try: 
-		sample = decline.reduceToVectors(
-			geometry=param['aoi'],
-			scale=param['pixel_scale'],
-			geometryType='centroid',
-			labelProperty='zone',
-			maxPixels=1e13,
-			reducer=ee.Reducer.first(),
-		);
-	except:
-		print("try another sampling method ")
-	try: # untested
-		sample = decline.stratifiedSample(
-			numPoints=param['kmeans_num_sample'],
-			classBand='your_band', 
-			region=region,
-			scale=30,
-			geometries=true
-		);
+    if sample is None:
+        raise RuntimeError("All sampling methods failed.")
 
-	except:
-		print("try another sampling method ")
-	try:
-		# Get random sample of point attributes for KMeans
-		sample = ee.FeatureCollection(
-			decline.sample(region=
-				param['aoi'], 
-				scale=param['pixel_scale'], 
-				numPixels=param['kmeans_num_sample'], 
-				tileScale=12, 
-				geometries=True)
-			.randomColumn().sort('random')
-		)
-	except:
-		print("try another sampling method ")
-	try:
-		# Get random sample of point attributes for KMeans	
-		sample = ee.FeatureCollection(
-			decline.sampleRegions(
-				collection=param['aoi'],
-				scale=param['pixel_scale'],
-				tileScale=12,
-				geometries=True
-			).randomColumn().sort('random').toList(param['kmeans_num_sample'])
-		)
-
-	except:
-		print("try another sampling method ")
-
-	export_params = {
-		'collection': sample,
-		'description': param['kmeansName']+"_sample",
-		'assetId': param['assetDir'] + param['kmeansName']+"_sample"
-	}
-
-
-	task_kmeans_sample = ee.batch.Export.table.toAsset(**export_params)
-	task_kmeans_sample.start()
-	return task_kmeans_sample
+    task = ee.batch.Export.table.toAsset(
+        collection=sample,
+        description=param['kmeansName'] + "_sample",
+        assetId=param['assetDir'] + param['kmeansName'] + "_sample"
+    )
+    task.start()
+    return task
 
 ##############################################################################
 # make KMEANS iamge 

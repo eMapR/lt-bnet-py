@@ -51,7 +51,7 @@ param['decline_step'] = 10
 param['decline_thresholds'] = {'tcb': 70, 'tcg': 70, 'tcw': 70} #70,70,70
 
 
-param['kmeans_num_sample'] = 1000
+param['kmeans_num_sample'] = 500
 param['num_of_clusters'] = 3
 
 #polygonization
@@ -66,7 +66,7 @@ param['ADS_path'] = {"on":0,"path": f"projects/{param['project_name']}/assets/ad
 
 #################### automated parameters ################################
 
-param['assetDir'] = f"A_projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 
+param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 
 param['fitted_img_p'] = f"A_predictor_fitted_img_{param['composite_params']['end_date'].year-5}_{param['composite_params']['end_date'].year}" # hardcoded -5
 param['predictor_change_img'] = f"A_predictor_change_img_{param['composite_params']['end_date'].year}"
 
