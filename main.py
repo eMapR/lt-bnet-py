@@ -589,7 +589,6 @@ def CreatePredictorDisturbancePolygons(param):
 						counter += 1
 					print(subregions)
 					grid = run.export_feature_collection(split_fc,'grid_'+split_d,param['assetDir'])
-					grid.start()
 					try:
 						go = 0
 						return [4,subtasks,subregions]
