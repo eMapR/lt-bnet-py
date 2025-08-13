@@ -921,7 +921,7 @@ def buildKMeansSample(param):
 	# Get band names from the SNIC decline image -- slice first and last (SNIC seed and cluster bands)
 	snic_bands = decline.bandNames().slice(1, -1)
 
-	if  1==1: #untested 
+	if  1==0: #untested 
 		sample = decline.reduceToVectors(
 			geometry=param['aoi'],
 			scale=param['pixel_scale'],
@@ -939,7 +939,7 @@ def buildKMeansSample(param):
 			geometries=true
 		);
 
-	if  1==0:
+	if  1==1:
 		# Get random sample of point attributes for KMeans
 		sample = ee.FeatureCollection(
 			decline.sample(region=

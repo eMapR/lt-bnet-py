@@ -42,8 +42,8 @@ param['study_region'] = "CONUS" # AK or CONUS
 param['brightness_value']='2500'
 param['configName'] = 'option3'
 param['agent_lookback'] = 5
-param['decline_step'] = 20
-param['decline_thresholds'] = {'tcb': 70, 'tcg': 50, 'tcw': 50}
+param['decline_step'] = 10
+param['decline_thresholds'] = {'tcb': 70, 'tcg': 70, 'tcw': 70}
 
 param['kmeans_num_sample'] = 5000
 param['num_of_clusters'] = 3
@@ -93,7 +93,7 @@ param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}_mag{param['decli
 param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu"
 
 #parameters export
-param['parameter_file'] = f"{param['project_name']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu_parameter_file"
+param['parameter_file'] = f"{param['project_name']}_mag{param['decline_thresholds']['tcw']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu_parameter_file"
 
 if param["platform"] == 'HlS':
     param['lt_collection_params'] = {

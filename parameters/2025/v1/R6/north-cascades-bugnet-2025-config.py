@@ -47,8 +47,9 @@ param['study_region'] = "CONUS" # AK or CONUS
 param['brightness_value']='2500'
 param['configName'] = 'option3'
 param['agent_lookback'] = 5
-param['decline_template'] = '{TCB} && {TCG} || {TCW} && {NBR}'
-param['decline_thresholds'] = {'TCB':(0,0),'TCG':(5,5), 'TCW':(10,10), 'NBR':(15,15)}
+param['decline_step'] = 10
+param['decline_thresholds'] = {'tcb': 70, 'tcg': 50, 'tcw': 50} #70,70,70
+
 
 param['kmeans_num_sample'] = 5000
 param['num_of_clusters'] = 3
@@ -59,6 +60,7 @@ param['bnet_buffer'] = 100
 
 
 param['subregion']= 'north-cascades'
+param['sub_region']= 'north-cascades'
 
 #################### automated parameters ################################
 param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 
@@ -85,20 +87,23 @@ param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 10
 param['maskEndTime'] = int(datetime.datetime(param['target'],12,30).timestamp() * 1000)
 
 #decline
-param['declineName'] = f"Decline_{param['configName']}_{param['target']}"
+param['declineName'] = f"Decline_{param['configName']}_{param['target']}_mag{param['decline_thresholds']['tcw']}"
 param['Mask'] = ee.Image(f"{param['assetDir']}{param['forestMaskName']}")
 
 #kmeans
-param['kmeansNameSample'] =  f"KMeans_{param['configName']}_{param['target']}_sample" 
-param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}"
+param['kmeansNameSample'] =  f"KMeans_{param['configName']}_{param['target']}_mag{param['decline_thresholds']['tcw']}_sample" 
+param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}_mag{param['decline_thresholds']['tcw']}"
 #param['KmeansVector'] = f"KMeans_{param['configName']}_{param['target']}_vector"
 
 #bugnet labeling
-param['predicted'] = f"labeled_{param['configName']}_{param['target']}"
+param['predicted'] = f"labeled_{param['configName']}_{param['target']}_mag{param['decline_thresholds']['tcw']}"
 
 #polygonization
-param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}_{param['bnet_polygon_mmu']}mmu"
-param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_{param['bnet_polygon_mmu']}mmu"
+param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu"
+param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu"
+
+#parameters export
+param['parameter_file'] = f"{param['project_name']}_mag{param['decline_thresholds']['tcw']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu_parameter_file"
 
 #parameters export
 param['parameter_file'] = f"{param['project_name']}_parameter_file"
