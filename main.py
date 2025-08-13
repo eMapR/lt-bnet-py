@@ -61,6 +61,9 @@ def flatten_dict(d, parent_key='', sep='_'):
 
     return dict(transformed_list)
 
+##############################################################################
+# 
+##############################################################################
 def dict_to_feature_collection(param):
     #(data_dict, asset_path)
     """
@@ -126,6 +129,9 @@ def list_assets(params):
     return asset_list
 
 
+##############################################################################
+# 
+##############################################################################
 def get_user_input(prompt, options):
     """Utility function to get user input with validation."""
     print(prompt)
@@ -138,6 +144,9 @@ def get_user_input(prompt, options):
     return options[int(choice) - 1]
 
 
+##############################################################################
+# 
+##############################################################################
 def export_to_drive(prefix, asset, folder,param):
     """Exports an asset to Google Drive."""
     if asset['type'] == 'TABLE':
@@ -187,6 +196,9 @@ def export_to_drive(prefix, asset, folder,param):
     print(f"Export task started for asset: {asset['id']} to Google Drive folder: {folder}")
 
 
+##############################################################################
+# 
+##############################################################################
 def export_to_cloud_storage(asset, bucket, path):
     """Exports an asset to Google Cloud Storage."""
     if asset['type'] == 'TABLE':
@@ -214,6 +226,9 @@ def export_to_cloud_storage(asset, bucket, path):
     print(f"Export task started for asset: {asset['id']} to Cloud Storage bucket: {bucket}/{path}")
 
 
+##############################################################################
+# 
+##############################################################################
 def export_assets(params):
     """Main function to guide the user through exporting assets."""
     # Ask the user for export location
@@ -282,6 +297,32 @@ def wait_for_task(task):
         print(f"Task {task.id} failed with error: {task.status()['error_message']}")
         return 0
 
+##############################################################################
+# delete assets
+##############################################################################
+
+def delete_assets(asset_ids, dry_run=False, pause_sec=0.2):
+    """
+    Delete a list of Earth Engine assets.
+    - dry_run=True: only prints what would be deleted.
+    - pause_sec: tiny pause between deletions to avoid rate limits.
+    """
+    # Ensure plain Python strings
+    asset_ids = [str(a) for a in asset_ids]
+
+    for aid in asset_ids:
+        try:
+            # Check existence first (avoids noisy 404s)
+            ee.data.getAsset(aid)  # raises if missing
+            if dry_run:
+                print(f"[dry-run] would delete: {aid}")
+            else:
+                ee.data.deleteAsset(aid)
+                print(f"deleted: {aid}")
+                time.sleep(pause_sec)
+        except Exception as e:
+            print(f"skip {aid}: {e}")
+
 
 ##############################################################################
 # Wait for Task to complete
@@ -329,6 +370,9 @@ def CreatePredictorFittedImagery(lt,param):
 		task = run.export_image(fitted_img_p,param, param['assetDir'],param['fitted_img_p'],param['pixel_scale'])
 		return task
 
+##############################################################################
+# 
+##############################################################################
 def CreateTrainingChangeImagery(lt,param):
 	# check to see if output asset exists
 	exists = asset_exists(param["assetDir_t"]+param['training_change_img'])
@@ -344,6 +388,9 @@ def CreateTrainingChangeImagery(lt,param):
 		task = run.export_image(change_img_t, param, param['assetDir_t'],param['training_change_img'],param['pixel_scale'])
 		return task
 
+##############################################################################
+# 
+##############################################################################
 def CreatePredictorChangeImagery(lt,param):
 	# check to see if output asset exists
 	exists = asset_exists(param["assetDir"]+param['predictor_change_img'])
@@ -360,6 +407,9 @@ def CreatePredictorChangeImagery(lt,param):
 
 		return task
 
+##############################################################################
+# 
+##############################################################################
 def CreateTrainingDisturbancePolygons(param):
 	# check to see if output asset exists
 	exists = asset_exists(param["assetDir_t"]+param['disturbance_polygons_training'])
@@ -375,8 +425,10 @@ def CreateTrainingDisturbancePolygons(param):
 		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir_t'])
 		return task
 
+##############################################################################
+# 
+##############################################################################
 # Grid a feature with square cells of `cell_size` meters (uses EPSG:3857)
-
 def grid_over_feature(feature, cell_size_m, proj_epsg='EPSG:3857'):
     """Build a covering grid (square cells ~cell_size_m) over one feature."""
     feature = ee.Feature(feature)
@@ -407,6 +459,9 @@ def grid_over_feature(feature, cell_size_m, proj_epsg='EPSG:3857'):
 
     return ee.FeatureCollection(ee.List.sequence(0, size.subtract(1)).map(_with_id))
 
+##############################################################################
+# 
+##############################################################################
 def split_collection_covering_grid(fc, cell_size_m, proj_epsg='EPSG:3857'):
     """Apply coveringGrid to every feature in a collection and flatten."""
     fc = ee.FeatureCollection(fc)
@@ -415,6 +470,9 @@ def split_collection_covering_grid(fc, cell_size_m, proj_epsg='EPSG:3857'):
     return ee.FeatureCollection(fc.map(_split).flatten())
 
 
+##############################################################################
+# 
+##############################################################################
 # Function to split a feature horizontally into N parts
 def split_feature_horizontally_n(feature, n_splits):
     bounds = feature.geometry().bounds()
@@ -442,12 +500,18 @@ def split_feature_horizontally_n(feature, n_splits):
     splits = ee.List.sequence(0, n_splits.subtract(1)).map(make_split)
     return ee.FeatureCollection(splits)
 
+##############################################################################
+# 
+##############################################################################
 # Function to apply horizontal split to a collection and flatten result
 def split_collection_horizontally_n(fc, n_splits):
     def split_and_collect(feature):
         return split_feature_horizontally_n(feature, ee.Number(n_splits))
     return fc.map(split_and_collect).flatten()
 
+##############################################################################
+# 
+##############################################################################
 # Function to split a feature vertically into N parts
 def split_feature_vertically_n(feature, n_splits):
     bounds = feature.geometry().bounds()
@@ -475,6 +539,9 @@ def split_feature_vertically_n(feature, n_splits):
     splits = ee.List.sequence(0, n_splits.subtract(1)).map(make_split)
     return ee.FeatureCollection(splits)
 
+##############################################################################
+# 
+##############################################################################
 # Function to apply split to a collection and flatten result
 def split_collection_vertically_n(fc, n_splits):
     def split_and_collect(feature):
@@ -482,6 +549,9 @@ def split_collection_vertically_n(fc, n_splits):
     return fc.map(split_and_collect).flatten()
 
 
+##############################################################################
+# 
+##############################################################################
 def CreatePredictorDisturbancePolygons(param):
 	# check to see if output asset exists
 	exists = asset_exists(param["assetDir"]+param['disturbance_polygons_predictor'])
@@ -603,6 +673,9 @@ def CreatePredictorDisturbancePolygons(param):
 				#	return [task, subregions]
 
 
+##############################################################################
+# 
+##############################################################################
 def merge_selected_feature_collections(asset_folder, id_suffixes, output_asset_id, description="MergedExport"):
     # List assets in the folder
     asset_list = ee.data.listAssets({'parent': asset_folder})['assets']
@@ -719,6 +792,9 @@ def filter_classes(param):
 
 		return task
 
+##############################################################################
+# 
+##############################################################################
 def buffer_classed_polygons(param):
 	# check to see if output asset exists
 	exists = asset_exists(param["assetDir"]+param['buffered_classes'])
@@ -732,6 +808,9 @@ def buffer_classed_polygons(param):
 		task = run.export_feature_collection(fc2, param['buffered_classes'], param['assetDir'])
 		return task
 
+##############################################################################
+# 
+##############################################################################
 def rasterize_classed_polygons(param):
 	# check to see if output asset exists
 	exists = asset_exists(param["assetDir"]+param['rasterize_classes'])
@@ -897,9 +976,9 @@ def DecliningLTSD(param):
 		'maxPixels': 1e13
 	}
 
-	task_decline_snic = ee.batch.Export.image.toAsset(**export_params)
+	task_decline = ee.batch.Export.image.toAsset(**export_params)
 
-	task_decline_snic.start()
+	task_decline.start()
 
 	return task_decline_snic
 
@@ -921,7 +1000,7 @@ def buildKMeansSample(param):
 	# Get band names from the SNIC decline image -- slice first and last (SNIC seed and cluster bands)
 	snic_bands = decline.bandNames().slice(1, -1)
 
-	if  1==0: #untested 
+	try: 
 		sample = decline.reduceToVectors(
 			geometry=param['aoi'],
 			scale=param['pixel_scale'],
@@ -930,16 +1009,20 @@ def buildKMeansSample(param):
 			maxPixels=1e13,
 			reducer=ee.Reducer.first(),
 		);
-	if  1==0: # untested
+	except:
+		print("try another sampling method ")
+	try: # untested
 		sample = decline.stratifiedSample(
-			numPoints=300,
+			numPoints=param['kmeans_num_sample'],
 			classBand='your_band', 
 			region=region,
 			scale=30,
 			geometries=true
 		);
 
-	if  1==1:
+	except:
+		print("try another sampling method ")
+	try:
 		# Get random sample of point attributes for KMeans
 		sample = ee.FeatureCollection(
 			decline.sample(region=
@@ -950,7 +1033,9 @@ def buildKMeansSample(param):
 				geometries=True)
 			.randomColumn().sort('random')
 		)
-	if 1==0:
+	except:
+		print("try another sampling method ")
+	try:
 		# Get random sample of point attributes for KMeans	
 		sample = ee.FeatureCollection(
 			decline.sampleRegions(
@@ -961,6 +1046,8 @@ def buildKMeansSample(param):
 			).randomColumn().sort('random').toList(param['kmeans_num_sample'])
 		)
 
+	except:
+		print("try another sampling method ")
 
 	export_params = {
 		'collection': sample,
@@ -1268,6 +1355,12 @@ def get_unique_pixel_values(param, region=None, scale=30):
     return unique_values
 
 
+##############################################################################
+# 
+##############################################################################
+##############################################################################
+# 
+##############################################################################
 def prompt_reclassification_mapping(unique_values):
     """
     Prompts user to enter new values for each unique pixel value.
@@ -1297,6 +1390,9 @@ def prompt_reclassification_mapping(unique_values):
     return unique_values, new_values
 
 
+##############################################################################
+# 
+##############################################################################
 def reclassify_image(params, from_values, to_values):
     """
     Reclassifies pixel values in a band using remap().
@@ -1381,12 +1477,20 @@ def extract_zonal_stats(image, feature_collection, stat_type, output_field_name,
     return zonal_stats
 
 # Define the function to split multi-polygon into individual polygons
-def split_multi_polygon(feature):
-    geometries = feature.geometry().geometries()
-    geometries_list = geometries.getInfo()  # Convert to a list
-    features = [ee.Feature(ee.Geometry(geometry)) for geometry in geometries_list]
-    return ee.FeatureCollection(features)
+def split_multi_polygon_ss(feature):
+    """Split a (multi)polygon Feature into single-part polygons on the server."""
+    geom  = ee.Geometry(feature.geometry())
+    parts = ee.List(geom.geometries())  # stays server-side
+    props = feature.toDictionary()
+    fc    = ee.FeatureCollection(parts.map(
+        lambda g: ee.Feature(ee.Geometry(g)).set(props)
+    ))
+    return fc
 
+
+##############################################################################
+# 
+##############################################################################
 def calc_attri_fields(param):
 
     fields = {
@@ -1413,44 +1517,123 @@ def calc_attri_fields(param):
 
     return fields
 
+##############################################################################
+# 
+##############################################################################
+#def export_buffer_buckets(param):
 def buffer_bnet_polygons(param):
-	# check to see if output asset exists
-	exists = asset_exists(param['assetDir'] + param['bnet_buffered_polygons'])
+    # check to see if output asset exists
+    exists = asset_exists(param['assetDir'] + param['bnet_buffered_polygons'])
 
-	if exists:
-		return
-	fc = ee.FeatureCollection(param['assetDir'] + param['bnet_polygonized']).filter(ee.Filter.gt('count',param['bnet_polygon_mmu']))
+    if exists:
+        return 0, 0
 
-	def buffer_f(ft):
-		polygon = ft.buffer(param['bnet_buffer'])
-		return polygon;
+    asset_dir   = param['assetDir']
+    base_name   = param['bnet_buffered_polygons']          # e.g., "bnet_buffers_2025"
+    buckets     = int(param.get('buckets', 24))            # tune to stay below 10MB/payload
+    buffer_m    = float(param['bnet_buffer'])
+    max_err     = float(param.get('buffer_max_error', 10)) # meters
+    mmu         = float(param['bnet_polygon_mmu'])
 
-	fc_buffered = fc.map(buffer_f)
+    # Source features (filter your mmu as before)
+    fc = (ee.FeatureCollection(asset_dir + param['bnet_polygonized'])
+            .filter(ee.Filter.gt('count', mmu)))
 
-	buffer_dissovled = ee.FeatureCollection(fc_buffered.geometry().dissolve())
+    # Deterministic partition 0..buckets-1
+    fc = (fc.randomColumn('rand', 42)
+            .map(lambda f: f.set('bucket', ee.Number(f.get('rand')).multiply(buckets).floor())))
 
-	# Apply the function to split the multi-polygon feature
-	polygons_fc = split_multi_polygon(buffer_dissovled.first())
+    tasks = []
+    asset_ids = []
+    for b in range(buckets):
+        sub = fc.filter(ee.Filter.eq('bucket', b)).map(
+            lambda ft: ft.setGeometry(
+                ft.geometry().buffer(buffer_m, max_err)  # OK to add .geodesic(False) if you want planar
+            )
+        )
+        # Skip empty buckets (prevents "empty collection" export errors)
+        size = ee.Number(sub.size())
+        # Create a per-bucket asset name
+        shard_id = f"{asset_dir}{base_name}_shard_{b:03d}"
+        asset_ids.append(shard_id)
 
-	img = ee.Image(param['assetDir'] + param['predicted'])
-	fc_bnet = extract_zonal_stats(img, polygons_fc, "mode", "bnet_label",param)
+        # Gate on size > 0 server-side
+        # NB: Export.table.toAsset must be constructed client-side, so we wrap with getInfo() guard:
+        if size.getInfo() > 0:
+            task = ee.batch.Export.table.toAsset(
+                collection=sub,
+                description=f"{base_name}_shard_{b:03d}",
+                assetId=shard_id
+            )
+            task.start()
+            tasks.append(task)
+        # else: nothing to export for this shard
 
-	# Define the function to add fields to each feature
-	def add_fields(feature):
-		return feature.set(calc_attri_fields(param))
+    return tasks, asset_ids
 
-	# Apply the function to each feature in the collection
-	fc_attri = fc_bnet.map(add_fields)
+##############################################################################
+# 
+##############################################################################
+def merge_buffer_buckets_and_finish(param, asset_ids):
+    # check to see if output asset exists
+    exists = asset_exists(param['assetDir'] + param['bnet_buffered_polygons'])
 
-	export_params = {
-		'collection':fc_attri,
-		'description': param['bnet_buffered_polygons'],
-		'assetId': param['assetDir'] + param['bnet_buffered_polygons']
-	}
+    if exists:
+        return
 
-	task = ee.batch.Export.table.toAsset(**export_params)
-	task.start()
-	return task
+    asset_dir = param['assetDir']
+    base_name = param['bnet_buffered_polygons']
+    max_err   = float(param.get('buffer_max_error', 10))
+
+    # Ensure Python list of str (NOT ee.List)
+    if hasattr(asset_ids, 'getInfo'):           # defensive: someone passed ee.List
+        asset_ids = asset_ids.getInfo()
+    asset_ids = [str(a) for a in asset_ids]
+
+    merged = ee.FeatureCollection([])
+
+    # Load each shard with a constant string and merge client-side
+    for aid in asset_ids:
+        try:
+            fc = ee.FeatureCollection(aid)
+            sz = fc.size().getInfo()            # tiny compute to confirm existence
+            if sz and sz > 0:
+                merged = merged.merge(fc)
+        except Exception as e:
+            print(f"Skipping shard {aid}: {e}")
+
+    # Guard: nothing merged
+    if merged.size().getInfo() == 0:
+        raise RuntimeError("No shard data found. Check shard exports and asset_ids.")
+
+    # (Optional) dissolve all shard buffers
+    dissolved_geom = merged.geometry().dissolve(max_err)
+    dissolved_fc   = ee.FeatureCollection([ee.Feature(dissolved_geom)])
+
+    # Split multi-polygons server-side (no getInfo)
+    polygons_fc = split_multi_polygon_ss(dissolved_fc.first())
+
+    # Continue your pipeline
+    img     = ee.Image(asset_dir + param['predicted'])
+    fc_bnet = extract_zonal_stats(img, polygons_fc, "mode", "bnet_label", param)
+
+    def add_fields(feature):
+        return feature.set(calc_attri_fields(param))
+    fc_attri = fc_bnet.map(add_fields)
+
+    # Export final
+    task = ee.batch.Export.table.toAsset(
+        collection=fc_attri,
+        description=param['bnet_buffered_polygons'],
+        assetId=param['assetDir'] + param['bnet_buffered_polygons']
+
+    )
+
+    task.start()
+    return task
+
+
+
 ##############################################################################
 # export metadata
 ##############################################################################
@@ -1600,12 +1783,10 @@ def main():
 		wait_for_task(task4)
 
 		task6 = CreatePredictorDisturbancePolygons(param)
-		print(task6)
 
 		if isinstance(task6, list):
 			for t in task6[1]:
 				result = wait_for_task(t)
-			print("merging")
 			task66 = merge_selected_feature_collections(param['assetDir'],task6[2],param['disturbance_polygons_predictor'],"testing")
 			wait_for_task(task66)
 		else:
@@ -1650,9 +1831,7 @@ def main():
 		wait_for_task(task_kmeans)
 
 		# if ADS exists do this
-		onon = 0 
-		print(onon)
-		if onon == 1:
+		if param['ADS_path']["on"]:
 			task_sample = kMeansProporitonsADSsample(param)
 			wait_for_task(task_sample)
 
@@ -1665,26 +1844,41 @@ def main():
 			task_poly = polygonize_bnet(param)
 			wait_for_task(task_poly)
 
-			task_buffer = buffer_bnet_polygons(param)
+			task_buffer, assets_ids = buffer_bnet_polygons(param)
 			wait_for_task(task_buffer)
+
+			task_buffer2 = merge_buffer_buckets_and_finish(param, assets_ids)
+			wait_for_task(task_buffer2)
 
 			task_params = dict_to_feature_collection(param)
 			wait_for_task(task_params)
 		else:
 			
 			unique_vals = get_unique_pixel_values(param)
+
 			if unique_vals:  
+
 				from_vals, to_vals = prompt_reclassification_mapping(unique_vals)
+
 				task_p = reclassify_image(param, from_vals, to_vals)
 				wait_for_task(task_p)
+
 				task_poly = polygonize_bnet(param)
 				wait_for_task(task_poly)
 
 			task_poly = polygonize_bnet(param)
 			wait_for_task(task_poly)
 
-			task_buffer = buffer_bnet_polygons(param)
-			wait_for_task(task_buffer)
+			task_buffer, assets_ids = buffer_bnet_polygons(param)
+
+			if isinstance(task_buffer, list):
+
+				for t in task_buffer:
+					wait_for_task(t)
+
+				task_buffer2 = merge_buffer_buckets_and_finish(param, assets_ids)
+				wait_for_task(task_buffer2)
+				delete_assets(assets_ids, dry_run=False)
 
 			task_params = dict_to_feature_collection(param)
 			wait_for_task(task_params)

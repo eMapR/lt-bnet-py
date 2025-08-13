@@ -48,10 +48,10 @@ param['brightness_value']='2500'
 param['configName'] = 'option3'
 param['agent_lookback'] = 5
 param['decline_step'] = 10
-param['decline_thresholds'] = {'tcb': 70, 'tcg': 50, 'tcw': 50} #70,70,70
+param['decline_thresholds'] = {'tcb': 70, 'tcg': 70, 'tcw': 70} #70,70,70
 
 
-param['kmeans_num_sample'] = 5000
+param['kmeans_num_sample'] = 1000
 param['num_of_clusters'] = 3
 
 #polygonization
@@ -62,24 +62,27 @@ param['bnet_buffer'] = 100
 param['subregion']= 'north-cascades'
 param['sub_region']= 'north-cascades'
 
+param['ADS_path'] = {"on":0,"path": f"projects/{param['project_name']}/assets/adsplaceholder"} 
+
 #################### automated parameters ################################
-param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 
-param['fitted_img_p'] = f"predictor_fitted_img_{param['composite_params']['end_date'].year-5}_{param['composite_params']['end_date'].year}" # hardcoded -5
-param['predictor_change_img'] = f"predictor_change_img_{param['composite_params']['end_date'].year}"
-param['disturbance_polygons_predictor']= f"predictor_disturbance_polygons_{param['composite_params']['end_date'].year}"
 
-param['attributed_polygons_predictor']= f"attributed_predictor_polygons_{param['composite_params']['end_date'].year}"
+param['assetDir'] = f"A_projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 
+param['fitted_img_p'] = f"A_predictor_fitted_img_{param['composite_params']['end_date'].year-5}_{param['composite_params']['end_date'].year}" # hardcoded -5
+param['predictor_change_img'] = f"A_predictor_change_img_{param['composite_params']['end_date'].year}"
 
-param['classified_fc']= f"classified_polygons_{param['composite_params']['end_date'].year}"
-param['assetDir_t'] = f"projects/{param['project_name']}/assets/" 
-param['attributed_polygons_training']= f"attributed_training_polygons_2012"
+param['disturbance_polygons_predictor']= f"B2_predictor_disturbance_polygons_{param['composite_params']['end_date'].year}"
+param['attributed_polygons_predictor']= f"B1_attributed_predictor_polygons_{param['composite_params']['end_date'].year}"
+
 # classifcation high mag
-param['filtered_classes'] = f"classified_polygons_filtered_{param['composite_params']['end_date'].year}"
-param['buffered_classes'] = f"classified_polygons_buffered_{param['composite_params']['end_date'].year}"
-param['rasterize_classes'] = f"classed_img_{param['composite_params']['end_date'].year}"
+param['classified_fc']= f"C1_classified_polygons_{param['composite_params']['end_date'].year}"
+param['assetDir_t'] = f"projects/{param['project_name']}/assets/" 
+param['attributed_polygons_training']= f"C0_attributed_training_polygons_2012"
+param['filtered_classes'] = f"C2_classified_polygons_filtered_{param['composite_params']['end_date'].year}"
+param['buffered_classes'] = f"C3_classified_polygons_buffered_{param['composite_params']['end_date'].year}"
+param['rasterize_classes'] = f"C4_classed_img_{param['composite_params']['end_date'].year}"
 
 # forest masking
-param['forestMaskName'] = f"bugnet_forest_mask_{param['target']}"
+param['forestMaskName'] = f"D_bugnet_forest_mask_{param['target']}"
 param['LTSDdir'] = param['assetDir']  
 param['ltchange'] = ee.Image(f"{param['assetDir']}classed_img_{param['target']}")
 targetPlus5 = param['target']-5
@@ -105,8 +108,6 @@ param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_m
 #parameters export
 param['parameter_file'] = f"{param['project_name']}_mag{param['decline_thresholds']['tcw']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu_parameter_file"
 
-#parameters export
-param['parameter_file'] = f"{param['project_name']}_parameter_file"
 
 if param["platform"] == 'HlS':
     param['lt_collection_params'] = {
@@ -165,3 +166,4 @@ else:
                 "minObservationsNeeded": 6,
         }
     }
+print(param["ADS_path"]["on"])
