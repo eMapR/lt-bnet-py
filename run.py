@@ -96,7 +96,7 @@ def export_image(stack, params, assetDir, asset,scale=30, max_pixels=1e13):
 ## 
 ###########################################################################################################################
 def vectorize_disturbance(change_image,params):
-	disturbance_polygons = change_image.select('yod').reduceToVectors(
+	disturbance_polygons = change_image.select('yod').selfMask().reduceToVectors(
 		reducer=ee.Reducer.countEvery(),
 		geometry=params['aoi'],
 		scale=30,
@@ -343,6 +343,16 @@ def export_feature_collection(fc,asset_id,asset_path):
 		assetId=asset_path + asset_id
 	)
 	fc_task.start()
+	return fc_task
+
+def export_feature_collection_hold(fc,asset_id,asset_path):
+	# Create the export task
+	fc_task = ee.batch.Export.table.toAsset(
+		collection=fc,
+		description=asset_id,
+		assetId=asset_path + asset_id
+	)
+	#fc_task.start()
 	return fc_task
 
 

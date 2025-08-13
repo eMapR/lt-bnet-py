@@ -1,17 +1,23 @@
+
+
 import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 from datetime import date
 import datetime 
 param = {}
-param['project_name'] = 'eastern-cascades-bugnet'
+param['project_name'] = 'klamath-mts-bugnet'
 ee.Initialize(project=param['project_name'])
+param['aoi'] = ee.FeatureCollection(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name', 'Klamath Mountains')).geometry().intersection(ee.FeatureCollection("TIGER/2018/States").filter(ee.Filter.eq('NAME', 'Oregon')).geometry(), ee.ErrorMargin(1)))
+param['subregion']= 'klamath-mts'
+param['sub_region']= 'klamath-mts'
+
+
 param["platform"] = 'LS'
 param['ltstartYear'] = 2000
 param['ltendYear'] = 2025
 param['target'] = 2025
-param['aoi'] = ee.FeatureCollection(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name', 'Eastern Cascades Slopes and Foothills')).geometry().intersection(ee.FeatureCollection("TIGER/2018/States").filter(ee.Filter.eq('NAME', 'Oregon')).geometry(), ee.ErrorMargin(1)))
 param['composite_params'] = {
-    "start_date": date(param['ltstartYear'], 5,1),
+    "start_date": date(param['ltstartYear'], 7,1),
     "end_date": date(param['ltendYear'], 9,20),
     "area_of_interest": param['aoi'],
     #"mask_labels": ['cloud', 'shadow', 'snow', 'water'],
@@ -28,29 +34,29 @@ param['change_params'] = {
                     'mag': {'value': 150, 'operator': '>' },
                     'dur': {'value': 3, 'operator': '<'},
                     'preval': {'value': 500, 'operator': '>'},
-                    'mmu': {'value': 10}
+                    'mmu': {'value': 5}
                 }
 
-param['subregion']= 'easternCascadesOR'
 
 #classify high mag polygons
 param['num_trees']= 200
 param['class_heavy']=0
 
-param['sub_region']="blue-mts"
 param['study_region'] = "CONUS" # AK or CONUS
 param['brightness_value']='2500'
 param['configName'] = 'option3'
 param['agent_lookback'] = 5
 param['decline_template'] = '{TCB} && {TCG} || {TCW} && {NBR}'
-param['decline_thresholds'] = {'TCB':(0,0),'TCG':(5,5), 'TCW':(10,10), 'NBR':(15,15)}
+param['decline_thresholds'] = {'TCB':(0,0),'TCG':(5,5), 'TCW':(10,10), 'NBR':(10,10)}
 
 param['kmeans_num_sample'] = 5000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 15
+param['bnet_polygon_mmu'] = 10
 param['bnet_buffer'] = 100
+
+
 
 #################### automated parameters ################################
 param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 

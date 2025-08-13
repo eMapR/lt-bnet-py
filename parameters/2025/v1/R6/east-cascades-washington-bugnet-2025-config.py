@@ -25,10 +25,10 @@ param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
                     'years': {'start': param['composite_params']["end_date"].year-6, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 200, 'operator': '>' },
-                    'dur': {'value': 4, 'operator': '<'},
-                    'preval': {'value': 300, 'operator': '>'},
-                    'mmu': {'value': 10}
+                    'mag': {'value': 150, 'operator': '>' },
+                    'dur': {'value': 3, 'operator': '<'},
+                    'preval': {'value': 500, 'operator': '>'},
+                    'mmu': {'value': 5}
                 }
 
 param['subregion']= 'easternCascadesWA'
@@ -42,8 +42,8 @@ param['study_region'] = "CONUS" # AK or CONUS
 param['brightness_value']='2500'
 param['configName'] = 'option3'
 param['agent_lookback'] = 5
-param['decline_template'] = '{TCB} && {TCG} || {TCW} && {NBR}'
-param['decline_thresholds'] = {'TCB':(0,0),'TCG':(5,5), 'TCW':(10,10), 'NBR':(15,15)}
+param['decline_step'] = 20
+param['decline_thresholds'] = {'tcb': 70, 'tcg': 50, 'tcw': 50}
 
 param['kmeans_num_sample'] = 5000
 param['num_of_clusters'] = 3
@@ -77,23 +77,23 @@ param['maskStartTime'] = int(datetime.datetime(targetPlus5,1,1).timestamp() * 10
 param['maskEndTime'] = int(datetime.datetime(param['target'],12,30).timestamp() * 1000)
 
 #decline
-param['declineName'] = f"Decline_{param['configName']}_{param['target']}"
+param['declineName'] = f"Decline_{param['configName']}_{param['target']}_mag{param['decline_thresholds']['tcw']}"
 param['Mask'] = ee.Image(f"{param['assetDir']}{param['forestMaskName']}")
 
 #kmeans
-param['kmeansNameSample'] =  f"KMeans_{param['configName']}_{param['target']}_sample" 
-param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}"
+param['kmeansNameSample'] =  f"KMeans_{param['configName']}_{param['target']}_mag{param['decline_thresholds']['tcw']}_sample" 
+param['kmeansName'] = f"KMeans_{param['configName']}_{param['target']}_mag{param['decline_thresholds']['tcw']}"
 #param['KmeansVector'] = f"KMeans_{param['configName']}_{param['target']}_vector"
 
 #bugnet labeling
-param['predicted'] = f"labeled_{param['configName']}_{param['target']}"
+param['predicted'] = f"labeled_{param['configName']}_{param['target']}_mag{param['decline_thresholds']['tcw']}"
 
 #polygonization
-param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}_{param['bnet_polygon_mmu']}mmu"
-param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_{param['bnet_polygon_mmu']}mmu"
+param['bnet_polygonized'] = f"bugnet_polygons_{param['target']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu"
+param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu"
 
 #parameters export
-param['parameter_file'] = f"{param['project_name']}_parameter_file"
+param['parameter_file'] = f"{param['project_name']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu_parameter_file"
 
 if param["platform"] == 'HlS':
     param['lt_collection_params'] = {

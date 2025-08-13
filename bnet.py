@@ -256,13 +256,11 @@ def decline_image(param):
     #return im.mask(im.expression("((TCW_4 - TCW_5 < 200 ) && (TCW_4 - TCW_5 > 100 )) && ((TCG_4 - TCG_5 < 200 )&&(TCG_4 - TCG_5 > 100 )) || ((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
     return im.mask(im.expression("((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
 
-def LTSD_decline_score(param,
-                       base_thresholds={'tcb': 70, 'tcg': 70, 'tcw': 70},
-                       taper_step=10,
-                       min_years_declining=2,
-                       return_score=False):
+def LTSD_decline_score(param, base_thresholds={'tcb': 70, 'tcg': 50, 'tcw': 50}, taper_step=10, min_years_declining=2, return_score=False):
     im = ee.Image(param['assetDir'] + param['fitted_img_p'])
     std_end_year = param['target']
+    base_thresholds = param['decline_thresholds']
+    taper_step= param['decline_step']
 
     # Generate 5 consecutive years: oldest (1) to most recent (5)
     years = {i: str(std_end_year - (5 - i)) for i in range(1, 6)}
@@ -276,18 +274,18 @@ def LTSD_decline_score(param,
         f'tcw_{i}': im.select(f'TCW_ftv_{years[i]}') for i in range(1, 6)
     }
 
-    # Calculate decline per year-pair with tapered thresholds
+    # Ca lculate decline per year-pair with tapered thresholds
     diffs = []
     for i in range(1, 5):  # year-pairs: 1-2, 2-3, 3-4, 4-5
         taper = taper_step * (4 - i)  # newest gets 0, oldest gets highest taper
-
+ 
         t_tcb = base_thresholds['tcb'] - taper
         t_tcg = base_thresholds['tcg'] - taper
         t_tcw = base_thresholds['tcw'] - taper
 
         diff_tcb = bands[f'tcb_{i}'].subtract(bands[f'tcb_{i+1}']).gt(t_tcb)
         diff_tcg = bands[f'tcg_{i}'].subtract(bands[f'tcg_{i+1}']).gt(t_tcg)
-        diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i+1}']).abs().gt(t_tcw)
+        diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i+1}']).gt(t_tcw)
 
 
         #year_decline = diff_tcb.And(diff_tcg).And(diff_tcw)

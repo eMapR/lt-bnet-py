@@ -2,16 +2,22 @@ import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 from datetime import date
 import datetime 
+
+
 param = {}
-param['project_name'] = 'eastern-cascades-bugnet'
+
+param['project_name'] = 'north-cascades-bugnet'
 ee.Initialize(project=param['project_name'])
 param["platform"] = 'LS'
 param['ltstartYear'] = 2000
 param['ltendYear'] = 2025
 param['target'] = 2025
-param['aoi'] = ee.FeatureCollection(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name', 'Eastern Cascades Slopes and Foothills')).geometry().intersection(ee.FeatureCollection("TIGER/2018/States").filter(ee.Filter.eq('NAME', 'Oregon')).geometry(), ee.ErrorMargin(1)))
+
+#param['aoi'] = ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name','North Cascades'))
+param['aoi'] = ee.FeatureCollection(ee.Feature(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name','North Cascades')).toList(1,2).get(0)))
+
 param['composite_params'] = {
-    "start_date": date(param['ltstartYear'], 5,1),
+    "start_date": date(param['ltstartYear'], 7,1),
     "end_date": date(param['ltendYear'], 9,20),
     "area_of_interest": param['aoi'],
     #"mask_labels": ['cloud', 'shadow', 'snow', 'water'],
@@ -25,19 +31,18 @@ param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
                     'years': {'start': param['composite_params']["end_date"].year-6, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 150, 'operator': '>' },
+                    'mag': {'value': 250, 'operator': '>' },
                     'dur': {'value': 3, 'operator': '<'},
-                    'preval': {'value': 500, 'operator': '>'},
-                    'mmu': {'value': 10}
+                    'preval': {'value': 300, 'operator': '>'},
+                    'mmu': {'value': 5}
                 }
 
-param['subregion']= 'easternCascadesOR'
+
 
 #classify high mag polygons
 param['num_trees']= 200
 param['class_heavy']=0
 
-param['sub_region']="blue-mts"
 param['study_region'] = "CONUS" # AK or CONUS
 param['brightness_value']='2500'
 param['configName'] = 'option3'
@@ -49,8 +54,11 @@ param['kmeans_num_sample'] = 5000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 15
+param['bnet_polygon_mmu'] = 30
 param['bnet_buffer'] = 100
+
+
+param['subregion']= 'north-cascades'
 
 #################### automated parameters ################################
 param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 
@@ -152,6 +160,3 @@ else:
                 "minObservationsNeeded": 6,
         }
     }
-
-
-

@@ -270,15 +270,17 @@ def load_parameters(file_path):
 def wait_for_task(task):
     counter = 0
     if not task:
-        return
+        return 0
     while task.status()['state'] in ['READY', 'RUNNING']:
         print(f"\rTask {task.id} is still running...{counter} min", end='', flush=True)
         time.sleep(60)  # Wait for 30 seconds before checking again
         counter+=1
     if task.status()['state'] == 'COMPLETED':
         print(f"Task {task.id} completed successfully!")
+        return 1
     else:
         print(f"Task {task.id} failed with error: {task.status()['error_message']}")
+        return 0
 
 
 ##############################################################################
@@ -373,6 +375,46 @@ def CreateTrainingDisturbancePolygons(param):
 		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir_t'])
 		return task
 
+# Grid a feature with square cells of `cell_size` meters (uses EPSG:3857)
+
+def grid_over_feature(feature, cell_size_m, proj_epsg='EPSG:3857'):
+    """Build a covering grid (square cells ~cell_size_m) over one feature."""
+    feature = ee.Feature(feature)
+    proj = ee.Projection(proj_epsg).atScale(cell_size_m)
+
+    # Covering grid over the feature’s bounds in the chosen projection
+    grid = feature.geometry().coveringGrid(proj, cell_size_m)
+
+    # Clip each grid cell to the feature and keep only non-empty pieces
+    def _clip(f):
+        f = ee.Feature(f)
+        clipped = ee.Feature(
+            ee.Geometry(f.geometry()).intersection(feature.geometry(), ee.ErrorMargin(1))
+        )
+        # add area so we can drop empty intersections
+        return clipped.set('area_m2', clipped.geometry().area(maxError=1))
+
+    clipped = ee.FeatureCollection(grid.map(_clip)).filter(ee.Filter.gt('area_m2', 0))
+
+    # Add a stable split_id per cell
+    size = clipped.size()
+    cells = clipped.toList(size)
+
+    def _with_id(i):
+        i = ee.Number(i)
+        cell = ee.Feature(cells.get(i))
+        return cell.set('split_id', ee.String('cell_').cat(i.format('%d')))
+
+    return ee.FeatureCollection(ee.List.sequence(0, size.subtract(1)).map(_with_id))
+
+def split_collection_covering_grid(fc, cell_size_m, proj_epsg='EPSG:3857'):
+    """Apply coveringGrid to every feature in a collection and flatten."""
+    fc = ee.FeatureCollection(fc)
+    def _split(f):
+        return grid_over_feature(f, cell_size_m, proj_epsg)
+    return ee.FeatureCollection(fc.map(_split).flatten())
+
+
 # Function to split a feature horizontally into N parts
 def split_feature_horizontally_n(feature, n_splits):
     bounds = feature.geometry().bounds()
@@ -453,10 +495,11 @@ def CreatePredictorDisturbancePolygons(param):
 		go = 1
 		while go:
 			try:
+				print(1)
 				disturbance_polygons_p = run.vectorize_disturbance(change_img_p,param)
-				print(disturbance_polygons_p.size().getInfo())
-				if disturbance_polygons_p.size().getInfo() > 50000:
-					raise Exception("Forcing exception for testing")
+				#print(disturbance_polygons_p.size().getInfo())
+				#if disturbance_polygons_p.size().getInfo() > 50000:
+				#	raise Exception("Forcing exception for testing")
 				go = 0
 				task = run.export_feature_collection(fc_simplified,param['disturbance_polygons_predictor'],param['assetDir'])
 				return task
@@ -512,16 +555,26 @@ def CreatePredictorDisturbancePolygons(param):
 					print(" Split direction?")
 					print(" 	1-vertically")
 					print(" 	2-horizontally")
+					print(" 	3-grid")
 					split_d = input('    :')
 					# Split the dataset
 					if split_d == '1':
-						split_fc = split_collection_vertically_n(aoi, 4)
+						print(" 	How many columns: ")
+						split_d = input('    :')
+						split_fc = split_collection_vertically_n(aoi, int(split_d))
 					elif split_d =='2':
-						split_fc = split_collection_horizontally_n(aoi, 4)
+						print(" 	How many rows: ")
+						split_d = input('    :')
+						split_fc = split_collection_horizontally_n(aoi, int(split_d))
+					elif split_d =='3':
+						print(" 	Grid scale 20000=200 feature up for less 40000 = 57: ")
+						split_d = input('    :')
+						split_fc = split_collection_covering_grid(aoi, int(split_d))  # meters per cell
 					else:
 						sys.exit()
 					number_of_features = split_fc.size().getInfo()
 					features_list = split_fc.toList(number_of_features)
+					print(number_of_features)
 					subregions = []
 					subtasks = []
 					counter = 0
@@ -535,6 +588,8 @@ def CreatePredictorDisturbancePolygons(param):
 						subtasks.append(task)
 						counter += 1
 					print(subregions)
+					grid = run.export_feature_collection(split_fc,'grid_'+split_d,param['assetDir'])
+					grid.start()
 					try:
 						go = 0
 						return [4,subtasks,subregions]
@@ -1550,7 +1605,8 @@ def main():
 
 		if isinstance(task6, list):
 			for t in task6[1]:
-				wait_for_task(t)
+				result = wait_for_task(t)
+			print("merging")
 			task66 = merge_selected_feature_collections(param['assetDir'],task6[2],param['disturbance_polygons_predictor'],"testing")
 			wait_for_task(task66)
 		else:
