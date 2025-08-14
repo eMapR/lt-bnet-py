@@ -552,125 +552,138 @@ def split_collection_vertically_n(fc, n_splits):
 ##############################################################################
 # 
 ##############################################################################
-def CreatePredictorDisturbancePolygons(param):
-	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['disturbance_polygons_predictor'])
+def CreatePredictorDisturbancePolygons(
+    param,
+    strategy="auto",            # "auto" | "full" | "bucket" | "grid"
+    buckets=8,                  # number of attribute buckets when strategy == "bucket"/"auto"
+    grid_cell_m=40000,          # grid cell size for "grid"/"auto"
+    random_seed=0               # seed for deterministic buckets
+):
+    """
+    Returns:
+        dict:
+          - mode:        str
+          - tasks:       list[ee.batch.Task]
+          - asset_paths: list[str]  (full EE asset IDs)
+          - subregions:  list[str]  (mirrors asset_paths for convenience)
+    """
+    # Helpers
+    def _base_name():
+        return f"{param['assetDir']}{param['disturbance_polygons_predictor']}"
 
-	if exists:
+    def _asset_path(suffix=""):
+        return f"{_base_name()}{suffix}"
 
-		return
+    created_paths = []  # track assets created in THIS run
 
-	else:
-		change_img_p = ee.Image(param["assetDir"]+param['predictor_change_img'])
-		go = 1
-		while go:
-			try:
-				print(1)
-				disturbance_polygons_p = run.vectorize_disturbance(change_img_p,param)
-				#print(disturbance_polygons_p.size().getInfo())
-				#if disturbance_polygons_p.size().getInfo() > 50000:
-				#	raise Exception("Forcing exception for testing")
-				go = 0
-				task = run.export_feature_collection(fc_simplified,param['disturbance_polygons_predictor'],param['assetDir'])
-				return task
+    def _export(fc, suffix=""):
+        asset_id = f"{param['assetDir']}{param['disturbance_polygons_predictor']}{suffix}"
+        if asset_exists(asset_id):
+            print(f"exists, skipping: {asset_id}")
+            return None, asset_id
+        desc = param['disturbance_polygons_predictor'] + suffix
+        task = run.export_feature_collection(fc, desc, param['assetDir'])  # starts inside your wrapper
+        created_paths.append(asset_id)  # record only when we actually create one
+        return task, asset_id
 
-			except:
-				print('error: dataset to large. Decrease area or increase magnitude parameter.')
-				print("    1: exit to adjust")
-				print("    2: add elevation mask (to find elelvation value go here:)")
-				print("    3: splite up region for Alaska")
-				print("    4: splite up region for CONUS")
-				track = input('    :')
-				if track == '1':
-					sys.exit()
-				elif track == '2':
-					newmag = input('enter elevation meters (keep under this value) : ')
-					eleMask = ee.Image('COPERNICUS/DEM/GLO30').select('DEM').mean().lt(int(newmag))
-					new_change_image = change_img_p.mask(eleMask).unmask().clip(param['aoi'])
-					disturbance_polygons_p = run.vectorize_disturbance(new_change_image,param)
-					task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
-					try:
-						#print(disturbance_polygons_p.size().getInfo())
-						go = 0
-						return task
-					except:
-						go = 1
-				elif track == '3':
-					hucid = param['huc6-id']
-					fc8 = ee.FeatureCollection('USGS/WBD/2017/HUC08')
-					fc6 = ee.FeatureCollection('USGS/WBD/2017/HUC06')
-					#huc6code = fc6.getString('huc6')
-					f8 = fc8.filter(ee.Filter.stringStartsWith('huc8', hucid))
-					number_of_features = f8.size().getInfo()
-					features_list = f8.toList(number_of_features)
-					subregions = []
-					counter = 0
-					subtasks = []
-					for f in range(number_of_features): 
-						fe = ee.Feature(features_list.get(f))
-						huc8code = fe.getString('huc8');
-						subregions.append(huc8code)
-						new_image_clipped = change_img_p.clip(fe)
-						disturbance_polygons_p = run.vectorize_disturbance(new_image_clipped, param)
-						task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor']+huc8code.getInfo(),param['assetDir'])
-						subtasks.append(task)
-						counter += 1
-					try:
-						go = 0
-						return [3,subtasks,subregions]
-					except:
-						go = 1
-				elif track == '4':
-					aoi = param['aoi']
-					print(" Split direction?")
-					print(" 	1-vertically")
-					print(" 	2-horizontally")
-					print(" 	3-grid")
-					split_d = input('    :')
-					# Split the dataset
-					if split_d == '1':
-						print(" 	How many columns: ")
-						split_d = input('    :')
-						split_fc = split_collection_vertically_n(aoi, int(split_d))
-					elif split_d =='2':
-						print(" 	How many rows: ")
-						split_d = input('    :')
-						split_fc = split_collection_horizontally_n(aoi, int(split_d))
-					elif split_d =='3':
-						print(" 	Grid scale 20000=200 feature up for less 40000 = 57: ")
-						split_d = input('    :')
-						split_fc = split_collection_covering_grid(aoi, int(split_d))  # meters per cell
-					else:
-						sys.exit()
-					number_of_features = split_fc.size().getInfo()
-					features_list = split_fc.toList(number_of_features)
-					print(number_of_features)
-					subregions = []
-					subtasks = []
-					counter = 0
-					for f in range(number_of_features): 
-						fe = ee.Feature(features_list.get(f))
-						split_code = fe.getString('split_id').cat(ee.String(str(counter)));
-						subregions.append(split_code)
-						new_image_clipped = change_img_p.clip(fe)
-						disturbance_polygons_p = run.vectorize_disturbance(new_image_clipped, param)
-						task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor']+split_code.getInfo(),param['assetDir'])
-						subtasks.append(task)
-						counter += 1
-					print(subregions)
-					grid = run.export_feature_collection(split_fc,'grid_'+split_d,param['assetDir'])
-					try:
-						go = 0
-						return [4,subtasks,subregions]
-					except:
-						go = 1
-				else:
-					sys.exit()
-				#if track != '3':
-				#	task = run.export_feature_collection(disturbance_polygons_p,param['disturbance_polygons_predictor'],param['assetDir'])
-				#	return task
-				#else:
-				#	return [task, subregions]
+    def _vectorize(img):
+        # Centralized call in case you want to tune defaults
+        # (e.g., tileScale, maxPixels, geometryType, simplification)
+        return run.vectorize_disturbance(img, param)
+
+    # 0) Short-circuit if a single unsuffixed asset already exists (covers full-case re-runs)
+    if strategy in ("auto", "full") and asset_exists(_asset_path()):
+        return {"mode": "full", "tasks": [], "asset_paths": [_asset_path()], "created_asset_paths": created_paths,"subregions": [_asset_path()]}
+
+    # 1) Load change image
+    change_img = ee.Image(param["assetDir"] + param["predictor_change_img"])
+
+    # ---------- Attempt 1: FULL AOI ----------
+    def attempt_full():
+        polys = _vectorize(change_img)
+        # Preflight: force a tiny evaluation before starting any export
+        ee.Number(polys.size()).getInfo()
+        task, path = _export(polys, "")
+        return {"mode": "full", "tasks": [task], "asset_paths": [path], "created_asset_paths": created_paths,"subregions": [path]}
+
+    # ---------- Attempt 2: ATTRIBUTE BUCKETS (no spatial slicing) ----------
+    # Build a deterministic "bucket" band: random integer in [0, buckets-1]
+    # Using ee.Image.random(seed) yields deterministic values given the seed.
+    def attempt_bucket():
+        bucket_band = ee.Image.random(random_seed).multiply(buckets).toInt()
+        staged = []  # (suffix, polys)
+
+        # Pass 1: preflight all buckets
+        for b in range(buckets):
+            masked = change_img.updateMask(bucket_band.eq(b))
+            polys = _vectorize(masked)
+            ee.Number(polys.size()).getInfo()    # <- preflight
+            staged.append((f"_b{b:02d}", polys))
+
+        # Pass 2: start exports only if ALL preflights passed
+        tasks, paths = [], []
+        for suffix, polys in staged:
+            t, p = _export(polys, suffix)
+            if t: tasks.append(t); paths.append(p)
+        if not tasks:
+            raise RuntimeError("Bucket strategy produced no tasks.")
+        return {"mode": "bucket", "tasks": tasks, "asset_paths": paths, "created_asset_paths": created_paths,"subregions": paths}
+
+    # ---------- Attempt 3: SPATIAL GRID (last resort) ----------
+    def attempt_grid():
+        split_fc = split_collection_covering_grid(param["aoi"], int(grid_cell_m))
+        count = split_fc.size().getInfo()
+        feats = split_fc.toList(count)
+
+        staged = []  # (suffix, polys)
+        # Pass 1: preflight every cell
+        for i in range(count):
+            fe = ee.Feature(feats.get(i))
+            sid = fe.get('split_id')
+            sid = (ee.String(sid).getInfo() if sid is not None else f"cell_{i}")
+            polys = _vectorize(change_img.clip(fe))
+            ee.Number(polys.size()).getInfo()    # <- preflight
+            staged.append((f"_{sid}", polys))
+
+        # Optional: export the grid itself after preflight succeeds
+        try:
+            _export(split_fc, f"_grid_{int(grid_cell_m)}m")
+        except Exception as e:
+            print(f"Grid export failed (non-fatal): {e}")
+
+        # Pass 2: start exports
+        tasks, paths = [], []
+        for suffix, polys in staged:
+            t, p = _export(polys, suffix)
+            if t: tasks.append(t); paths.append(p)
+        if not tasks:
+            raise RuntimeError("Grid strategy produced no tasks.")
+        return {"mode": "grid", "tasks": tasks, "asset_paths": paths,"created_asset_paths": created_paths, "subregions": paths}
+
+    # ---------- Strategy selection & cascade ----------
+    # You can force a strategy, or let "auto" cascade through them.
+    attempts = []
+    if strategy == "full":
+        attempts = [attempt_full]
+    elif strategy == "bucket":
+        attempts = [attempt_bucket]
+    elif strategy == "grid":
+        attempts = [attempt_grid]
+    elif strategy == "auto":
+        attempts = [attempt_full, attempt_bucket, attempt_grid]
+    else:
+        raise ValueError(f"Unknown strategy: {strategy}")
+
+    last_err = None
+    for fn in attempts:
+        try:
+            return fn()
+        except Exception as e:
+            print(f"{fn.__name__} failed: {e}")
+            last_err = e
+
+    # If we reach here, all attempts failed
+    raise RuntimeError(f"All strategies failed. Last error: {last_err}")
 
 
 ##############################################################################
@@ -980,7 +993,7 @@ def DecliningLTSD(param):
 
 	task_decline.start()
 
-	return task_decline_snic
+	return task_decline
 
 
 ##############################################################################
@@ -1350,33 +1363,71 @@ def get_unique_pixel_values(param, region=None, scale=30):
 ##############################################################################
 # 
 ##############################################################################
-def prompt_reclassification_mapping(unique_values):
+def prompt_reclassification_mapping(unique_values, new_values=None, interactive=False, value_type=int):
     """
-    Prompts user to enter new values for each unique pixel value.
+    Build a mapping from original pixel values to new values.
 
     Args:
-        unique_values (list): List of unique pixel values.
+        unique_values (iterable): Unique pixel values (any order).
+        new_values (None | list | dict): 
+            - None  -> identity mapping (default, no interaction)
+            - list  -> must match length of unique_values (order-aligned)
+            - dict  -> keys are originals; missing keys map to identity
+        interactive (bool): If True and new_values is None, prompt user.
+        value_type (callable|None): Coerce outputs (e.g., int). Use None to skip.
 
     Returns:
-        Tuple of two lists: (original values, new values)
+        (orig_list, mapped_list)
     """
-    print("Original values found in image:", unique_values)
-    print(f"Enter {len(unique_values)} new values (in order), separated by commas.")
-    
-    while True:
-        input_str = input("New values: ")
-        new_values = [v.strip() for v in input_str.split(',')]
-        
-        if len(new_values) != len(unique_values):
-            print(f"Error: Expected {len(unique_values)} values, but got {len(new_values)}. Try again.")
-        else:
-            try:
-                new_values = [int(v) for v in new_values]
+    # Normalize & preserve first-seen order
+    orig = list(dict.fromkeys(unique_values))
+
+    # Case 1: default identity (no interaction)
+    if new_values is None and not interactive:
+        mapped = list(orig)
+
+    # Case 2: interactive prompt
+    elif new_values is None and interactive:
+        print("Original values found in image:", orig)
+        print(f"Enter {len(orig)} new values (in order), separated by commas.")
+        while True:
+            input_str = input("New values: ").strip()
+            if not input_str:
+                # Empty input => identity
+                mapped = list(orig)
                 break
-            except ValueError:
-                print("Error: Please enter valid integer values.")
-    
-    return unique_values, new_values
+            parts = [p.strip() for p in input_str.split(",")]
+            if len(parts) != len(orig):
+                print(f"Error: expected {len(orig)} values, got {len(parts)}. Try again.")
+                continue
+            try:
+                mapped = [value_type(p) if value_type is not None else p for p in parts]
+                break
+            except Exception:
+                print("Error: please enter valid values.")
+                continue
+
+    # Case 3: explicit list
+    elif isinstance(new_values, (list, tuple)):
+        if len(new_values) != len(orig):
+            raise ValueError(f"Length mismatch: got {len(new_values)}, expected {len(orig)}.")
+        mapped = list(new_values)
+
+    # Case 4: explicit dict
+    elif isinstance(new_values, dict):
+        mapped = [new_values.get(v, v) for v in orig]
+
+    else:
+        raise TypeError("new_values must be None, list/tuple, or dict.")
+
+    # Optional coercion
+    if value_type is not None:
+        try:
+            mapped = [value_type(v) for v in mapped]
+        except Exception as e:
+            raise ValueError(f"Failed to coerce mapped values with {value_type}: {e}")
+
+    return orig, mapped
 
 
 ##############################################################################
@@ -1771,16 +1822,46 @@ def main():
 		wait_for_task(task2)
 		wait_for_task(task4)
 
-		task6 = CreatePredictorDisturbancePolygons(param)
+		res = CreatePredictorDisturbancePolygons(param)  # returns {'mode','tasks','asset_paths','subregions'}
 
-		if isinstance(task6, list):
-			for t in task6[1]:
-				result = wait_for_task(t)
-			task66 = merge_selected_feature_collections(param['assetDir'],task6[2],param['disturbance_polygons_predictor'],"testing")
-			wait_for_task(task66)
+		# 1) Wait for all started exports (skip Nones from "exists, skipping")
+		tasks = [t for t in res.get('tasks', []) if t is not None]
+		for t in tasks:
+			wait_for_task(t)
+
+		# 2) Merge shards only if there’s more than one asset
+		asset_paths = res.get('asset_paths', [])
+		if len(asset_paths) > 1:
+			base_name  = param['disturbance_polygons_predictor']
+			asset_dir  = param['assetDir']
+			merged_name = f"{base_name}_merged"
+			merged_task = merge_selected_feature_collections(asset_dir, asset_paths, merged_name, "merged predictor shards")
+			wait_for_task(merged_task)
+
+			# ---- CLEANUP (delete shards) ----
+			merged_path = f"{asset_dir}{merged_name}"
+
+			def looks_like_shard(aid: str) -> bool:
+				name = aid.split('/')[-1]
+				# keep only pieces like "<base_name>_*" but not the merged or any grid export you want to keep
+				if name == merged_name:
+					return False
+				if name.startswith(f"{base_name}_grid_"):   # keep the grid index asset if you export it
+					return False
+				return name.startswith(base_name + "_")
+
+			# Prefer deleting only shards created in THIS run; fall back to all shards if list is empty
+			candidates = created_paths if created_paths else asset_paths
+			to_delete  = [a for a in candidates if looks_like_shard(a)]
+
+			# Dry-run first if you want to preview
+			# delete_assets(to_delete, dry_run=True)
+
+			delete_assets(to_delete, dry_run=False, pause_sec=0.2)
+
 		else:
-			wait_for_task(task6)
-
+			# Single asset (full AOI) — nothing to merge
+			pass
 
 		task8 = attributePredictorPolygons(param)
 		wait_for_task(task8)
