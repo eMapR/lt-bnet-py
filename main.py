@@ -9,6 +9,8 @@ import datetime
 import bnet as bnet
 import run as run
 import importlib.util
+
+
 # Authenticate the Earth Engine API (uncomment if needed for authentication)
 #ee.Authenticate(force=True)
 
@@ -332,11 +334,11 @@ def asset_exists(asset_id):
         # Attempt to get information about the asset.
         asset_info = ee.data.getAsset(asset_id)
         if asset_info:
-            print(f"Asset exists: {asset_id}")
+            print(f"Asset exists: {asset_id}", flush=False)
             return True
     except ee.EEException as e:
         # If the asset does not exist, an exception will be raised.
-        print(f"Asset does not exist: {asset_id}")
+        print(f"Asset does not exist: {asset_id}", flush=False)
         return False
 
 
@@ -567,6 +569,11 @@ def CreatePredictorDisturbancePolygons(
           - asset_paths: list[str]  (full EE asset IDs)
           - subregions:  list[str]  (mirrors asset_paths for convenience)
     """
+    # check to see if output asset exists
+    exists = asset_exists(param["assetDir"]+param['disturbance_polygons_predictor'])
+
+    if exists:
+        return 0
     # Helpers
     def _base_name():
         return f"{param['assetDir']}{param['disturbance_polygons_predictor']}"
@@ -1823,45 +1830,46 @@ def main():
 		wait_for_task(task4)
 
 		res = CreatePredictorDisturbancePolygons(param,"bucket")  # returns {'mode','tasks','asset_paths','subregions'}
+		if res !=0:
 
-		# 1) Wait for all started exports (skip Nones from "exists, skipping")
-		tasks = [t for t in res.get('tasks', []) if t is not None]
-		for t in tasks:
-			wait_for_task(t)
+			# 1) Wait for all started exports (skip Nones from "exists, skipping")
+			tasks = [t for t in res.get('tasks', []) if t is not None]
+			for t in tasks:
+				wait_for_task(t)
 
-		# 2) Merge shards only if there’s more than one asset
-		asset_paths = res.get('asset_paths', [])
-		if len(asset_paths) > 1:
-			base_name  = param['disturbance_polygons_predictor']
-			asset_dir  = param['assetDir']
-			merged_name = f"{base_name}_merged"
-			merged_task = merge_selected_feature_collections(asset_dir, asset_paths, merged_name, "merged predictor shards")
-			wait_for_task(merged_task)
+			# 2) Merge shards only if there’s more than one asset
+			asset_paths = res.get('asset_paths', [])
+			if len(asset_paths) > 1:
+				base_name  = param['disturbance_polygons_predictor']
+				asset_dir  = param['assetDir']
+				merged_name = f"{base_name}"
+				merged_task = merge_selected_feature_collections(asset_dir, asset_paths, merged_name, "merged predictor shards")
+				wait_for_task(merged_task)
 
-			# ---- CLEANUP (delete shards) ----
-			merged_path = f"{asset_dir}{merged_name}"
+				# ---- CLEANUP (delete shards) ----
+				merged_path = f"{asset_dir}{merged_name}"
+	
+				def looks_like_shard(aid: str) -> bool:
+					name = aid.split('/')[-1]
+					# keep only pieces like "<base_name>_*" but not the merged or any grid export you want to keep
+					if name == merged_name:
+						return False
+					if name.startswith(f"{base_name}_grid_"):   # keep the grid index asset if you export it
+						return False
+					return name.startswith(base_name + "_")
+	
+				# Prefer deleting only shards created in THIS run; fall back to all shards if list is empty
+				candidates = created_paths if created_paths else asset_paths
+				to_delete  = [a for a in candidates if looks_like_shard(a)]
 
-			def looks_like_shard(aid: str) -> bool:
-				name = aid.split('/')[-1]
-				# keep only pieces like "<base_name>_*" but not the merged or any grid export you want to keep
-				if name == merged_name:
-					return False
-				if name.startswith(f"{base_name}_grid_"):   # keep the grid index asset if you export it
-					return False
-				return name.startswith(base_name + "_")
+				# Dry-run first if you want to preview
+				#delete_assets(to_delete, dry_run=True)
 
-			# Prefer deleting only shards created in THIS run; fall back to all shards if list is empty
-			candidates = created_paths if created_paths else asset_paths
-			to_delete  = [a for a in candidates if looks_like_shard(a)]
+				delete_assets(to_delete, dry_run=False, pause_sec=0.2)
 
-			# Dry-run first if you want to preview
-			#delete_assets(to_delete, dry_run=True)
-
-			delete_assets(to_delete, dry_run=False, pause_sec=0.2)
-
-		else:
-			# Single asset (full AOI) — nothing to merge
-			pass
+			else:
+				# Single asset (full AOI) — nothing to merge
+				pass
 
 		task8 = attributePredictorPolygons(param)
 		wait_for_task(task8)
