@@ -47,7 +47,7 @@ param['kmeans_num_sample'] = 5000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 15
+param['bnet_polygon_mmu'] = 5
 param['bnet_buffer'] = 100
 
 param['ADS_path'] = {"on":0,"path": f"projects/{param['project_name']}/assets/adsplaceholder"} 

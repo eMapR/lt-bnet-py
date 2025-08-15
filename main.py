@@ -1822,7 +1822,7 @@ def main():
 		wait_for_task(task2)
 		wait_for_task(task4)
 
-		res = CreatePredictorDisturbancePolygons(param)  # returns {'mode','tasks','asset_paths','subregions'}
+		res = CreatePredictorDisturbancePolygons(param,"bucket")  # returns {'mode','tasks','asset_paths','subregions'}
 
 		# 1) Wait for all started exports (skip Nones from "exists, skipping")
 		tasks = [t for t in res.get('tasks', []) if t is not None]
@@ -1855,7 +1855,7 @@ def main():
 			to_delete  = [a for a in candidates if looks_like_shard(a)]
 
 			# Dry-run first if you want to preview
-			# delete_assets(to_delete, dry_run=True)
+			#delete_assets(to_delete, dry_run=True)
 
 			delete_assets(to_delete, dry_run=False, pause_sec=0.2)
 
