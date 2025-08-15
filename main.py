@@ -1006,69 +1006,142 @@ def DecliningLTSD(param):
 ##############################################################################
 # Sample for Kmeans build 
 ##############################################################################
-def buildKMeansSample(param):
-    # Bail if it already exists
-    if asset_exists(param['assetDir'] + param['kmeansName'] + "_sample"):
-        return
+# Keep your own implementation if you already have one.
+def _asset_exists(asset_id: str) -> bool:
+    try:
+        ee.data.getAsset(asset_id)
+        return True
+    except Exception:
+        return False
+
+def _wait_for_task(task: ee.batch.Task, poll_seconds=20, timeout_minutes=180, on_update=None):
+    """
+    Polls until terminal state. Returns the final status dict.
+    No prints; uses on_update(str) if provided.
+    """
+    start = time.time()
+    last_state = None
+    while True:
+        status = task.status()
+        state = status.get('state')
+        if state != last_state and on_update:
+            on_update(f"[GEE task {task.id}] state={state}")
+            last_state = state
+
+        if state in ("COMPLETED", "FAILED", "CANCELLED"):
+            return status
+
+        if timeout_minutes and (time.time() - start) > timeout_minutes * 60:
+            try:
+                task.cancel()
+            except Exception:
+                pass
+            status["state"] = "CANCELLED"
+            status["error_message"] = f"Timed out after {timeout_minutes} minutes."
+            return status
+
+        time.sleep(poll_seconds)
+
+def buildKMeansSample(param,
+                      poll_seconds=20,
+                      timeout_minutes=180,
+                      overwrite=False,
+                      progress_cb=None):
+    """
+    Tries methods in order; for each:
+      - build FC (lazy)
+      - start Export.table.toAsset
+      - wait for completion
+      - on failure/timeout => try next method
+    No printing. Returns {'final_state', 'assetId', 'attempts'}.
+    """
+    def log(msg):
+        if progress_cb:  # caller controls any output
+            progress_cb(msg)
+
+    asset_id = f"{param['assetDir']}{param['kmeansName']}_sample"
+    desc_base = f"{param['kmeansName']}_sample"
+
+    if _asset_exists(asset_id):
+        if not overwrite:
+            return {'final_state': 'ALREADY_EXISTS', 'assetId': asset_id, 'attempts': []}
+        # else continue to overwrite
 
     decline = ee.Image(param['assetDir'] + param['declineName'])
+    aoi = param['aoi']
+    scale = param['pixel_scale']
+    n = int(param['kmeans_num_sample'])
+    class_band = param.get('class_band')
 
     attempts = [
         ("reduceToVectors-centroids", lambda: decline.reduceToVectors(
-            geometry=param['aoi'],
-            scale=param['pixel_scale'],
+            geometry=aoi,
+            scale=scale,
             geometryType='centroid',
             labelProperty='zone',
             maxPixels=1e13,
             reducer=ee.Reducer.first(),
         )),
+
         ("stratifiedSample", lambda: decline.stratifiedSample(
-            numPoints=param['kmeans_num_sample'],
-            classBand=param['class_band'],    # must exist in `decline`
-            region=param['aoi'],
-            scale=param['pixel_scale'],
+            numPoints=100,
+            classBand=class_band,   # if missing/invalid, this attempt will fail and we move on
+            region=aoi,
+            scale=scale,
             geometries=True
         )),
+
         ("sample", lambda: ee.FeatureCollection(
             decline.sample(
-                region=param['aoi'],
-                scale=param['pixel_scale'],
-                numPixels=param['kmeans_num_sample'],
+                region=aoi,
+                scale=scale,
+                numPixels=n,
                 tileScale=12,
                 geometries=True
             ).randomColumn().sort('random')
         )),
+
         ("sampleRegions", lambda: ee.FeatureCollection(
             decline.sampleRegions(
-                collection=param['aoi'],        # must be a FeatureCollection
-                scale=param['pixel_scale'],
+                collection=aoi,   # must be a FeatureCollection
+                scale=scale,
                 geometries=True
-            ).randomColumn().sort('random').toList(param['kmeans_num_sample'])
+            ).randomColumn().sort('random').toList(n)
         )),
     ]
 
-    sample = None
-    for name, fn in attempts:
+    attempt_logs = []
+
+    for name, builder in attempts:
+        if asset_exists(asset_id):
+            return {'final_state': 'COMPLETED', 'assetId': asset_id, 'attempts': attempt_logs}
+
         try:
-            sample = fn()
-            # Validate it's non-empty if you want:
-            # if ee.Number(sample.size()).getInfo() == 0: raise ValueError("Empty sample")
-            print(f"Using method: {name}")
-            break
+            fc = builder()
         except Exception as e:
-            print(f"{name} failed: {e}")
+            attempt_logs.append({'name': name, 'build_error': str(e)})
+            continue
 
-    if sample is None:
-        raise RuntimeError("All sampling methods failed.")
+        desc = f"{desc_base}__{name}"
+        task = ee.batch.Export.table.toAsset(
+            collection=fc,
+            description=desc,
+            assetId=asset_id
+        )
+        task.start()
 
-    task = ee.batch.Export.table.toAsset(
-        collection=sample,
-        description=param['kmeansName'] + "_sample",
-        assetId=param['assetDir'] + param['kmeansName'] + "_sample"
-    )
-    task.start()
-    return task
+        status = _wait_for_task(task,
+                               poll_seconds=poll_seconds,
+                               timeout_minutes=timeout_minutes,
+                               on_update=log)
+        attempt_logs.append({'name': name, 'task_id': task.id, 'status': status})
+        state = status.get('state')
 
+        if state == 'COMPLETED' or asset_exists(asset_id):
+            return {'final_state': 'COMPLETED', 'assetId': asset_id, 'attempts': attempt_logs}
+        # else try next attempt
+
+    return {'final_state': 'FAILED', 'assetId': asset_id, 'attempts': attempt_logs}
 ##############################################################################
 # make KMEANS iamge 
 ##############################################################################
@@ -1902,8 +1975,8 @@ def main():
 			task_decline_snic = DecliningSNIC(param)
 			wait_for_task(task_decline_snic)
 
-		task_kmeans_sample = buildKMeansSample(param)
-		wait_for_task(task_kmeans_sample)
+		buildKMeansSample(param)
+		#wait_for_task(task_kmeans_sample)
 
 		task_kmeans = kMeansImage(param)
 		wait_for_task(task_kmeans)
