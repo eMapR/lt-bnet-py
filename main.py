@@ -1085,7 +1085,7 @@ def buildKMeansSample(param,
 
         ("stratifiedSample", lambda: decline.stratifiedSample(
             numPoints=100,
-            classBand=class_band,   # if missing/invalid, this attempt will fail and we move on
+            classBand="decline_score",   # if missing/invalid, this attempt will fail and we move on
             region=aoi,
             scale=scale,
             geometries=True
