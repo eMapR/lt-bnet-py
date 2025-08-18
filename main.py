@@ -1074,6 +1074,15 @@ def buildKMeansSample(param,
     class_band = param.get('class_band')
 
     attempts = [
+
+        ("stratifiedSample", lambda: decline.stratifiedSample(
+            numPoints=200,
+            classBand="decline_score",   # if missing/invalid, this attempt will fail and we move on
+            region=aoi,
+            scale=scale,
+            geometries=True
+        )),
+
         ("reduceToVectors-centroids", lambda: decline.reduceToVectors(
             geometry=aoi,
             scale=scale,
@@ -1081,14 +1090,6 @@ def buildKMeansSample(param,
             labelProperty='zone',
             maxPixels=1e13,
             reducer=ee.Reducer.first(),
-        )),
-
-        ("stratifiedSample", lambda: decline.stratifiedSample(
-            numPoints=100,
-            classBand="decline_score",   # if missing/invalid, this attempt will fail and we move on
-            region=aoi,
-            scale=scale,
-            geometries=True
         )),
 
         ("sample", lambda: ee.FeatureCollection(
@@ -1902,7 +1903,7 @@ def main():
 		wait_for_task(task2)
 		wait_for_task(task4)
 
-		res = CreatePredictorDisturbancePolygons(param,"bucket")  # returns {'mode','tasks','asset_paths','subregions'}
+		res = CreatePredictorDisturbancePolygons(param,"auto")  # returns {'mode','tasks','asset_paths','subregions'}
 		if res !=0:
 
 			# 1) Wait for all started exports (skip Nones from "exists, skipping")
@@ -1932,7 +1933,7 @@ def main():
 					return name.startswith(base_name + "_")
 	
 				# Prefer deleting only shards created in THIS run; fall back to all shards if list is empty
-				candidates = created_paths if created_paths else asset_paths
+				candidates = res['created_asset_paths'] if res['created_asset_paths'] else asset_paths
 				to_delete  = [a for a in candidates if looks_like_shard(a)]
 
 				# Dry-run first if you want to preview

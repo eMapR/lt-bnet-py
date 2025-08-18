@@ -42,13 +42,13 @@ param['brightness_value']='2500'
 param['configName'] = 'option3'
 param['agent_lookback'] = 5
 param['decline_step'] = 10
-param['decline_thresholds'] = {'tcb': 70, 'tcg': 50, 'tcw': 50}
+param['decline_thresholds'] = {'tcb': 70, 'tcg': 70, 'tcw': 70}
 
 param['kmeans_num_sample'] = 1000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 15
+param['bnet_polygon_mmu'] = 10
 param['bnet_buffer'] = 100
 
 param['ADS_path'] = {"on":0,"path": f"projects/{param['project_name']}/assets/adsplaceholder"} 
