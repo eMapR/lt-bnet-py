@@ -21,6 +21,7 @@ param['composite_params'] = {
     "mask_labels": ['cloud', 'shadow', 'snow', 'water'],
     "debug": True
 }
+
 param['index'] = "NBR"
 param['fit'] = ["TCB", "TCG", "TCW","NBR"]
 param['version'] = "1"
@@ -36,6 +37,7 @@ param['change_params'] = {
                 }
 param['huc6-id'] = '190803'
 param['subregion']= 'kenai-peninsula'
+param['sub_region']= 'kenai-peninsula'
 #classify high mag polygons
 param['num_trees']= 200
 param['class_heavy']=0
@@ -53,7 +55,7 @@ param['kmeans_num_sample'] = 1000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 20
+param['bnet_polygon_mmu'] = 10
 param['bnet_buffer'] = 100
 
 

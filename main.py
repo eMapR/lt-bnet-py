@@ -1613,10 +1613,12 @@ def split_multi_polygon_ss(feature):
 # 
 ##############################################################################
 def calc_attri_fields(param):
+    today = datetime.datetime.today()
+    formatted_date = today.strftime("%m-%d-%Y")
 
     fields = {
       'ACRES': 0,
-      'CREATED_DATE': '07-21-2025',
+      'CREATED_DATE': formatted_date,
       'DAMAGE_TYPE_CODE': 0,
       'DCA_CODE': 0,
       'HOST_CODE': 0,
