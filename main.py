@@ -891,12 +891,48 @@ def CreateForestMask(param):
 			.multiply(fire_img) \
 			.multiply(tassMap) \
 			.updateMask(ee.ImageCollection('JRC/GFC2020/V2').mosaic()) \
+
+
 	# export image mask
 	task_mask = ee.batch.Export.image.toAsset(
 		#image=ee.Image(param['LTSDdir'] + param['LTSDname']).select([0]).multiply(0).add(1).byte(),
 		image=mask.byte(),
  		description=param['forestMaskName'],
 		assetId=param["assetDir"]+param['forestMaskName'],
+		region=param['aoi'].geometry(),
+		scale=param['pixel_scale'],
+		maxPixels=1e13
+	)
+	task_mask.start()
+
+	return task_mask
+##############################################################################
+# Create forest mask
+##############################################################################
+def CreateForestMaskVis(param):
+	# check to see if output asset exists
+	exists = asset_exists(param["assetDir"]+param['forestMaskName']+"_label")
+
+	if exists:
+
+		return
+
+	mtbs = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
+
+	lcms  = bnet.lcms_forest_mask(2024, param['target'], param).unmask(0).toInt()      # 0/1
+	tass  = bnet.tasselCapMask(param).unmask(0).toInt()                                 # 0/1
+	high  = param['ltchange'].gt(0).unmask(0).toInt()                                   # 0/1
+	fire  = mtbs.filter(ee.Filter.And(ee.Filter.gte("Ig_Date", param['maskStartTime']),ee.Filter.lte("Ig_Date", param['maskEndTime']))).reduceToImage(["Map_ID"], ee.Reducer.mean()).gt(0).unmask(0).toInt()      # 0/1
+
+	# code = (tass<<3) | (fire<<2) | (high<<1) | (lcms<<0)
+	mask_code = (lcms.bitwiseOr(high.leftShift(1)).bitwiseOr(fire.leftShift(2)).bitwiseOr(tass.leftShift(3)).toInt16().clip(param['aoi']).updateMask(ee.ImageCollection('JRC/GFC2020/V2').mosaic()))
+
+	# export image mask
+	task_mask = ee.batch.Export.image.toAsset(
+		#image=ee.Image(param['LTSDdir'] + param['LTSDname']).select([0]).multiply(0).add(1).byte(),
+		image=mask_code.int16(),
+ 		description=param['forestMaskName']+"_label",
+		assetId=param["assetDir"]+param['forestMaskName']+"_label",
 		region=param['aoi'].geometry(),
 		scale=param['pixel_scale'],
 		maxPixels=1e13
@@ -1962,6 +1998,7 @@ def main():
 		task12 = rasterize_classed_polygons(param)
 		wait_for_task(task12)
 
+		task_mask = CreateForestMaskVis(param)	
 		task_mask = CreateForestMask(param)	
 		wait_for_task(task_mask)
 

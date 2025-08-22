@@ -48,7 +48,7 @@ param['kmeans_num_sample'] = 1000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 10
+param['bnet_polygon_mmu'] = 25
 param['bnet_buffer'] = 100
 
 param['ADS_path'] = {"on":0,"path": f"projects/{param['project_name']}/assets/adsplaceholder"} 
@@ -96,6 +96,9 @@ param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_m
 
 #parameters export
 param['parameter_file'] = f"{param['project_name']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu_parameter_file"
+
+param['outputfile_prefix'] = f"Bugnet_{param['subregion']}_v{param['target']}-{param['version']}_Annual_Change" 
+
 
 if param["platform"] == 'HlS':
     param['lt_collection_params'] = {

@@ -49,13 +49,13 @@ param['configName'] = 'option3'
 param['agent_lookback'] = 5
 param['decline_step'] = 10
 
-param['decline_thresholds'] = {'tcb': 70, 'tcg': 70, 'tcw': 70}
+param['decline_thresholds'] = {'tcb': 70, 'tcg': 60, 'tcw': 60}
 
 param['kmeans_num_sample'] = 1000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 10
+param['bnet_polygon_mmu'] = 30
 param['bnet_buffer'] = 100
 
 
@@ -104,6 +104,8 @@ param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_m
 
 #parameters export
 param['parameter_file'] = f"{param['project_name']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu_parameter_file"
+
+param['outputfile_prefix'] = f"Bugnet_{param['subregion']}_v{param['target']}-{param['version']}_Annual_Change" 
 
 
 if param["platform"] == 'HlS':
