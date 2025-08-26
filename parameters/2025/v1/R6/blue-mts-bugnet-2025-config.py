@@ -3,13 +3,13 @@ from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 from datetime import date
 import datetime 
 param = {}
-param['project_name'] = 'eastern-cascades-wa-bugnet'
+param['project_name'] = 'blue-mts-bugnet'
 ee.Initialize(project=param['project_name'])
 param["platform"] = 'LS'
 param['ltstartYear'] = 2000
 param['ltendYear'] = 2025
 param['target'] = 2025
-param['aoi'] = ee.FeatureCollection(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name', 'Eastern Cascades Slopes and Foothills')).geometry().intersection(ee.FeatureCollection("TIGER/2018/States").filter(ee.Filter.eq('NAME', 'Washington')).geometry(), ee.ErrorMargin(1)))
+param['aoi'] = ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name','Blue Mountains'))
 param['composite_params'] = {
     "start_date": date(param['ltstartYear'], 5,1),
     "end_date": date(param['ltendYear'], 9,20),
@@ -29,8 +29,8 @@ param['change_params'] = {
                     'mmu': {'value': 5}
                 }
 
-param['subregion']= 'easternCascadesWA'
-param['sub_region']="easternCascadesWA"
+param['subregion']= 'blueMts'
+param['sub_region']="blueMts"
 
 #classify high mag polygons
 param['num_trees']= 200
@@ -41,13 +41,13 @@ param['brightness_value']='2500' #  higher for ...
 param['configName'] = 'option3'
 param['agent_lookback'] = 5
 param['decline_step'] = 10
-param['decline_thresholds'] = {'tcb': 70, 'tcg': 50, 'tcw': 50}
+param['decline_thresholds'] = {'tcb': 70, 'tcg': 70, 'tcw': 70}
 
 param['kmeans_num_sample'] = 5000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 5
+param['bnet_polygon_mmu'] = 20
 param['bnet_buffer'] = 100
 
 param['ADS_path'] = {"on":0,"path": f"projects/{param['project_name']}/assets/adsplaceholder"} 
