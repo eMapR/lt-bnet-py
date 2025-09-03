@@ -6,63 +6,58 @@ import datetime
 
 param = {}
 
-param['project_name'] = 'north-cascades-bugnet'
+param['project_name'] = 'william-sound-bugnet'
 ee.Initialize(project=param['project_name'])
-param["platform"] = 'LS'
+
+param["platform"] = 'LS' 
 param['ltstartYear'] = 2000
 param['ltendYear'] = 2025
 param['target'] = 2025
-
-#param['aoi'] = ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name','North Cascades'))
-param['aoi'] = ee.FeatureCollection(ee.Feature(ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name','North Cascades')).toList(1,2).get(0)))
-
+param['aoi'] = ee.FeatureCollection("USGS/WBD/2017/HUC06").filter(ee.Filter.eq('name','Prince William Sound'))
 param['composite_params'] = {
     "start_date": date(param['ltstartYear'], 7,1),
     "end_date": date(param['ltendYear'], 9,20),
     "area_of_interest": param['aoi'],
-    #"mask_labels": ['cloud', 'shadow', 'snow', 'water'],
-    #"debug": True
+    "mask_labels": ['cloud', 'shadow', 'snow', 'water'],
+    "debug": True
 }
+
 param['index'] = "NBR"
 param['fit'] = ["TCB", "TCG", "TCW","NBR"]
-param['version'] = "3"
+param['version'] = "1"
 param['pixel_scale'] = 30
 param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
                     'years': {'start': param['composite_params']["end_date"].year-6, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 350, 'operator': '>' },
-                    'dur': {'value': 3, 'operator': '<'},
+                    'mag': {'value': 200, 'operator': '>' },
+                    'dur': {'value': 4, 'operator': '<'},
                     'preval': {'value': 300, 'operator': '>'},
-                    'mmu': {'value': 8}
+                    'mmu': {'value': 10}
                 }
-
-
-
+param['huc6-id'] = '190202'
+param['subregion']= 'william-sound'
+param['sub_region']= 'william-sound'
 #classify high mag polygons
 param['num_trees']= 200
 param['class_heavy']=0
-param['polygon-split-method'] = 'grid'
-
-param['study_region'] = "CONUS" # AK or CONUS
+param['polygon-split-method'] = 'auto'
+param['study_region'] = "AK" # AK or CONUS
 param['brightness_value']='2500'
+#decline
 param['configName'] = 'option3'
 param['agent_lookback'] = 5
 param['decline_step'] = 10
-param['decline_thresholds'] = {'tcb': 70, 'tcg': 50, 'tcw': 50} #70,70,70
 
+param['decline_thresholds'] = {'tcb': 70, 'tcg': 50, 'tcw': 50}
 
-
-param['kmeans_num_sample'] = 500
+param['kmeans_num_sample'] = 1000
 param['num_of_clusters'] = 3
 
 #polygonization
-param['bnet_polygon_mmu'] = 30
+param['bnet_polygon_mmu'] = 10
 param['bnet_buffer'] = 100
 
-
-param['subregion']= 'north-cascades'
-param['sub_region']= 'north-cascades'
 
 param['ADS_path'] = {"on":0,"path": f"projects/{param['project_name']}/assets/adsplaceholder"} 
 param['wild_path'] = {"on":1,"path": f"projects/bnet-main/assets/BdyDesg_LSRS_Wilderness","path2":f"projects/north-cascades-bugnet/assets/nps_boundary"} 
@@ -112,6 +107,7 @@ param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_m
 param['parameter_file'] = f"{param['project_name']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu_parameter_file"
 
 param['outputfile_prefix'] = f"Bugnet_{param['subregion']}_v{param['target']}-{param['version']}_Annual_Change" 
+
 
 if param["platform"] == 'HlS':
     param['lt_collection_params'] = {
@@ -170,4 +166,6 @@ else:
                 "minObservationsNeeded": 6,
         }
     }
-print(param)
+
+#print(param)
+

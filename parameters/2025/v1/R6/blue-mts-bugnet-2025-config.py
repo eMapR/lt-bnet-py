@@ -23,9 +23,9 @@ param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
                     'years': {'start': param['composite_params']["end_date"].year-6, 'end': param['composite_params']["end_date"].year},
-                    'mag': {'value': 150, 'operator': '>' },
+                    'mag': {'value': 250, 'operator': '>' },
                     'dur': {'value': 3, 'operator': '<'},
-                    'preval': {'value': 500, 'operator': '>'},
+                    'preval': {'value': 300, 'operator': '>'},
                     'mmu': {'value': 5}
                 }
 
@@ -35,6 +35,8 @@ param['sub_region']="blueMts"
 #classify high mag polygons
 param['num_trees']= 200
 param['class_heavy']=0
+param['polygon-split-method'] = 'auto'
+
 
 param['study_region'] = "CONUS" # AK or CONUS
 param['brightness_value']='2500' #  higher for ...
@@ -51,6 +53,8 @@ param['bnet_polygon_mmu'] = 20
 param['bnet_buffer'] = 100
 
 param['ADS_path'] = {"on":0,"path": f"projects/{param['project_name']}/assets/adsplaceholder"} 
+param['wild_path'] = {"on":1,"path": f"projects/bnet-main/assets/BdyDesg_LSRS_Wilderness","path2":f"projects/north-cascades-bugnet/assets/nps_boundary"} 
+
 
 #################### automated parameters ################################
 

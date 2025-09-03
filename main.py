@@ -556,8 +556,8 @@ def split_collection_vertically_n(fc, n_splits):
 ##############################################################################
 def CreatePredictorDisturbancePolygons(
     param,
-    strategy="auto",            # "auto" | "full" | "bucket" | "grid"
-    buckets=8,                  # number of attribute buckets when strategy == "bucket"/"auto"
+    strategy="grid",            # "auto" | "full" | "bucket" | "grid"
+    buckets=10,                  # number of attribute buckets when strategy == "bucket"/"auto"
     grid_cell_m=40000,          # grid cell size for "grid"/"auto"
     random_seed=0               # seed for deterministic buckets
 ):
@@ -638,6 +638,7 @@ def CreatePredictorDisturbancePolygons(
 
     # ---------- Attempt 3: SPATIAL GRID (last resort) ----------
     def attempt_grid():
+        print('grid')
         split_fc = split_collection_covering_grid(param["aoi"], int(grid_cell_m))
         count = split_fc.size().getInfo()
         feats = split_fc.toList(count)
@@ -825,7 +826,32 @@ def buffer_classed_polygons(param):
 	else:
 		fc1 = ee.FeatureCollection(param["assetDir"]+param['filtered_classes'])
 		fc2 = run.buffer_features(fc1, 100)
-		task = run.export_feature_collection(fc2, param['buffered_classes'], param['assetDir'])
+
+		#High Magnitude -- makes a raster mask from vector layer of clear cuts fire etc 
+		if param['wild_path']["on"]:
+			# Build an "intersects" condition using geometry fields
+			cond = ee.Filter.intersects(
+				leftField='.geo',   # geometry of 'many'
+				rightField='.geo'   # geometry of 'few'
+			)
+			# Inverted join: keep features from 'many' that do NOT intersect anything in 'few'
+			many_without_few = ee.Join.inverted().apply(
+				primary=fc2,
+				secondary=ee.FeatureCollection(param['wild_path']['path']).merge(ee.FeatureCollection(param['wild_path']['path2'])),
+				condition=cond
+			)
+
+			# Filter to class 40 (fire) and merge with the non-intersecting features
+			fire = fc2.filter(ee.Filter.eq('classification', 40))
+			out = fire.merge(many_without_few)
+		else:
+			out = run.buffer_features(fc1, 100)
+
+
+
+
+
+		task = run.export_feature_collection(out, param['buffered_classes'], param['assetDir'])
 		return task
 
 ##############################################################################
@@ -868,8 +894,8 @@ def CreateForestMask(param):
 	#reflectance mask
 	tassMap = bnet.tasselCapMask(param)
 
-	#High Magnitude -- makes a raster mask from vector layer of clear cuts fire etc 
 	highMagChange_img = param['ltchange'].gt(0).unmask().Not()
+
 
 	#Fire mask - filter MTBS dataset by date 
 	fires = mtbs.filter(
@@ -1941,7 +1967,7 @@ def main():
 		wait_for_task(task2)
 		wait_for_task(task4)
 
-		res = CreatePredictorDisturbancePolygons(param,"auto")  # returns {'mode','tasks','asset_paths','subregions'}
+		res = CreatePredictorDisturbancePolygons(param,param['polygon-split-method'])  # returns {'mode','tasks','asset_paths','subregions'}
 		if res !=0:
 
 			# 1) Wait for all started exports (skip Nones from "exists, skipping")
