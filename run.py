@@ -47,13 +47,13 @@ def get_fitted_stack(lt,prefix,parameters):
 	if prefix == "fitted_training":
 
 		# Extract fitted data for each index 8 9 10 11 12
-		nbr = rename_bands_by_year(lt.get_fitted_data(index_list[0], start_date=start_date, end_date=end_date),index_list[0],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
-		tcb = rename_bands_by_year(lt.get_fitted_data(index_list[1], start_date=start_date, end_date=end_date),index_list[1],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
-		tcg = rename_bands_by_year(lt.get_fitted_data(index_list[2], start_date=start_date, end_date=end_date),index_list[2],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
-		#tcw = rename_bands_by_year(lt.get_fitted_data(index_list[3], start_date=start_date, end_date=end_date),index_list[3],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		img1 = rename_bands_by_year(lt.get_fitted_data(index_list[0], start_date=start_date, end_date=end_date),index_list[0],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		img2 = rename_bands_by_year(lt.get_fitted_data(index_list[1], start_date=start_date, end_date=end_date),index_list[1],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		img3 = rename_bands_by_year(lt.get_fitted_data(index_list[2], start_date=start_date, end_date=end_date),index_list[2],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
+		img4 = rename_bands_by_year(lt.get_fitted_data(index_list[3], start_date=start_date, end_date=end_date),index_list[3],start_year, end_year).select([3,4,5,6,7,8,9,10,11,12])
 
 		# Merge all predictor data into a final stack
-		stack = nbr.addBands(tcb).addBands(tcg) #.addBands(tcw)
+		stack = img1.addBands(img2).addBands(img3).addBands(img4)
 
 		return stack
 	else:
@@ -61,16 +61,13 @@ def get_fitted_stack(lt,prefix,parameters):
 		band_count = ((end_year+1) - start_year)
 		last_bands = ee.List.sequence(band_count - selection, band_count - 1)
 		# Extract fitted data for each index
-		nbr = rename_bands_by_year(lt.get_fitted_data(index_list[0], start_date=start_date, end_date=end_date),index_list[0],start_year, end_year).select(last_bands)
-		tcb = rename_bands_by_year(lt.get_fitted_data(index_list[1], start_date=start_date, end_date=end_date),index_list[1],start_year, end_year).select(last_bands)
-		tcg = rename_bands_by_year(lt.get_fitted_data(index_list[2], start_date=start_date, end_date=end_date),index_list[2],start_year, end_year).select(last_bands)
-		#nbr = rename_bands_by_year(lt.get_fitted_data("nbr", start_date=start_date, end_date=end_date),'nbr',start_year, end_year).select(last_bands)
-		#tcb = rename_bands_by_year(lt.get_fitted_data("tcb", start_date=start_date, end_date=end_date),'tcb',start_year, end_year).select(last_bands)
-		#tcg = rename_bands_by_year(lt.get_fitted_data("tcg", start_date=start_date, end_date=end_date),'tcg',start_year, end_year).select(last_bands)
-		#tcw = rename_bands_by_year(lt.get_fitted_data("tcw", start_date=start_date, end_date=end_date),'tcw',start_year, end_year).select(last_bands)
+		img1 = rename_bands_by_year(lt.get_fitted_data(index_list[0], start_date=start_date, end_date=end_date),index_list[0],start_year, end_year).select(last_bands)
+		img2 = rename_bands_by_year(lt.get_fitted_data(index_list[1], start_date=start_date, end_date=end_date),index_list[1],start_year, end_year).select(last_bands)
+		img3 = rename_bands_by_year(lt.get_fitted_data(index_list[2], start_date=start_date, end_date=end_date),index_list[2],start_year, end_year).select(last_bands)
+		img4 = rename_bands_by_year(lt.get_fitted_data(index_list[3], start_date=start_date, end_date=end_date),index_list[3],start_year, end_year).select(last_bands)
 
 		# Merge all predictor data into a final stack
-		stack = nbr.addBands(tcb).addBands(tcg) #.addBands(tcw)
+		stack = img1.addBands(img2).addBands(img3).addBands(img4)
 
 		return stack
 

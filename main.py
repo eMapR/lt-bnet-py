@@ -1820,6 +1820,22 @@ def merge_buffer_buckets_and_finish(param, asset_ids):
 
 
 ##############################################################################
+# set access 
+##############################################################################
+
+def walk(parent_id):
+    """Yield every child asset (recursively)."""
+    info = ee.data.getAsset(parent_id)                     # e.g., 'projects/your-project/assets/folder'
+    for child in ee.data.listAssets({'parent': info['name']}).get('assets', []):
+        t = child['type']
+        name = child['name']
+        if t in ('FOLDER', 'IMAGE_COLLECTION'):
+            for x in walk(name):
+                yield x
+        else:
+            yield name
+
+##############################################################################
 # export metadata
 ##############################################################################
 def export_parameter_file(param):
@@ -1836,6 +1852,8 @@ def gui():
 	print("    4 - Clean.")
 	mode = input(':')
 	if mode == '2':
+		return mode
+	elif mode == '5':
 		return mode
 	elif mode == '4':
 		return mode
@@ -1874,6 +1892,16 @@ def main():
 	if mode == '4':
 		run.list_and_delete_assets(param['assetDir'])
 		sys.exit()
+
+
+	if mode == '5':
+		# Example: make everything under a folder publicly readable
+		parent = param['assetDir']
+		acl_update = {'all_users_can_read': True}  # public-read
+		for asset in walk(parent):
+			print('Updating:', asset)
+			ee.data.setAssetAcl(asset, acl_update)
+
 
 	elif mode == '1':
 

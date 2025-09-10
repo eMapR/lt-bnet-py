@@ -89,35 +89,6 @@ def generate_year_list(start_year, end_year, index):
     return year_list
 
 
-def standardized_lt_image(ltrendr, start_Year, end_Year, fit_index, std_end_year):
-
-
-    nbr_years = generate_year_list(start_Year, end_Year,'nbr')
-    fitted_nbr = ltrendr.data.select(['ftv_nbr_fit']).arrayFlatten([nbr_years]) 
-    tcb_years = generate_year_list(start_Year, end_Year,'tcb')
-    fitted_tcb = ltrendr.data.select(['ftv_tcb_fit']).arrayFlatten([tcb_years]) 
-    tcg_years = generate_year_list(start_Year, end_Year,'tcg')
-    fitted_tcg = ltrendr.data.select(['ftv_tcg_fit']).arrayFlatten([tcg_years]) 
-    tcw_years = generate_year_list(start_Year, end_Year,'tcw')
-    fitted_tcw = ltrendr.data.select(['ftv_tcw_fit']).arrayFlatten([tcw_years]) 
-
-    years = [str(std_end_year - i) for i in [9, 5, 2, 1, 0]]
-    nbr_tapered = fitted_nbr.select([f"nbr_ftv_{year}" for year in years], [f"yr_{year}_nbr" for year in years])
-    tcb_tapered = fitted_tcb.select([f"tcb_ftv_{year}" for year in years], [f"yr_{year}_tcb" for year in years])
-    tcg_tapered = fitted_tcg.select([f"tcg_ftv_{year}" for year in years], [f"yr_{year}_tcg" for year in years])
-    tcw_tapered = fitted_tcw.select([f"tcw_ftv_{year}" for year in years], [f"yr_{year}_tcw" for year in years])
-
-    def standardize(fitted):
-        mean = fitted.reduce(ee.Reducer.mean())
-        return fitted.subtract(mean)
-
-    standardized_nbr = standardize(nbr_tapered).rename([f"yr_{year}_nbr_ltsd" for year in years])
-    standardized_tcb = standardize(tcb_tapered).rename([f"yr_{year}_tcb_ltsd" for year in years])
-    standardized_tcg = standardize(tcg_tapered).rename([f"yr_{year}_tcg_ltsd" for year in years])
-    standardized_tcw = standardize(tcw_tapered).rename([f"yr_{year}_tcw_ltsd" for year in years])
-
-    return standardized_nbr.addBands(standardized_tcb).addBands(standardized_tcg).addBands(standardized_tcw).addBands(nbr_tapered).addBands(tcb_tapered).addBands(tcg_tapered).addBands(tcw_tapered)
-
 
 
 def filter_ads(agent, severity, defol, ads_col, all):
