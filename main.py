@@ -44,7 +44,6 @@ def flatten_dict(d, parent_key='', sep='_'):
 
     transformed_list = []
     for key, value in items:
-        print(key,value)
         if isinstance(value, list):  # Convert list to comma-separated string
             if isinstance(value[0], int):
                 value = [str(element) for element in value]
@@ -136,7 +135,6 @@ def list_assets(params):
 ##############################################################################
 def get_user_input(prompt, options):
     """Utility function to get user input with validation."""
-    print(prompt)
     for idx, option in enumerate(options):
         print(f"{idx + 1}. {option}")
     choice = input("Enter your choice: ")
@@ -231,32 +229,68 @@ def export_to_cloud_storage(asset, bucket, path):
 ##############################################################################
 # 
 ##############################################################################
-def export_assets(params):
-    """Main function to guide the user through exporting assets."""
-    # Ask the user for export location
+# Stable tails (region-agnostic) for items that include a varying region prefix
+DEFAULT_SUFFIXES = [
+    "_mag50_10mmu_parameter_file",
+    "_mag50_20mmu_parameter_file",
+    "_mag50_30mmu_parameter_file",
+    "_mag60_10mmu_parameter_file",
+    "_mag60_20mmu_parameter_file",
+    "_mag60_30mmu_parameter_file",
+    "_mag70_10mmu_parameter_file",
+    "_mag70_20mmu_parameter_file",
+    "_mag70_30mmu_parameter_file",
+]
+
+# Exact basenames for items that don't include the region slug
+DEFAULT_BASENAMES = [
+    "A_predictor_fitted_img_2020_2025",
+    "C4_classed_img_2025",
+    "D_bugnet_forest_mask_2025",
+    "bugnet_polygons_buffered_2025_mag50_10mmu",
+    "bugnet_polygons_buffered_2025_mag50_20mmu",
+    "bugnet_polygons_buffered_2025_mag50_30mmu",
+    "bugnet_polygons_buffered_2025_mag60_10mmu",
+    "bugnet_polygons_buffered_2025_mag60_20mmu",
+    "bugnet_polygons_buffered_2025_mag60_30mmu",
+    "bugnet_polygons_buffered_2025_mag70_10mmu",
+    "bugnet_polygons_buffered_2025_mag70_20mmu",
+    "bugnet_polygons_buffered_2025_mag70_30mmu",
+]
+
+def _is_default_asset(asset_id: str) -> bool:
+    """True if this asset matches our default selection rules."""
+    base = asset_id.rsplit('/', 1)[-1]  # basename
+    if base in DEFAULT_BASENAMES:
+        return True
+    return any(base.endswith(sfx) for sfx in DEFAULT_SUFFIXES)
+
+def export_assets(params, use_defaults=True):
+    """Main function to export assets automatically or interactively."""
     location = get_user_input(
         "Where would you like to export your assets?",
         ['Google Drive', 'Google Cloud Storage']
     )
 
-    # List all assets
     assets = list_assets(params)
-    print("\nAvailable assets:")
-    for idx, asset in enumerate(assets):
-        print(f"{idx + 1}. {asset['id']} ({asset['type']})")
 
-    # Get user selection
-    selected_indices = input(
-        "Enter the numbers of the assets you'd like to export (comma-separated): "
-    ).split(',')
-    selected_indices = [int(idx.strip()) - 1 for idx in selected_indices if idx.strip().isdigit()]
-    selected_assets = [assets[idx] for idx in selected_indices]
+    if use_defaults:
+        selected_assets = [a for a in assets if _is_default_asset(a['id'])]
+        print(f"Exporting {len(selected_assets)} default assets...")
+    else:
+        print("\nAvailable assets:")
+        for idx, asset in enumerate(assets):
+            print(f"{idx + 1}. {asset['id']} ({asset['type']})")
+        selected_indices = input(
+            "Enter the numbers of the assets you'd like to export (comma-separated): "
+        ).split(',')
+        selected_indices = [int(idx.strip()) - 1 for idx in selected_indices if idx.strip().isdigit()]
+        selected_assets = [assets[idx] for idx in selected_indices]
 
-    # Perform export based on location
     if location == 'Google Drive':
         folder = input("Enter the Google Drive folder name: ")
         for asset in selected_assets:
-            export_to_drive(params['outputfile_prefix'],asset, folder,params)
+            export_to_drive(params['outputfile_prefix'], asset, folder, params)
     elif location == 'Google Cloud Storage':
         bucket = input("Enter the Google Cloud Storage bucket name: ")
         path = input("Enter the path within the bucket: ")
@@ -368,7 +402,7 @@ def CreatePredictorFittedImagery(lt,param):
 
 	else:
 		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
-		fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',param).mask(treeMask)
+		fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',param).mask(treeMask).int16()
 		task = run.export_image(fitted_img_p,param, param['assetDir'],param['fitted_img_p'],param['pixel_scale'])
 		return task
 
@@ -713,8 +747,6 @@ def merge_selected_feature_collections(asset_folder, id_suffixes, output_asset_i
                     break  # Stop checking other suffixes once a match is found
     if not fc_ids:
         raise ValueError("No matching FeatureCollections found for the provided suffixes.")
-    print("fc_ids")
-    print(fc_ids)
     # Load and merge FeatureCollections
     fc_list = [ee.FeatureCollection(fc_id) for fc_id in fc_ids]
     merged_fc = ee.FeatureCollection(fc_list).flatten()
