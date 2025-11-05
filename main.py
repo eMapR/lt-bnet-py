@@ -7,7 +7,6 @@ import time
 import datetime
 #from parameters import blue_mt_config_opt3_2023 as bnet_config
 import bnet as bnet
-import run as run
 import importlib.util
 
 
@@ -36,7 +35,7 @@ def flatten_dict(d, parent_key='', sep='_'):
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
         if isinstance(v, dict):
             items.extend(flatten_dict(v, new_key, sep=sep).items())
-        elif isinstance(v, (ee.FeatureCollection, ee.Image, LandsatComposite)):
+        elif isinstance(v, (ee.FeatureCollection, ee.Image, ee.ImageCollection ,LandsatComposite)):
             items.append((new_key, "GEE object"))
         else:
             items.append((new_key, v))
@@ -388,8 +387,8 @@ def CreateTrainingFittedImagery(lt,param):
 		return
 
 	else:
-		fitted_img_t = run.get_fitted_stack(lt,'fitted_training',param)
-		task = run.export_image(fitted_img_t,param, param['assetDir_t'],param['fitted_img_t'],param['pixel_scale'])
+		fitted_img_t = bnet.get_fitted_stack(lt,'fitted_training',param)
+		task = bnet.export_image(fitted_img_t,param, param['assetDir_t'],param['fitted_img_t'],param['pixel_scale'])
 		return task
 
 def CreatePredictorFittedImagery(lt,param):
@@ -402,8 +401,8 @@ def CreatePredictorFittedImagery(lt,param):
 
 	else:
 		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
-		fitted_img_p = run.get_fitted_stack(lt,'fitted_predictor',param).mask(treeMask).int16()
-		task = run.export_image(fitted_img_p,param, param['assetDir'],param['fitted_img_p'],param['pixel_scale'])
+		fitted_img_p = bnet.get_fitted_stack(lt,'fitted_predictor',param).mask(treeMask).int16()
+		task = bnet.export_image(fitted_img_p,param, param['assetDir'],param['fitted_img_p'],param['pixel_scale'])
 		return task
 
 ##############################################################################
@@ -421,7 +420,7 @@ def CreateTrainingChangeImagery(lt,param):
 
 		param['change_params']['years'] = {'start': 2007, 'end': 2012}
 		change_img_t = lt.get_change_map(param['change_params'])
-		task = run.export_image(change_img_t, param, param['assetDir_t'],param['training_change_img'],param['pixel_scale'])
+		task = bnet.export_image(change_img_t, param, param['assetDir_t'],param['training_change_img'],param['pixel_scale'])
 		return task
 
 ##############################################################################
@@ -436,10 +435,10 @@ def CreatePredictorChangeImagery(lt,param):
 		return
 
 	else:
-		param['change_params']['years'] = {'start': param['composite_params']['end_date'].year-6, 'end': param['composite_params']['end_date'].year}
+		#param['change_params']['years'] = {'start': param['composite_params']['end_date'].year-6, 'end': param['composite_params']['end_date'].year}
 		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
 		change_img_p = lt.get_change_map(param['change_params']).mask(treeMask)
-		task = run.export_image(change_img_p,param, param['assetDir'],param['predictor_change_img'],param['pixel_scale'])
+		task = bnet.export_image(change_img_p,param, param['assetDir'],param['predictor_change_img'],param['pixel_scale'])
 
 		return task
 
@@ -457,8 +456,8 @@ def CreateTrainingDisturbancePolygons(param):
 	else:
 
 		change_img_t = ee.Image(param["assetDir_t"]+param['training_change_img']) #.unmask().clip(param['aoi'])
-		disturbance_polygons_t = run.vectorize_disturbance(change_img_t,param)
-		task = run.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir_t'])
+		disturbance_polygons_t = bnet.vectorize_disturbance(change_img_t,param)
+		task = bnet.export_feature_collection(disturbance_polygons_t,param['disturbance_polygons_training'],param['assetDir_t'])
 		return task
 
 ##############################################################################
@@ -623,14 +622,14 @@ def CreatePredictorDisturbancePolygons(
             print(f"exists, skipping: {asset_id}")
             return None, asset_id
         desc = param['disturbance_polygons_predictor'] + suffix
-        task = run.export_feature_collection(fc, desc, param['assetDir'])  # starts inside your wrapper
+        task = bnet.export_feature_collection(fc, desc, param['assetDir'])  # starts inside your wrapper
         created_paths.append(asset_id)  # record only when we actually create one
         return task, asset_id
 
     def _vectorize(img):
         # Centralized call in case you want to tune defaults
         # (e.g., tileScale, maxPixels, geometryType, simplification)
-        return run.vectorize_disturbance(img, param)
+        return bnet.vectorize_disturbance(img, param)
 
     # 0) Short-circuit if a single unsuffixed asset already exists (covers full-case re-runs)
     if strategy in ("auto", "full") and asset_exists(_asset_path()):
@@ -771,19 +770,19 @@ def attributeTrainingPolygons(param):
 
 	else:
 
-		gee_attributed_fc = run.attribute_with_reference_data(param,'training')
+		gee_attributed_fc = bnet.attribute_with_reference_data(param,'training')
 
 		# reproject and change feature collecton to json
-		reprojected_geojson = run.feature_collection_to_geojson(gee_attributed_fc, param['source_epsg'], param['target_epsg'])    # apply reprojections and feature collectio>
+		reprojected_geojson = bnet.feature_collection_to_geojson(gee_attributed_fc, param['source_epsg'], param['target_epsg'])    # apply reprojections and feature collectio>
 
 		# attribute with Cmonster
-		event_polygons_attri1 = run.attribute_with_cmonster_data(reprojected_geojson,param['cMonster_img_path'])                   # apply attribution (cMonster)
+		event_polygons_attri1 = bnet.attribute_with_cmonster_data(reprojected_geojson,param['cMonster_img_path'])                   # apply attribution (cMonster)
 
 		# reproject and convert to featrue collection
-		reprojected_fc = run.geojson_to_ee_feature(event_polygons_attri1, param['target_epsg'], param['source_epsg'])           # apply re-reprojection and geojson to featur>
+		reprojected_fc = bnet.geojson_to_ee_feature(event_polygons_attri1, param['target_epsg'], param['source_epsg'])           # apply re-reprojection and geojson to featur>
 
 		# export
-		task = run.export_feature_collection(reprojected_fc,param['attributed_polygons_training'],param['assetDir_t'] )
+		task = bnet.export_feature_collection(reprojected_fc,param['attributed_polygons_training'],param['assetDir_t'] )
 
 		return task
 
@@ -797,8 +796,8 @@ def attributePredictorPolygons(param):
 		return
 
 	else:
-		gee_attributed_fc = run.attribute_with_reference_data(param,'predictor')
-		task = run.export_feature_collection(gee_attributed_fc,param['attributed_polygons_predictor'],param['assetDir'] )
+		gee_attributed_fc = bnet.attribute_with_reference_data(param,'predictor')
+		task = bnet.export_feature_collection(gee_attributed_fc,param['attributed_polygons_predictor'],param['assetDir'] )
 		return task
 
 ##############################################################################
@@ -818,13 +817,13 @@ def classify_polygons(param):
 		unlabeled_fc = ee.FeatureCollection(param['assetDir']+param['attributed_polygons_predictor'])
 
 		predictor_variables = unlabeled_fc.first().propertyNames()
-		labeled_fc = run.drop_null_features(labeled_fc,predictor_variables).filter(ee.Filter.neq('mode_value', 160))
-		unlabeled_fc = run.drop_null_features(unlabeled_fc,predictor_variables)
+		labeled_fc = bnet.drop_null_features(labeled_fc,predictor_variables).filter(ee.Filter.neq('mode_value', 160))
+		unlabeled_fc = bnet.drop_null_features(unlabeled_fc,predictor_variables)
 
-		trained_classifier = run.train_classifier(labeled_fc,"mode_value",predictor_variables,param['num_trees'])
-		classified_fc = run.classify_features(unlabeled_fc, trained_classifier,param['class_heavy'])
+		trained_classifier = bnet.train_classifier(labeled_fc,"mode_value",predictor_variables,param['num_trees'])
+		classified_fc = bnet.classify_features(unlabeled_fc, trained_classifier,param['class_heavy'])
 
-		task = run.export_feature_collection(classified_fc,param['classified_fc'],param['assetDir'])
+		task = bnet.export_feature_collection(classified_fc,param['classified_fc'],param['assetDir'])
 		return task
 
 ##############################################################################
@@ -839,9 +838,9 @@ def filter_classes(param):
 		return
 
 	else:
-		fc1 = run.filter_by_mode_value(ee.FeatureCollection(param['assetDir'] + param['classified_fc']), 19, 41, 60, 90)
+		fc1 = bnet.filter_by_mode_value(ee.FeatureCollection(param['assetDir'] + param['classified_fc']), 19, 41, 60, 90)
 
-		task = run.export_feature_collection(fc1, param['filtered_classes'], param['assetDir'])
+		task = bnet.export_feature_collection(fc1, param['filtered_classes'], param['assetDir'])
 
 		return task
 
@@ -857,7 +856,7 @@ def buffer_classed_polygons(param):
 
 	else:
 		fc1 = ee.FeatureCollection(param["assetDir"]+param['filtered_classes'])
-		fc2 = run.buffer_features(fc1, 100)
+		fc2 = bnet.buffer_features(fc1, 100)
 
 		#High Magnitude -- makes a raster mask from vector layer of clear cuts fire etc 
 		if param['wild_path']["on"]:
@@ -877,13 +876,13 @@ def buffer_classed_polygons(param):
 			fire = fc2.filter(ee.Filter.eq('classification', 40))
 			out = fire.merge(many_without_few)
 		else:
-			out = run.buffer_features(fc1, 100)
+			out = bnet.buffer_features(fc1, 100)
 
 
 
 
 
-		task = run.export_feature_collection(out, param['buffered_classes'], param['assetDir'])
+		task = bnet.export_feature_collection(out, param['buffered_classes'], param['assetDir'])
 		return task
 
 ##############################################################################
@@ -899,8 +898,8 @@ def rasterize_classed_polygons(param):
 
 	else:
 		fc2 = ee.FeatureCollection(param["assetDir"]+param['buffered_classes'])
-		img = run.rasterize_polygons(fc2, 'classification', param['pixel_scale'], region=param['aoi'])
-		task = run.export_image(img, param, param['assetDir'],param['rasterize_classes'])
+		img = bnet.rasterize_polygons(fc2, 'classification', param['pixel_scale'], region=param['aoi'])
+		task = bnet.export_image(img, param, param['assetDir'],param['rasterize_classes'])
 
 		return task
 
@@ -1737,7 +1736,6 @@ def calc_attri_fields(param):
 ##############################################################################
 # 
 ##############################################################################
-#def export_buffer_buckets(param):
 def buffer_bnet_polygons(param):
     # check to see if output asset exists
     exists = asset_exists(param['assetDir'] + param['bnet_buffered_polygons'])
@@ -1747,7 +1745,7 @@ def buffer_bnet_polygons(param):
 
     asset_dir   = param['assetDir']
     base_name   = param['bnet_buffered_polygons']          # e.g., "bnet_buffers_2025"
-    buckets     = int(param.get('buckets', 24))            # tune to stay below 10MB/payload
+    buckets     = int(param.get('buckets', 75))            # tune to stay below 10MB/payload
     buffer_m    = float(param['bnet_buffer'])
     max_err     = float(param.get('buffer_max_error', 10)) # meters
     mmu         = float(param['bnet_polygon_mmu'])
@@ -1833,6 +1831,7 @@ def merge_buffer_buckets_and_finish(param, asset_ids):
     # Continue your pipeline
     img     = ee.Image(asset_dir + param['predicted'])
     fc_bnet = extract_zonal_stats(img, polygons_fc, "mode", "bnet_label", param)
+    #fc_bnet = extract_zonal_stats(img, merged, "mode", "bnet_label", param)
 
     def add_fields(feature):
         return feature.set(calc_attri_fields(param))
@@ -1922,7 +1921,7 @@ def main():
 		export_assets(param)
 		sys.exit()
 	if mode == '4':
-		run.list_and_delete_assets(param['assetDir'])
+		bnet.list_and_delete_assets(param['assetDir'])
 		sys.exit()
 
 
@@ -2157,8 +2156,20 @@ def main():
 				wait_for_task(task_buffer2)
 				delete_assets(assets_ids, dry_run=False)
 
+			exists = asset_exists(param["assetDir"]+param['bnet_buffered_polygons'])
+			if not exists:
+				print(1)
+
 			task_params = dict_to_feature_collection(param)
 			wait_for_task(task_params)
+
+			# Example: make everything under a folder publicly readable
+			parent = param['assetDir']
+			acl_update = {'all_users_can_read': True}  # public-read
+			for asset in walk(parent):
+				print('Updating:', asset)
+				ee.data.setAssetAcl(asset, acl_update)
+
 	else:
 		print('bye')
 
