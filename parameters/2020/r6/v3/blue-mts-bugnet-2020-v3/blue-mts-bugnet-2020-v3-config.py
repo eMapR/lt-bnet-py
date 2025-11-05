@@ -7,7 +7,7 @@ param['project_name'] = 'blue-mts-bugnet'
 ee.Initialize(project=param['project_name'])
 param["platform"] = 'LS'
 param['ltstartYear'] = 2000
-param['ltendYear'] = 2025
+param['ltendYear'] = 2024
 param['target'] = 2020
 param['aoi'] = ee.FeatureCollection("EPA/Ecoregions/2013/L3").filter(ee.Filter.eq('na_l3name','Blue Mountains'))
 param['composite_params'] = {
@@ -22,7 +22,7 @@ param['pixel_scale'] = 30
 param['change_params'] = {
                     'delta': 'loss',
                     'sort': 'greatest',
-                    'years': {'start': param['composite_params']["end_date"].year-6, 'end': param['composite_params']["end_date"].year},
+                    'years': {'start': param['target']-6, 'end': param['target']},
                     'mag': {'value': 350, 'operator': '>' },
                     'dur': {'value': 3, 'operator': '<'},
                     'preval': {'value': 300, 'operator': '>'},
@@ -60,18 +60,18 @@ param['wild_path'] = {"on":1,"path": f"projects/bnet-main/assets/BdyDesg_LSRS_Wi
 
 param['assetDir'] = f"projects/{param['project_name']}/assets/{param['target']}-v{param['version']}/" 
 param['fitted_img_p'] = f"A_predictor_fitted_img_{param['composite_params']['end_date'].year-5}_{param['composite_params']['end_date'].year}" # hardcoded -5
-param['predictor_change_img'] = f"A_predictor_change_img_{param['composite_params']['end_date'].year}"
+param['predictor_change_img'] = f"A_predictor_change_img_{param['target']}"
 
-param['disturbance_polygons_predictor']= f"B1_predictor_disturbance_polygons_{param['composite_params']['end_date'].year}"
-param['attributed_polygons_predictor']= f"B2_attributed_predictor_polygons_{param['composite_params']['end_date'].year}"
+param['disturbance_polygons_predictor']= f"B1_predictor_disturbance_polygons_{param['target']}"
+param['attributed_polygons_predictor']= f"B2_attributed_predictor_polygons_{param['target']}"
 
 # classifcation high mag
-param['classified_fc']= f"C1_classified_polygons_{param['composite_params']['end_date'].year}"
+param['classified_fc']= f"C1_classified_polygons_{param['target']}"
 param['assetDir_t'] = f"projects/{param['project_name']}/assets/" 
 param['attributed_polygons_training']= f"attributed_training_polygons_2012"
-param['filtered_classes'] = f"C2_classified_polygons_filtered_{param['composite_params']['end_date'].year}"
-param['buffered_classes'] = f"C3_classified_polygons_buffered_{param['composite_params']['end_date'].year}"
-param['rasterize_classes'] = f"C4_classed_img_{param['composite_params']['end_date'].year}"
+param['filtered_classes'] = f"C2_classified_polygons_filtered_{param['target']}"
+param['buffered_classes'] = f"C3_classified_polygons_buffered_{param['target']}"
+param['rasterize_classes'] = f"C4_classed_img_{param['target']}"
 
 # forest masking
 param['forestMaskName'] = f"D_bugnet_forest_mask_{param['target']}"
