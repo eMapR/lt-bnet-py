@@ -2,6 +2,7 @@ import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 import os
 import sys
+import re
 import time
 #from datetime import date
 import datetime
@@ -145,22 +146,68 @@ def get_user_input(prompt, options):
 
 ##############################################################################
 # 
+#######################remove_duplicate_substrings#######################################################
+def remove_duplicate_substrings(filename):
+    """
+    Removes duplicate substrings in a filename.
+    Substrings are defined as components separated by _ or -.
+    Keeps the first occurrence of each substring and removes the others.
+    Delimiters (_ and -) are preserved.
+    """
+    # Split into tokens AND keep delimiters
+    parts = re.split(r'([_-])', filename)
+
+    seen = set()
+    cleaned_parts = []
+
+    for part in parts:
+        if part in ['_', '-']:
+            # Keep delimiters exactly as they appear
+            cleaned_parts.append(part)
+        else:
+            # Keep only first occurrence of each substring
+            if part not in seen:
+                cleaned_parts.append(part)
+                seen.add(part)
+
+    result = "".join(cleaned_parts)
+
+    # 2. Collapse any mixed sequences of hyphens/underscores → single underscore
+    result = re.sub(r'[_-]+', '_', result)
+
+    # 3. Remove leading/trailing underscores if any appear
+    result = result.strip('_')
+
+    return result
+
+##############################################################################
+# 
 ##############################################################################
 def export_to_drive(prefix, asset, folder,param):
     """Exports an asset to Google Drive."""
     if asset['type'] == 'TABLE':
+        print('table')
         collection = ee.FeatureCollection(asset['id'])
         if "parameter" in asset['id']:
+            print("param")
+            print(f"{prefix}_{asset['id'].split('/')[-1]}")
+            outname = f"{prefix}_{asset['id'].split('/')[-1]}"
+            outname2 = outname.replace('bugnet_','')
+            outname3 = remove_duplicate_substrings(outname2)
             task = ee.batch.Export.table.toDrive(
                 collection=collection,
-                description=f"{prefix}_{asset['id'].split('/')[-1]}",
+                description=outname3,
                 folder=prefix,
                 fileFormat="CSV"
             )
         else:
+            print('shp')
+            outname = f"{prefix}_{asset['id'].split('/')[-1]}"
+            outname2 = outname.replace('bugnet_','')
+            outname3 = remove_duplicate_substrings(outname2)
             task = ee.batch.Export.table.toDrive(
                 collection=collection,
-                description=f"{prefix}_{asset['id'].split('/')[-1]}",
+                description=outname3,
                 folder=prefix,
                 fileFormat="SHP"
             )
@@ -171,18 +218,24 @@ def export_to_drive(prefix, asset, folder,param):
             count = band_names.size()
             last_three = band_names.slice(count.subtract(3), count)
             last_three_bands = image.select(last_three)
+            outname = f"{prefix}_{asset['id'].split('/')[-1]}"
+            outname2 = outname.replace('bugnet_','')
+            outname3 = remove_duplicate_substrings(outname2)
             task = ee.batch.Export.image.toDrive(
                 image=last_three_bands,
-                description=f"{prefix}_{asset['id'].split('/')[-1]}",
+                description=outname3,
                 folder=prefix,
                 scale=param['pixel_scale'],
                 region=image.geometry().bounds(),
                 maxPixels=1e13
             )
         else:
+            outname = f"{prefix}_{asset['id'].split('/')[-1]}"
+            outname2 = outname.replace('bugnet_','')
+            outname3 = remove_duplicate_substrings(outname2)
             task = ee.batch.Export.image.toDrive(
                 image=image,
-                description=f"{prefix}_{asset['id'].split('/')[-1]}",
+                description=outname3,
                 folder=prefix,
                 scale=param['pixel_scale'],
                 region=image.geometry().bounds(),
@@ -289,6 +342,7 @@ def export_assets(params, use_defaults=True):
     if location == 'Google Drive':
         folder = input("Enter the Google Drive folder name: ")
         for asset in selected_assets:
+            print(params['outputfile_prefix'], folder, params)
             export_to_drive(params['outputfile_prefix'], asset, folder, params)
     elif location == 'Google Cloud Storage':
         bucket = input("Enter the Google Cloud Storage bucket name: ")
@@ -1717,16 +1771,16 @@ def calc_attri_fields(param):
       'HOST_CODE': 0,
       'HOST_GROUP_CODE': 0,
       'IDS_DATA_SOURCE': 91,
-      'KEY': 'clarype@oregonstate.edu',
+      #'KEY': 'clarype@oregonstate.edu',
       'LABEL': 'Default Label',
       'MODIFIED_DATE': '',
       'NOTES': '',
       'PERCENT_AFFECTED_CODE': 2,
-      'SUB_REGION': param['sub_region'],
+      #'SUB_REGION': param['sub_region'],
       'REGION_ID': param['study_region'],
       'SURVEY_YEAR': param['target'],
       'US_AREA': 'CONUS',
-      'MMU': param['bnet_polygon_mmu'], 
+      #'MMU': param['bnet_polygon_mmu'], 
       #'count': 14,
       #'bugnet_label': 1
     };
@@ -1833,9 +1887,19 @@ def merge_buffer_buckets_and_finish(param, asset_ids):
     fc_bnet = extract_zonal_stats(img, polygons_fc, "mode", "bnet_label", param)
     #fc_bnet = extract_zonal_stats(img, merged, "mode", "bnet_label", param)
 
-    def add_fields(feature):
-        return feature.set(calc_attri_fields(param))
-    fc_attri = fc_bnet.map(add_fields)
+    #def add_fields(feature):
+    #    return feature.set(calc_attri_fields(param))
+    #fc_attri = fc_bnet.map(add_fields)
+
+    def rebuild_feature(feature):
+        feature = ee.Feature(feature)
+
+        new_props = ee.Dictionary(calc_attri_fields(param))  # must be a dict/ee.Dictionary
+
+        # New feature with SAME geometry, NO old properties
+        return ee.Feature(feature.geometry()).set(new_props)
+
+    fc_attri = fc_bnet.map(rebuild_feature)
 
     # Export final
     task = ee.batch.Export.table.toAsset(

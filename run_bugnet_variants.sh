@@ -5,9 +5,13 @@ set -euo pipefail
 # SETTINGS (edit these for your env)
 ########################################
 # Output config filename prefix:
-OUT_NAME_PREFIX="blue-mts-bugnet-2022-v3"
+PRO="coast-range"
+REGION="r6"
+YEAR="2025"
+VERSION="v3"
+OUT_NAME_PREFIX="${PRO}-bugnet-${YEAR}-${VERSION}"
 
-PARAM_DIR="/vol/v1/bugnet/lt-bnet-py/bugnet/parameters/2022/r6/v3/${OUT_NAME_PREFIX}"
+PARAM_DIR="/vol/v1/bugnet/lt-bnet-py/bugnet/parameters/${YEAR}/${REGION}/${VERSION}/${OUT_NAME_PREFIX}"
 TEMPLATE_CFG="${PARAM_DIR}/${OUT_NAME_PREFIX}-config.py"
 PY_RUNNER="/vol/v1/bugnet/lt-bnet-py/bugnet/main.py"
 

@@ -22,16 +22,18 @@ SHAPE_EXTS = {".shp", ".shx", ".dbf", ".prj", ".cpg", ".qix", ".sbn", ".sbx", ".
 TIF_SIMPLE = {".tif", ".tiff"}
 
 # Common lead (non-parameter files)
-LEAD = r"^(?P<project>[A-Za-z0-9]+)_(?P<region>[a-z0-9\-]+)_(?P<ver>v(?P<year>\d{4})-(?P<vernum>\d+))_Annual_Change_"
+LEAD = r"^(?P<project>[A-Za-z0-9]+)_(?P<region>[a-z0-9\-_]+)_(?P<ver>v(?P<year>\d{4})_(?P<vernum>\d+))_Annual_Change_"
+#LEAD = r"^(?P<project>[A-Za-z0-9]+)_(?P<region>[a-z0-9\-]+)_(?P<ver>v(?P<year>\d{4})-(?P<vernum>\d+))_Annual_Change_"
+#LEAD = r"^(?P<project>[A-Za-z0-9]+)_(?P<region>[a-z0-9\-]+)_(?P<ver>v(?P<year>\d{4})-(?P<vernum>\d+))_"
 PATTERNS = {
     "fitted": re.compile(LEAD + r"A_predictor_fitted_img_(?P<y1>\d{4})_(?P<y2>\d{4})$", re.I),
     "classed": re.compile(LEAD + r"C4_classed_img_(?P<prod_year>\d{4})$", re.I),
-    "mask":   re.compile(LEAD + r"D_bugnet_forest_mask_(?P<prod_year>\d{4})$", re.I),
-    "polys":  re.compile(LEAD + r"bugnet_polygons_buffered_(?P<prod_year>\d{4})_mag(?P<mag>\d+)_(?P<mmu>\d+)mmu$", re.I),
+    "mask":   re.compile(LEAD + r"D_forest_mask_(?P<prod_year>\d{4})$", re.I),
+    "polys":  re.compile(LEAD + r"polygons_buffered_(?P<prod_year>\d{4})_mag(?P<mag>\d+)_(?P<mmu>\d+)mmu$", re.I),
 }
 # Parameter CSVs: region is before "-bugnet"
 PARAMS = re.compile(
-    LEAD + r"(?P<region2>[a-z0-9\-]+)-bugnet_mag(?P<mag>\d+)_(?P<mmu>\d+)mmu_parameter_file$", re.I
+    LEAD + r"_mag(?P<mag>\d+)_(?P<mmu>\d+)mmu_parameter_file$", re.I
 )
 
 # Chunk suffix patterns on STEM (no extension): -00000 or -##########-##########
@@ -86,7 +88,9 @@ def is_tif_like(p: Path) -> bool:
     return (p.suffix.lower() in TIF_SIMPLE) or pl.endswith(".tif.aux.xml") or pl.endswith(".tif.ovr")
 
 def parse_params_tokens(stem: str):
+    print(PARAMS.pattern)
     m = PARAMS.match(stem)
+    print(m)
     if not m:
         return None
     gd = m.groupdict()
@@ -133,7 +137,7 @@ Region: {tokens.get('region_pretty','')}
 Version: {tokens.get('ver','')}
 
 General Description:
-The BugNet workflow generates raster and vector products to detect and characterize insect and disease disturbances in forests. Using Landsat (30 m) and LandTrendr temporal segmentation, it produces fitted spectral data, masked/classified imagery, and polygon products representing potential disturbance.
+The BugNet workflow generates raster and vector products to detect and characterize insect and disease disturbances in forests. Using Landsat (30 m) and LandTrendr temporal segmentation, it produces fitted spectral data, masked/classified imagery, and polygon products representing potential non-stand replacment disturbance.
 
 Versioning (typical):
 - V1: Baseline
@@ -157,7 +161,7 @@ Forms the foundation for disturbance detection and classification by capturing s
 """
     elif kind == "classed":
         body = """Description:
-Disturbance classification (C4) derived from the fitted image. Removes high-magnitude events (e.g., fire, clearcuts, partial harvests).
+Disturbance classification (C4) derived from the fitted image. Removes high-magnitude events (e.g., fire, clearcuts, partial harvests) from forest mask.
 
 Purpose:
 Ensures the workflow focuses on subtle, non-stand-replacing disturbances associated with insect/disease activity.
@@ -273,6 +277,7 @@ def main():
     for f in files:
         nm = strip_compound_tif(f.name); stem = Path(nm).stem
         if f.suffix.lower() == ".csv":
+            print(stem)
             t = parse_params_tokens(stem)
             if t: tokens = t; break
     if not tokens:

@@ -1,0 +1,749 @@
+[13:56:49] Starting. DRY_RUN=0 JOBS=4
+[13:56:49] Template: /vol/v1/bugnet/lt-bnet-py/bugnet/parameters/2023/r6/v3/blue-mts-bugnet-2023-v3/blue-mts-bugnet-2023-v3-config.py
+[13:56:49] Runner:   /vol/v1/bugnet/lt-bnet-py/bugnet/main.py
+[13:56:49] Output to: /vol/v1/bugnet/lt-bnet-py/bugnet/parameters/2023/r6/v3/blue-mts-bugnet-2023-v3
+[13:56:49] Plan: MAGS=50 60 70 MMUS=10 20 30 (BASE_MMU=10)
+[13:56:49] Bootstrap not yet done; will start with a single job.
+[13:56:49] BOOTSTRAP: running mag50-mmu10 ONLY
+[13:56:49] RUN: MAG=50 MMU=10
+{'project_name': 'blue-mts-bugnet', 'platform': 'LS', 'ltstartYear': 2000, 'ltendYear': 2025, 'target': 2023, 'aoi': <ee.featurecollection.FeatureCollection object at 0x7fd3e126a3f0>, 'composite_params': {'start_date': datetime.date(2000, 7, 1), 'end_date': datetime.date(2025, 9, 20), 'area_of_interest': <ee.featurecollection.FeatureCollection object at 0x7fd3e126a3f0>}, 'index': 'NBR', 'fit': ['TCB', 'TCG', 'TCW', 'NBR'], 'version': '3', 'pixel_scale': 30, 'change_params': {'delta': 'loss', 'sort': 'greatest', 'years': {'start': 2017, 'end': 2023}, 'mag': {'value': 350, 'operator': '>'}, 'dur': {'value': 3, 'operator': '<'}, 'preval': {'value': 300, 'operator': '>'}, 'mmu': {'value': 8}}, 'subregion': 'blueMts', 'sub_region': 'blueMts', 'num_trees': 200, 'class_heavy': 0, 'polygon-split-method': 'auto', 'study_region': 'CONUS', 'brightness_value': '2500', 'configName': 'option3', 'agent_lookback': 5, 'decline_step': 10, 'decline_thresholds': {'tcb': 50, 'tcg': 50, 'tcw': 50}, 'kmeans_num_sample': 5000, 'num_of_clusters': 3, 'bnet_polygon_mmu': 10, 'bnet_buffer': 100, 'ADS_path': {'on': 0, 'path': 'projects/blue-mts-bugnet/assets/adsplaceholder'}, 'wild_path': {'on': 1, 'path': 'projects/bnet-main/assets/BdyDesg_LSRS_Wilderness', 'path2': 'projects/north-cascades-bugnet/assets/nps_boundary'}, 'assetDir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'fitted_img_p': 'A_predictor_fitted_img_2020_2025', 'predictor_change_img': 'A_predictor_change_img_2023', 'disturbance_polygons_predictor': 'B1_predictor_disturbance_polygons_2023', 'attributed_polygons_predictor': 'B2_attributed_predictor_polygons_2023', 'classified_fc': 'C1_classified_polygons_2023', 'assetDir_t': 'projects/blue-mts-bugnet/assets/', 'attributed_polygons_training': 'attributed_training_polygons_2012', 'filtered_classes': 'C2_classified_polygons_filtered_2023', 'buffered_classes': 'C3_classified_polygons_buffered_2023', 'rasterize_classes': 'C4_classed_img_2023', 'forestMaskName': 'D_bugnet_forest_mask_2023', 'LTSDdir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'ltchange': <ee.image.Image object at 0x7fd3ddef24e0>, 'maskStartTime': 1514793600000, 'maskEndTime': 1703923200000, 'declineName': 'Decline_option3_2023_mag50', 'Mask': <ee.image.Image object at 0x7fd3de058b90>, 'kmeansNameSample': 'KMeans_option3_2023_mag50_sample', 'kmeansName': 'KMeans_option3_2023_mag50', 'predicted': 'labeled_option3_2023_mag50', 'bnet_polygonized': 'bugnet_polygons_2023_mag50_10mmu', 'bnet_buffered_polygons': 'bugnet_polygons_buffered_2023_mag50_10mmu', 'parameter_file': 'blue-mts-bugnet_mag50_10mmu_parameter_file', 'outputfile_prefix': 'Bugnet_blueMts_v2023-3_Annual_Change', 'lt_collection_params': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7fd3dd7c14c0>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'lt_params': {'lt_collection': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7fd3dd7c14c0>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'run_params': {'maxSegments': 6, 'spikeThreshold': 0.9, 'vertexCountOvershoot': 3, 'preventOneYearRecovery': True, 'recoveryThreshold': 0.25, 'pvalThreshold': 0.05, 'bestModelProportion': 0.75, 'minObservationsNeeded': 6}}}
+Welcome to bugnet!
+How would you like to continue? Enter ...
+    1 - Run bugnet.
+    2 - Run bugnet no training.
+    3 - Export.
+    4 - Clean.
+:Asset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_change_img_2023
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Task XES6M4SSIM4MKBRYO2RXUGSI is still running...0 minTask XES6M4SSIM4MKBRYO2RXUGSI is still running...1 minTask XES6M4SSIM4MKBRYO2RXUGSI is still running...2 minTask XES6M4SSIM4MKBRYO2RXUGSI is still running...3 minTask XES6M4SSIM4MKBRYO2RXUGSI completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
+Task PQUQY3P7PPA2N4TBX3MKTHLJ is still running...0 minTask PQUQY3P7PPA2N4TBX3MKTHLJ is still running...1 minTask PQUQY3P7PPA2N4TBX3MKTHLJ is still running...2 minTask PQUQY3P7PPA2N4TBX3MKTHLJ is still running...3 minTask PQUQY3P7PPA2N4TBX3MKTHLJ is still running...4 minTask PQUQY3P7PPA2N4TBX3MKTHLJ is still running...5 minTask PQUQY3P7PPA2N4TBX3MKTHLJ is still running...6 minTask PQUQY3P7PPA2N4TBX3MKTHLJ is still running...7 minTask PQUQY3P7PPA2N4TBX3MKTHLJ is still running...8 minTask PQUQY3P7PPA2N4TBX3MKTHLJ is still running...9 minTask PQUQY3P7PPA2N4TBX3MKTHLJ completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/C1_classified_polygons_2023
+Task GU2Q3WX4PSNUO4IOR5B57P7C is still running...0 minTask GU2Q3WX4PSNUO4IOR5B57P7C is still running...1 minTask GU2Q3WX4PSNUO4IOR5B57P7C is still running...2 minTask GU2Q3WX4PSNUO4IOR5B57P7C is still running...3 minTask GU2Q3WX4PSNUO4IOR5B57P7C completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
+Task ZI2MLLOF7KXZG5LMCNYA2YR3 is still running...0 minTask ZI2MLLOF7KXZG5LMCNYA2YR3 is still running...1 minTask ZI2MLLOF7KXZG5LMCNYA2YR3 is still running...2 minTask ZI2MLLOF7KXZG5LMCNYA2YR3 completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
+Task D27VDXG37HXPYNDO5BFJDFDG is still running...0 minTask D27VDXG37HXPYNDO5BFJDFDG is still running...1 minTask D27VDXG37HXPYNDO5BFJDFDG is still running...2 minTask D27VDXG37HXPYNDO5BFJDFDG is still running...3 minTask D27VDXG37HXPYNDO5BFJDFDG is still running...4 minTask D27VDXG37HXPYNDO5BFJDFDG is still running...5 minTask D27VDXG37HXPYNDO5BFJDFDG is still running...6 minTask D27VDXG37HXPYNDO5BFJDFDG is still running...7 minTask D27VDXG37HXPYNDO5BFJDFDG is still running...8 minTask D27VDXG37HXPYNDO5BFJDFDG completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/C4_classed_img_2023
+Task AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...0 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...1 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...2 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...3 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...4 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...5 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...6 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...7 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...8 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...9 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 is still running...10 minTask AYEU6JKQ2V6IAYUKM4XDDAC5 completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
+Task OBCZAS2IGSULDB6XTXIGO5EQ is still running...0 minTask OBCZAS2IGSULDB6XTXIGO5EQ is still running...1 minTask OBCZAS2IGSULDB6XTXIGO5EQ is still running...2 minTask OBCZAS2IGSULDB6XTXIGO5EQ is still running...3 minTask OBCZAS2IGSULDB6XTXIGO5EQ is still running...4 minTask OBCZAS2IGSULDB6XTXIGO5EQ is still running...5 minTask OBCZAS2IGSULDB6XTXIGO5EQ is still running...6 minTask OBCZAS2IGSULDB6XTXIGO5EQ is still running...7 minTask OBCZAS2IGSULDB6XTXIGO5EQ is still running...8 minTask OBCZAS2IGSULDB6XTXIGO5EQ completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag50
+Task NASGT4R6VYP4LXUWURMOUPQ6 is still running...0 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...1 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...2 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...3 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...4 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...5 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...6 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...7 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...8 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...9 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...10 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...11 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...12 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...13 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...14 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...15 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...16 minTask NASGT4R6VYP4LXUWURMOUPQ6 is still running...17 minTask NASGT4R6VYP4LXUWURMOUPQ6 completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50_sample
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50
+Task MXC5UHVTRZFCR3Z5A6J257KX is still running...0 minTask MXC5UHVTRZFCR3Z5A6J257KX is still running...1 minTask MXC5UHVTRZFCR3Z5A6J257KX is still running...2 minTask MXC5UHVTRZFCR3Z5A6J257KX is still running...3 minTask MXC5UHVTRZFCR3Z5A6J257KX is still running...4 minTask MXC5UHVTRZFCR3Z5A6J257KX is still running...5 minTask MXC5UHVTRZFCR3Z5A6J257KX is still running...6 minTask MXC5UHVTRZFCR3Z5A6J257KX is still running...7 minTask MXC5UHVTRZFCR3Z5A6J257KX is still running...8 minTask MXC5UHVTRZFCR3Z5A6J257KX completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/labeled_option3_2023_mag50
+Task JCKRQLRYM4TW6KO5YVKUA63K is still running...0 minTask JCKRQLRYM4TW6KO5YVKUA63K is still running...1 minTask JCKRQLRYM4TW6KO5YVKUA63K is still running...2 minTask JCKRQLRYM4TW6KO5YVKUA63K is still running...3 minTask JCKRQLRYM4TW6KO5YVKUA63K is still running...4 minTask JCKRQLRYM4TW6KO5YVKUA63K is still running...5 minTask JCKRQLRYM4TW6KO5YVKUA63K is still running...6 minTask JCKRQLRYM4TW6KO5YVKUA63K is still running...7 minTask JCKRQLRYM4TW6KO5YVKUA63K is still running...8 minTask JCKRQLRYM4TW6KO5YVKUA63K is still running...9 minTask JCKRQLRYM4TW6KO5YVKUA63K completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_10mmu
+Task G5QYUGZOZWZRXEDH74ZNOWOX is still running...0 minTask G5QYUGZOZWZRXEDH74ZNOWOX is still running...1 minTask G5QYUGZOZWZRXEDH74ZNOWOX is still running...2 minTask G5QYUGZOZWZRXEDH74ZNOWOX completed successfully!
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_10mmu
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu
+Task MTWWAC5G6JUL6RKJ5MOTTKFR is still running...0 minTask MTWWAC5G6JUL6RKJ5MOTTKFR completed successfully!
+Task VY2BGYYN3CRBIVYNXO3RNRUA completed successfully!
+Task FW6CKK5ETFYSFNATMXYFWQBD is still running...0 minTask FW6CKK5ETFYSFNATMXYFWQBD completed successfully!
+Task SQDLNBNHYIYPET4YS7F5I5X3 completed successfully!
+Task X3OS42CE4BEY7YG7UCPMLL5M is still running...0 minTask X3OS42CE4BEY7YG7UCPMLL5M is still running...1 minTask X3OS42CE4BEY7YG7UCPMLL5M completed successfully!
+Task QVJFBQJNGFNX6WABX64BK7RH completed successfully!
+Task 7PF65FCJFECIGBVU32HJPDFC completed successfully!
+Task ETHNX35QRQWKCSTR5NW6Y464 completed successfully!
+Task OB6BZFHNNPP53FTJZXGJWXQ7 is still running...0 minTask OB6BZFHNNPP53FTJZXGJWXQ7 is still running...1 minTask OB6BZFHNNPP53FTJZXGJWXQ7 completed successfully!
+Task 5R7JKH5V3F5HUX5EK7A4XH5L completed successfully!
+Task BG6YMUIDQDTCUYCL7LDPDVPA is still running...0 minTask BG6YMUIDQDTCUYCL7LDPDVPA completed successfully!
+Task CWJFNETD6XZMXDMSCZTYM5F7 completed successfully!
+Task ARRIPQDRUSO5Q3AJD5HFWK5B completed successfully!
+Task VUK5JIIFZP33DV4EIXS72QC7 is still running...0 minTask VUK5JIIFZP33DV4EIXS72QC7 is still running...1 minTask VUK5JIIFZP33DV4EIXS72QC7 completed successfully!
+Task IXW32L5VSZ5QOIZQQMJ2JJOJ completed successfully!
+Task KERGH2PZAGUBCLYYATOLPFRA is still running...0 minTask KERGH2PZAGUBCLYYATOLPFRA completed successfully!
+Task FWOGPD7MGIK5UCO2GEO3EJAH completed successfully!
+Task BTJ5VHJD5G2YFQ5CYIK3S5RE is still running...0 minTask BTJ5VHJD5G2YFQ5CYIK3S5RE completed successfully!
+Task M2LWTIQDEDDK4JMAWLZDVN4H is still running...0 minTask M2LWTIQDEDDK4JMAWLZDVN4H completed successfully!
+Task ZVTSF3USQNMUSEVMX5G4C3SK is still running...0 minTask ZVTSF3USQNMUSEVMX5G4C3SK completed successfully!
+Task 7BBT74VBRBP5J6KW5D2CSV4D is still running...0 minTask 7BBT74VBRBP5J6KW5D2CSV4D completed successfully!
+Task JTWP6UMJQPLPMWOH7R26IY4D completed successfully!
+Task LIKDCVPSUZLLYF65KVB5ZOM6 is still running...0 minTask LIKDCVPSUZLLYF65KVB5ZOM6 completed successfully!
+Task EX3DGPDPCB6W56CRT4G6CH6I is still running...0 minTask EX3DGPDPCB6W56CRT4G6CH6I completed successfully!
+Task Z55SOM5IZGFR3GC5DWNO4MY5 is still running...0 minTask Z55SOM5IZGFR3GC5DWNO4MY5 completed successfully!
+Task UW4JTV3PGNRTALBN4S2QFUFG completed successfully!
+Task DSS4EDONN5DLMZSRJMVQYTJ6 is still running...0 minTask DSS4EDONN5DLMZSRJMVQYTJ6 is still running...1 minTask DSS4EDONN5DLMZSRJMVQYTJ6 completed successfully!
+Task DO57LGTNML6BX3SGLSVTWV4N completed successfully!
+Task 7CW5X4ZWN32LDSA46KP2WWDZ is still running...0 minTask 7CW5X4ZWN32LDSA46KP2WWDZ completed successfully!
+Task XORUOSKFS3MRVTVAJFPIH55E is still running...0 minTask XORUOSKFS3MRVTVAJFPIH55E completed successfully!
+Task PBL5L5ULNKMOBDHNIRNAJ6FF completed successfully!
+Task YG2VIA4AJNPNBXHHXNQGMPES is still running...0 minTask YG2VIA4AJNPNBXHHXNQGMPES completed successfully!
+Task MSFJ3HHR3S6HR4QQ36TKX33Q is still running...0 minTask MSFJ3HHR3S6HR4QQ36TKX33Q completed successfully!
+Task V3VHZ7C3Z63USSDXWJTR2FT6 completed successfully!
+Task GLQ4XC2S3QCDHYXVYYM7E2EJ is still running...0 minTask GLQ4XC2S3QCDHYXVYYM7E2EJ is still running...1 minTask GLQ4XC2S3QCDHYXVYYM7E2EJ completed successfully!
+Task TUSI5FJCMB5ID6FBXUAJSZDV completed successfully!
+Task U7CVRYLSVGKDF5XLVU5RK4KS is still running...0 minTask U7CVRYLSVGKDF5XLVU5RK4KS completed successfully!
+Task CFKBXRIZ2WNULPGQHUT7XLIC completed successfully!
+Task 4AK4MZJLUYTOZKQUQ4JJCCMZ is still running...0 minTask 4AK4MZJLUYTOZKQUQ4JJCCMZ completed successfully!
+Task PAZDC743LIYALE2ZNDL52G2K completed successfully!
+Task K2EMKA7WO72UL4GO7UM3NA2A is still running...0 minTask K2EMKA7WO72UL4GO7UM3NA2A is still running...1 minTask K2EMKA7WO72UL4GO7UM3NA2A completed successfully!
+Task OVVPC3ABHVH4237VKR2R225E completed successfully!
+Task RZW7T46DX7YQFD6BXVIJN43V is still running...0 minTask RZW7T46DX7YQFD6BXVIJN43V completed successfully!
+Task VT36TRZDKZVBZD7C372R3DTG is still running...0 minTask VT36TRZDKZVBZD7C372R3DTG completed successfully!
+Task PXTLJRQDJA3LEI4AAFWJYHHX completed successfully!
+Task RQZUG222BZPKZ2F3SYCORQ5C is still running...0 minTask RQZUG222BZPKZ2F3SYCORQ5C completed successfully!
+Task AW6FRP7BE7JYXSO5Z2HX6SBJ completed successfully!
+Task CUXQHXW7L5RWOWYCUX4VRAAS is still running...0 minTask CUXQHXW7L5RWOWYCUX4VRAAS completed successfully!
+Task N4FPVQZXVW334EFEHXL3DL5B is still running...0 minTask N4FPVQZXVW334EFEHXL3DL5B completed successfully!
+Task 7HKW2N6GHL23PEL7WMKXBPBH is still running...0 minTask 7HKW2N6GHL23PEL7WMKXBPBH completed successfully!
+Task GPSWF2UW2CDGZLW65QRP5SS6 completed successfully!
+Task A6D65JKUVNFU6XTGWR6Y5IMM is still running...0 minTask A6D65JKUVNFU6XTGWR6Y5IMM completed successfully!
+Task VGCDPJBFWRYWWNHXL6KQBEUA is still running...0 minTask VGCDPJBFWRYWWNHXL6KQBEUA is still running...1 minTask VGCDPJBFWRYWWNHXL6KQBEUA completed successfully!
+Task 5Q2JWOSJE5CT7MJAMXCTGJNE completed successfully!
+Task WX4NYHPIEB6XF7YKWJ6XXH5Q completed successfully!
+Task JXVDJYGUTOSOFHG7EBMNPWY6 is still running...0 minTask JXVDJYGUTOSOFHG7EBMNPWY6 completed successfully!
+Task 7KWZICR7J72RULWIFQXXHKCN completed successfully!
+Task WBLCZ55ATHDXLHLLPXZV4R3T is still running...0 minTask WBLCZ55ATHDXLHLLPXZV4R3T is still running...1 minTask WBLCZ55ATHDXLHLLPXZV4R3T completed successfully!
+Task WNDAXHNHSLGO5PWXQXDCQICE completed successfully!
+Task Z6YFAROPKTTSRHKY3SPMCRLK is still running...0 minTask Z6YFAROPKTTSRHKY3SPMCRLK completed successfully!
+Task ZECYSFGH262LOYHMWAM7LHHM completed successfully!
+Task 47JVCGLLR4K5RE7EHOLQ6YFG is still running...0 minTask 47JVCGLLR4K5RE7EHOLQ6YFG completed successfully!
+Task IXEK5JY3A7BOYLLWV3L54U4V completed successfully!
+Task REGIPIAJ4GRRIEEXLAQXV3VM is still running...0 minTask REGIPIAJ4GRRIEEXLAQXV3VM completed successfully!
+Task F4RZ3FC7VCLJ26GKXGB2VGOW is still running...0 minTask F4RZ3FC7VCLJ26GKXGB2VGOW completed successfully!
+Task AE6ORDWOPK4KOCB5MCELNH3G completed successfully!
+Task JMHPOT6QL6CNKHSJDA7N76NQ is still running...0 minTask JMHPOT6QL6CNKHSJDA7N76NQ completed successfully!
+Task 2HBRPQWAHQB743ANPDWSMLVM is still running...0 minTask 2HBRPQWAHQB743ANPDWSMLVM completed successfully!
+Task 547ARGN63NP7JTYO3AEXK4NP completed successfully!
+Task WJV7AVAXRPNZLNQ74MZZCOK7 is still running...0 minTask WJV7AVAXRPNZLNQ74MZZCOK7 completed successfully!
+Task JV4RLF2YCAMTB7T6LK46GNIK completed successfully!
+Task APKO5XLNMLDCU2CGQMNCKCUK is still running...0 minTask APKO5XLNMLDCU2CGQMNCKCUK completed successfully!
+Task UNQGRDN3FF5PSN3BW3NCF4BG completed successfully!
+Task MZLOHDFK74J4KKIAB54ROYYB is still running...0 minTask MZLOHDFK74J4KKIAB54ROYYB is still running...1 minTask MZLOHDFK74J4KKIAB54ROYYB completed successfully!
+Task AFXJQ3SKLFLR35WNYP322NH6 completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu
+Task KCGRT3J4DMW33HANNB3M2K6H is still running...0 minTask KCGRT3J4DMW33HANNB3M2K6H is still running...1 minTask KCGRT3J4DMW33HANNB3M2K6H completed successfully!
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_000
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_001
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_002
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_003
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_004
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_005
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_006
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_007
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_008
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_009
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_010
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_011
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_012
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_013
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_014
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_015
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_016
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_017
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_018
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_019
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_020
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_021
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_022
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_023
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_024
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_025
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_026
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_027
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_028
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_029
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_030
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_031
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_032
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_033
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_034
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_035
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_036
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_037
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_038
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_039
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_040
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_041
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_042
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_043
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_044
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_045
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_046
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_047
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_048
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_049
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_050
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_051
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_052
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_053
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_054
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_055
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_056
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_057
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_058
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_059
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_060
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_061
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_062
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_063
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_064
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_065
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_066
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_067
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_068
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_069
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_070
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_071
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_072
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_073
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu_shard_074
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/blue-mts-bugnet_mag50_10mmu_parameter_file
+Task XG25STA5FQW7HOCPZA6WKJND is still running...0 minTask XG25STA5FQW7HOCPZA6WKJND is still running...1 minTask XG25STA5FQW7HOCPZA6WKJND is still running...2 minTask XG25STA5FQW7HOCPZA6WKJND completed successfully!
+Updating: projects/blue-mts-bugnet/assets/2023-v3/blue-mts-bugnet_mag50_10mmu_parameter_file
+Updating: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_change_img_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
+Updating: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C1_classified_polygons_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C4_classed_img_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
+Updating: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag50
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50_sample
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_10mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/labeled_option3_2023_mag50
+[16:31:07] BOOTSTRAP: completed and marked (/vol/v1/bugnet/lt-bnet-py/bugnet/parameters/2023/r6/v3/blue-mts-bugnet-2023-v3/.bootstrap_done)
+[16:31:07] Queued MAG=50 chain
+[16:31:07] MAG=50: base was done in bootstrap; launching remaining MMUs.
+[16:31:07] MAG=50: queued MMU=20
+[16:31:07] MAG=50: queued MMU=30
+[16:31:07] Queued MAG=60 chain
+[16:31:07] MAG=60: starting base MMU=10
+[16:31:07] Queued MAG=70 chain
+[16:31:07] MAG=70: starting base MMU=10
+[16:31:07] RUN: MAG=50 MMU=20
+[16:31:07] RUN: MAG=50 MMU=30
+[16:31:07] RUN: MAG=60 MMU=10
+[16:31:07] RUN: MAG=70 MMU=10
+{'project_name': 'blue-mts-bugnet', 'platform': 'LS', 'ltstartYear': 2000, 'ltendYear': 2025, 'target': 2023, 'aoi': <ee.featurecollection.FeatureCollection object at 0x7fe177b9f860>, 'composite_params': {'start_date': datetime.date(2000, 7, 1), 'end_date': datetime.date(2025, 9, 20), 'area_of_interest': <ee.featurecollection.FeatureCollection object at 0x7fe177b9f860>}, 'index': 'NBR', 'fit': ['TCB', 'TCG', 'TCW', 'NBR'], 'version': '3', 'pixel_scale': 30, 'change_params': {'delta': 'loss', 'sort': 'greatest', 'years': {'start': 2017, 'end': 2023}, 'mag': {'value': 350, 'operator': '>'}, 'dur': {'value': 3, 'operator': '<'}, 'preval': {'value': 300, 'operator': '>'}, 'mmu': {'value': 8}}, 'subregion': 'blueMts', 'sub_region': 'blueMts', 'num_trees': 200, 'class_heavy': 0, 'polygon-split-method': 'auto', 'study_region': 'CONUS', 'brightness_value': '2500', 'configName': 'option3', 'agent_lookback': 5, 'decline_step': 10, 'decline_thresholds': {'tcb': 50, 'tcg': 50, 'tcw': 50}, 'kmeans_num_sample': 5000, 'num_of_clusters': 3, 'bnet_polygon_mmu': 30, 'bnet_buffer': 100, 'ADS_path': {'on': 0, 'path': 'projects/blue-mts-bugnet/assets/adsplaceholder'}, 'wild_path': {'on': 1, 'path': 'projects/bnet-main/assets/BdyDesg_LSRS_Wilderness', 'path2': 'projects/north-cascades-bugnet/assets/nps_boundary'}, 'assetDir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'fitted_img_p': 'A_predictor_fitted_img_2020_2025', 'predictor_change_img': 'A_predictor_change_img_2023', 'disturbance_polygons_predictor': 'B1_predictor_disturbance_polygons_2023', 'attributed_polygons_predictor': 'B2_attributed_predictor_polygons_2023', 'classified_fc': 'C1_classified_polygons_2023', 'assetDir_t': 'projects/blue-mts-bugnet/assets/', 'attributed_polygons_training': 'attributed_training_polygons_2012', 'filtered_classes': 'C2_classified_polygons_filtered_2023', 'buffered_classes': 'C3_classified_polygons_buffered_2023', 'rasterize_classes': 'C4_classed_img_2023', 'forestMaskName': 'D_bugnet_forest_mask_2023', 'LTSDdir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'ltchange': <ee.image.Image object at 0x7fe177b9f320>, 'maskStartTime': 1514793600000, 'maskEndTime': 1703923200000, 'declineName': 'Decline_option3_2023_mag50', 'Mask': <ee.image.Image object at 0x7fe177b9f020>, 'kmeansNameSample': 'KMeans_option3_2023_mag50_sample', 'kmeansName': 'KMeans_option3_2023_mag50', 'predicted': 'labeled_option3_2023_mag50', 'bnet_polygonized': 'bugnet_polygons_2023_mag50_30mmu', 'bnet_buffered_polygons': 'bugnet_polygons_buffered_2023_mag50_30mmu', 'parameter_file': 'blue-mts-bugnet_mag50_30mmu_parameter_file', 'outputfile_prefix': 'Bugnet_blueMts_v2023-3_Annual_Change', 'lt_collection_params': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7fe177abe450>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'lt_params': {'lt_collection': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7fe177abe450>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'run_params': {'maxSegments': 6, 'spikeThreshold': 0.9, 'vertexCountOvershoot': 3, 'preventOneYearRecovery': True, 'recoveryThreshold': 0.25, 'pvalThreshold': 0.05, 'bestModelProportion': 0.75, 'minObservationsNeeded': 6}}}
+Welcome to bugnet!
+How would you like to continue? Enter ...
+    1 - Run bugnet.
+    2 - Run bugnet no training.
+    3 - Export.
+    4 - Clean.
+:{'project_name': 'blue-mts-bugnet', 'platform': 'LS', 'ltstartYear': 2000, 'ltendYear': 2025, 'target': 2023, 'aoi': <ee.featurecollection.FeatureCollection object at 0x7f075667a120>, 'composite_params': {'start_date': datetime.date(2000, 7, 1), 'end_date': datetime.date(2025, 9, 20), 'area_of_interest': <ee.featurecollection.FeatureCollection object at 0x7f075667a120>}, 'index': 'NBR', 'fit': ['TCB', 'TCG', 'TCW', 'NBR'], 'version': '3', 'pixel_scale': 30, 'change_params': {'delta': 'loss', 'sort': 'greatest', 'years': {'start': 2017, 'end': 2023}, 'mag': {'value': 350, 'operator': '>'}, 'dur': {'value': 3, 'operator': '<'}, 'preval': {'value': 300, 'operator': '>'}, 'mmu': {'value': 8}}, 'subregion': 'blueMts', 'sub_region': 'blueMts', 'num_trees': 200, 'class_heavy': 0, 'polygon-split-method': 'auto', 'study_region': 'CONUS', 'brightness_value': '2500', 'configName': 'option3', 'agent_lookback': 5, 'decline_step': 10, 'decline_thresholds': {'tcb': 50, 'tcg': 50, 'tcw': 50}, 'kmeans_num_sample': 5000, 'num_of_clusters': 3, 'bnet_polygon_mmu': 20, 'bnet_buffer': 100, 'ADS_path': {'on': 0, 'path': 'projects/blue-mts-bugnet/assets/adsplaceholder'}, 'wild_path': {'on': 1, 'path': 'projects/bnet-main/assets/BdyDesg_LSRS_Wilderness', 'path2': 'projects/north-cascades-bugnet/assets/nps_boundary'}, 'assetDir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'fitted_img_p': 'A_predictor_fitted_img_2020_2025', 'predictor_change_img': 'A_predictor_change_img_2023', 'disturbance_polygons_predictor': 'B1_predictor_disturbance_polygons_2023', 'attributed_polygons_predictor': 'B2_attributed_predictor_polygons_2023', 'classified_fc': 'C1_classified_polygons_2023', 'assetDir_t': 'projects/blue-mts-bugnet/assets/', 'attributed_polygons_training': 'attributed_training_polygons_2012', 'filtered_classes': 'C2_classified_polygons_filtered_2023', 'buffered_classes': 'C3_classified_polygons_buffered_2023', 'rasterize_classes': 'C4_classed_img_2023', 'forestMaskName': 'D_bugnet_forest_mask_2023', 'LTSDdir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'ltchange': <ee.image.Image object at 0x7f075667a870>, 'maskStartTime': 1514793600000, 'maskEndTime': 1703923200000, 'declineName': 'Decline_option3_2023_mag50', 'Mask': <ee.image.Image object at 0x7f075667bfe0>, 'kmeansNameSample': 'KMeans_option3_2023_mag50_sample', 'kmeansName': 'KMeans_option3_2023_mag50', 'predicted': 'labeled_option3_2023_mag50', 'bnet_polygonized': 'bugnet_polygons_2023_mag50_20mmu', 'bnet_buffered_polygons': 'bugnet_polygons_buffered_2023_mag50_20mmu', 'parameter_file': 'blue-mts-bugnet_mag50_20mmu_parameter_file', 'outputfile_prefix': 'Bugnet_blueMts_v2023-3_Annual_Change', 'lt_collection_params': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7f07565d1190>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'lt_params': {'lt_collection': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7f07565d1190>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'run_params': {'maxSegments': 6, 'spikeThreshold': 0.9, 'vertexCountOvershoot': 3, 'preventOneYearRecovery': True, 'recoveryThreshold': 0.25, 'pvalThreshold': 0.05, 'bestModelProportion': 0.75, 'minObservationsNeeded': 6}}}
+Welcome to bugnet!
+How would you like to continue? Enter ...
+    1 - Run bugnet.
+    2 - Run bugnet no training.
+    3 - Export.
+    4 - Clean.
+:{'project_name': 'blue-mts-bugnet', 'platform': 'LS', 'ltstartYear': 2000, 'ltendYear': 2025, 'target': 2023, 'aoi': <ee.featurecollection.FeatureCollection object at 0x7f21f49bd4c0>, 'composite_params': {'start_date': datetime.date(2000, 7, 1), 'end_date': datetime.date(2025, 9, 20), 'area_of_interest': <ee.featurecollection.FeatureCollection object at 0x7f21f49bd4c0>}, 'index': 'NBR', 'fit': ['TCB', 'TCG', 'TCW', 'NBR'], 'version': '3', 'pixel_scale': 30, 'change_params': {'delta': 'loss', 'sort': 'greatest', 'years': {'start': 2017, 'end': 2023}, 'mag': {'value': 350, 'operator': '>'}, 'dur': {'value': 3, 'operator': '<'}, 'preval': {'value': 300, 'operator': '>'}, 'mmu': {'value': 8}}, 'subregion': 'blueMts', 'sub_region': 'blueMts', 'num_trees': 200, 'class_heavy': 0, 'polygon-split-method': 'auto', 'study_region': 'CONUS', 'brightness_value': '2500', 'configName': 'option3', 'agent_lookback': 5, 'decline_step': 10, 'decline_thresholds': {'tcb': 60, 'tcg': 60, 'tcw': 60}, 'kmeans_num_sample': 5000, 'num_of_clusters': 3, 'bnet_polygon_mmu': 10, 'bnet_buffer': 100, 'ADS_path': {'on': 0, 'path': 'projects/blue-mts-bugnet/assets/adsplaceholder'}, 'wild_path': {'on': 1, 'path': 'projects/bnet-main/assets/BdyDesg_LSRS_Wilderness', 'path2': 'projects/north-cascades-bugnet/assets/nps_boundary'}, 'assetDir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'fitted_img_p': 'A_predictor_fitted_img_2020_2025', 'predictor_change_img': 'A_predictor_change_img_2023', 'disturbance_polygons_predictor': 'B1_predictor_disturbance_polygons_2023', 'attributed_polygons_predictor': 'B2_attributed_predictor_polygons_2023', 'classified_fc': 'C1_classified_polygons_2023', 'assetDir_t': 'projects/blue-mts-bugnet/assets/', 'attributed_polygons_training': 'attributed_training_polygons_2012', 'filtered_classes': 'C2_classified_polygons_filtered_2023', 'buffered_classes': 'C3_classified_polygons_buffered_2023', 'rasterize_classes': 'C4_classed_img_2023', 'forestMaskName': 'D_bugnet_forest_mask_2023', 'LTSDdir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'ltchange': <ee.image.Image object at 0x7f21f5804bc0>, 'maskStartTime': 1514793600000, 'maskEndTime': 1703923200000, 'declineName': 'Decline_option3_2023_mag60', 'Mask': <ee.image.Image object at 0x7f21f49bd160>, 'kmeansNameSample': 'KMeans_option3_2023_mag60_sample', 'kmeansName': 'KMeans_option3_2023_mag60', 'predicted': 'labeled_option3_2023_mag60', 'bnet_polygonized': 'bugnet_polygons_2023_mag60_10mmu', 'bnet_buffered_polygons': 'bugnet_polygons_buffered_2023_mag60_10mmu', 'parameter_file': 'blue-mts-bugnet_mag60_10mmu_parameter_file', 'outputfile_prefix': 'Bugnet_blueMts_v2023-3_Annual_Change', 'lt_collection_params': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7f21f49bc680>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'lt_params': {'lt_collection': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7f21f49bc680>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'run_params': {'maxSegments': 6, 'spikeThreshold': 0.9, 'vertexCountOvershoot': 3, 'preventOneYearRecovery': True, 'recoveryThreshold': 0.25, 'pvalThreshold': 0.05, 'bestModelProportion': 0.75, 'minObservationsNeeded': 6}}}
+Welcome to bugnet!
+How would you like to continue? Enter ...
+    1 - Run bugnet.
+    2 - Run bugnet no training.
+    3 - Export.
+    4 - Clean.
+:{'project_name': 'blue-mts-bugnet', 'platform': 'LS', 'ltstartYear': 2000, 'ltendYear': 2025, 'target': 2023, 'aoi': <ee.featurecollection.FeatureCollection object at 0x7ff1ff9d11f0>, 'composite_params': {'start_date': datetime.date(2000, 7, 1), 'end_date': datetime.date(2025, 9, 20), 'area_of_interest': <ee.featurecollection.FeatureCollection object at 0x7ff1ff9d11f0>}, 'index': 'NBR', 'fit': ['TCB', 'TCG', 'TCW', 'NBR'], 'version': '3', 'pixel_scale': 30, 'change_params': {'delta': 'loss', 'sort': 'greatest', 'years': {'start': 2017, 'end': 2023}, 'mag': {'value': 350, 'operator': '>'}, 'dur': {'value': 3, 'operator': '<'}, 'preval': {'value': 300, 'operator': '>'}, 'mmu': {'value': 8}}, 'subregion': 'blueMts', 'sub_region': 'blueMts', 'num_trees': 200, 'class_heavy': 0, 'polygon-split-method': 'auto', 'study_region': 'CONUS', 'brightness_value': '2500', 'configName': 'option3', 'agent_lookback': 5, 'decline_step': 10, 'decline_thresholds': {'tcb': 70, 'tcg': 70, 'tcw': 70}, 'kmeans_num_sample': 5000, 'num_of_clusters': 3, 'bnet_polygon_mmu': 10, 'bnet_buffer': 100, 'ADS_path': {'on': 0, 'path': 'projects/blue-mts-bugnet/assets/adsplaceholder'}, 'wild_path': {'on': 1, 'path': 'projects/bnet-main/assets/BdyDesg_LSRS_Wilderness', 'path2': 'projects/north-cascades-bugnet/assets/nps_boundary'}, 'assetDir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'fitted_img_p': 'A_predictor_fitted_img_2020_2025', 'predictor_change_img': 'A_predictor_change_img_2023', 'disturbance_polygons_predictor': 'B1_predictor_disturbance_polygons_2023', 'attributed_polygons_predictor': 'B2_attributed_predictor_polygons_2023', 'classified_fc': 'C1_classified_polygons_2023', 'assetDir_t': 'projects/blue-mts-bugnet/assets/', 'attributed_polygons_training': 'attributed_training_polygons_2012', 'filtered_classes': 'C2_classified_polygons_filtered_2023', 'buffered_classes': 'C3_classified_polygons_buffered_2023', 'rasterize_classes': 'C4_classed_img_2023', 'forestMaskName': 'D_bugnet_forest_mask_2023', 'LTSDdir': 'projects/blue-mts-bugnet/assets/2023-v3/', 'ltchange': <ee.image.Image object at 0x7ff1ff9d2270>, 'maskStartTime': 1514793600000, 'maskEndTime': 1703923200000, 'declineName': 'Decline_option3_2023_mag70', 'Mask': <ee.image.Image object at 0x7ff1ff9d2570>, 'kmeansNameSample': 'KMeans_option3_2023_mag70_sample', 'kmeansName': 'KMeans_option3_2023_mag70', 'predicted': 'labeled_option3_2023_mag70', 'bnet_polygonized': 'bugnet_polygons_2023_mag70_10mmu', 'bnet_buffered_polygons': 'bugnet_polygons_buffered_2023_mag70_10mmu', 'parameter_file': 'blue-mts-bugnet_mag70_10mmu_parameter_file', 'outputfile_prefix': 'Bugnet_blueMts_v2023-3_Annual_Change', 'lt_collection_params': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7ff1ff9d1d30>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'lt_params': {'lt_collection': {'sr_collection': <ltgee.landtrendr.LandsatComposite object at 0x7ff1ff9d1d30>, 'index': 'NBR', 'ftv_list': ['TCB', 'TCG', 'TCW', 'NBR']}, 'run_params': {'maxSegments': 6, 'spikeThreshold': 0.9, 'vertexCountOvershoot': 3, 'preventOneYearRecovery': True, 'recoveryThreshold': 0.25, 'pvalThreshold': 0.05, 'bestModelProportion': 0.75, 'minObservationsNeeded': 6}}}
+Welcome to bugnet!
+How would you like to continue? Enter ...
+    1 - Run bugnet.
+    2 - Run bugnet no training.
+    3 - Export.
+    4 - Clean.
+:Asset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_change_img_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C1_classified_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C4_classed_img_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag60
+Task 636DVRZISXZM2C24V7MVCIFT is still running...0 minAsset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_change_img_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C1_classified_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C4_classed_img_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag70
+Task VJ44ZSIIJDAOBDFYNWREZMCJ is still running...0 minAsset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_change_img_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C1_classified_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C4_classed_img_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag50
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/labeled_option3_2023_mag50
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_30mmu
+Task ACWUERHBUYIX7ORJRLXTAQPV is still running...0 minAsset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_change_img_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C1_classified_polygons_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/C4_classed_img_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag50
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/labeled_option3_2023_mag50
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_20mmu
+Task 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...0 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...1 minTask 636DVRZISXZM2C24V7MVCIFT is still running...1 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...1 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...1 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...2 minTask 636DVRZISXZM2C24V7MVCIFT is still running...2 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...2 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...2 minTask 636DVRZISXZM2C24V7MVCIFT is still running...3 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...3 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...3 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...3 minTask 636DVRZISXZM2C24V7MVCIFT is still running...4 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...4 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...4 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...4 minTask 636DVRZISXZM2C24V7MVCIFT is still running...5 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...5 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...5 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...5 minTask 636DVRZISXZM2C24V7MVCIFT is still running...6 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...6 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...6 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...6 minTask 636DVRZISXZM2C24V7MVCIFT is still running...7 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...7 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...7 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...7 minTask 636DVRZISXZM2C24V7MVCIFT is still running...8 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...8 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...8 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...8 minTask 636DVRZISXZM2C24V7MVCIFT is still running...9 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...9 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...9 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...9 minTask 636DVRZISXZM2C24V7MVCIFT is still running...10 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...10 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...10 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...10 minTask 636DVRZISXZM2C24V7MVCIFT is still running...11 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...11 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...11 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...11 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...12 minTask ACWUERHBUYIX7ORJRLXTAQPV is still running...12 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...12 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...13 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...13 minTask ACWUERHBUYIX7ORJRLXTAQPV completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu
+Task GHUIJGWPITSCB4TKGMVJN5UF is still running...0 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...14 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF is still running...14 minTask GHUIJGWPITSCB4TKGMVJN5UF is still running...1 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...15 minTask GHUIJGWPITSCB4TKGMVJN5UF is still running...2 minTask 7LNRJ6AUBNOVXTU5V6X2MWGF completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu
+Task 6WDKB6LHUICTR36PBJ4K4BNO is still running...0 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...16 minTask 636DVRZISXZM2C24V7MVCIFT completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag60_sample
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag60
+Task C52OGHXE6JCOQY5A64KSLMOW is still running...0 minTask GHUIJGWPITSCB4TKGMVJN5UF is still running...3 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...1 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...17 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...1 minTask GHUIJGWPITSCB4TKGMVJN5UF completed successfully!
+Task S6ITEUJM3H6ITM7IQWWPEWP5 is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...2 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...18 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...2 minTask S6ITEUJM3H6ITM7IQWWPEWP5 is still running...1 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...3 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...19 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...3 minTask S6ITEUJM3H6ITM7IQWWPEWP5 completed successfully!
+Task UBAKFR5I2NG34F3SAEKEGF33 is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...4 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...20 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...4 minTask UBAKFR5I2NG34F3SAEKEGF33 completed successfully!
+Task CLNUFPCGNTKNIUBB6VXRIDW3 is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...5 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...21 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...5 minTask CLNUFPCGNTKNIUBB6VXRIDW3 completed successfully!
+Task CSZMORWQW64M25FJJWW4H6T7 is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...6 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...22 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...6 minTask CSZMORWQW64M25FJJWW4H6T7 completed successfully!
+Task ZGWZ4CMNZMXKCJOCG6OIQIV6 is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...7 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...23 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...7 minTask ZGWZ4CMNZMXKCJOCG6OIQIV6 completed successfully!
+Task PHERP32IF52RTTS7OBN4OUCY is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...8 minTask VJ44ZSIIJDAOBDFYNWREZMCJ is still running...24 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...8 minTask PHERP32IF52RTTS7OBN4OUCY completed successfully!
+Task 3A4ML3662NNO6E7X2HLCZRKI is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...9 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...9 minTask 3A4ML3662NNO6E7X2HLCZRKI completed successfully!
+Task 47BCBRO7EIMWD5ONVU3P6PIH completed successfully!
+Task G5UAD73XEBJTEBMYMX7W5PMO is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...10 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...10 minTask G5UAD73XEBJTEBMYMX7W5PMO completed successfully!
+Task Y6RYHWGKMMURPI34YBJTWJYQ is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...11 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...11 minTask Y6RYHWGKMMURPI34YBJTWJYQ completed successfully!
+Task YDYVAG5ZD5CD2G2RQO2ZUVFX completed successfully!
+Task 5FOWWBN6N43JWRVRCHIMRQAL is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...12 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...12 minTask 5FOWWBN6N43JWRVRCHIMRQAL completed successfully!
+Task RX6Q2DFJMNKS2ZCEAKIHI46N completed successfully!
+Task A3HJR2W2FWKNOMGLVQOKA2GN is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...13 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...13 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...14 minTask A3HJR2W2FWKNOMGLVQOKA2GN completed successfully!
+Task SYIII56ZYIT576S6FDHNU3AO completed successfully!
+Task WNV4WADMQWWZYH4VE6KSLER6 is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...14 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...15 minTask WNV4WADMQWWZYH4VE6KSLER6 completed successfully!
+Task J6KJWSDWGO75ZSBVEMYNE4AP completed successfully!
+Task YVYJKMQ7CPWTIFKNJITIZTMK is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...15 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...16 minTask YVYJKMQ7CPWTIFKNJITIZTMK completed successfully!
+Task QYB6EN62HRXWR6EHS7IPMSMG completed successfully!
+Task NME6T2CBQXNOIQEUODONGXTF is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...16 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...17 minTask NME6T2CBQXNOIQEUODONGXTF completed successfully!
+Task ZIH2BVWHDDJTTY4S6ZMWC4MI is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...17 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...18 minTask ZIH2BVWHDDJTTY4S6ZMWC4MI completed successfully!
+Task SR6NZO3DDRAOJ3LNEXOZN7QB completed successfully!
+Task U3QSMQDC5ZA754OBSRHYHZJD is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...18 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...19 minTask U3QSMQDC5ZA754OBSRHYHZJD completed successfully!
+Task Q5PA62CCYFOZ7TKBZNQFEZW4 is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...19 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...20 minTask Q5PA62CCYFOZ7TKBZNQFEZW4 completed successfully!
+Task OCQCIVC2F3YW5PY2NLNX7CRR completed successfully!
+Task 6KTP5X2VBS3FF4GHQ5WQBOXF is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...20 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...21 minTask 6KTP5X2VBS3FF4GHQ5WQBOXF is still running...1 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...21 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...22 minTask 6KTP5X2VBS3FF4GHQ5WQBOXF completed successfully!
+Task U5UXAQ3VHLKKKY3XJP4HEO5O completed successfully!
+Task NYLQ64JR6ND3DGWN5LOM323K completed successfully!
+Task O7D52O6EX2JEOP4Z74IXBG3H is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...22 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...23 minTask O7D52O6EX2JEOP4Z74IXBG3H is still running...1 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...23 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...24 minTask O7D52O6EX2JEOP4Z74IXBG3H completed successfully!
+Task 6KGPO4T4QBUSWAZFWHL7OF53 completed successfully!
+Task IRWCFOOQHVBLC4QQJLVG3UF2 is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...24 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...25 minTask IRWCFOOQHVBLC4QQJLVG3UF2 is still running...1 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...25 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...26 minTask IRWCFOOQHVBLC4QQJLVG3UF2 completed successfully!
+Task KWLO6PGPWHRDR5YVGYV2PVGR completed successfully!
+Task XXCSAKEUEUTCOR4DU47MIGTY is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...26 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...27 minTask XXCSAKEUEUTCOR4DU47MIGTY completed successfully!
+Task 4ZMYI2EGXRVGHJEMCU73PUEJ completed successfully!
+Task WKE3LUVNFS2TEBIYSIB5KA6D is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...27 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...28 minTask WKE3LUVNFS2TEBIYSIB5KA6D is still running...1 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...28 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...29 minTask WKE3LUVNFS2TEBIYSIB5KA6D completed successfully!
+Task Z2AMXC36AWBSGMYQ7Z47LHG2 completed successfully!
+Task KU2AX3SL2O3RH22MORX27XNE is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...29 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...30 minTask KU2AX3SL2O3RH22MORX27XNE completed successfully!
+Task ZOIANO3YMDVIPLOAJ56Z7PNV completed successfully!
+Task 6TP6IMVNWGRVTRVLPZQYVMSP is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...30 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...31 minTask 6TP6IMVNWGRVTRVLPZQYVMSP completed successfully!
+Task NAM6WEUB6T5F2HOTPBD5QGCS completed successfully!
+Task 5CN3Q7DXQ3EF6777KVUPINIX is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...31 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...32 minTask 5CN3Q7DXQ3EF6777KVUPINIX completed successfully!
+Task IWOWUAU37QM7PLXCV4SIORI5 completed successfully!
+Task TOQ7SUDVYFBOIX73ER2635RN is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...32 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...33 minTask TOQ7SUDVYFBOIX73ER2635RN completed successfully!
+Task 66EXKF7OWLWGBDNPUY45D5UH completed successfully!
+Task 5ZWZB2JAGI7NLTW5RCFRECEI is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...33 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...34 minTask 5ZWZB2JAGI7NLTW5RCFRECEI completed successfully!
+Task DUW6GLKZCBPETHAU6B73QEXQ completed successfully!
+Task JOOZDUZ75BPUIZMDQ3UUM2SS is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...34 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...35 minTask JOOZDUZ75BPUIZMDQ3UUM2SS completed successfully!
+Task MMQZDGJIJQCS2EQ2V655F7Q7 completed successfully!
+Task 75UFBJDY6BQEKTTPZDF3MOSV is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...35 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...36 minTask 75UFBJDY6BQEKTTPZDF3MOSV completed successfully!
+Task EX3NU3HMKW745BQBDRKZ3PVT is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...36 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...37 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...37 minTask EX3NU3HMKW745BQBDRKZ3PVT completed successfully!
+Task EWBVOTB4XCYYTG5KKCF35DHJ completed successfully!
+Task 24ZTZJKUA6H76A7MLMHBGJET is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...38 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...38 minTask 24ZTZJKUA6H76A7MLMHBGJET completed successfully!
+Task 7WZTS3UC5P2DQJN5SHQVAKID completed successfully!
+Task 75Y6K6TTTOCTMZNH4G2X6WBL is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...39 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...39 minTask 75Y6K6TTTOCTMZNH4G2X6WBL is still running...1 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...40 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...40 minTask 75Y6K6TTTOCTMZNH4G2X6WBL completed successfully!
+Task 3KV2E4JJPO7IQEV72HGZGIQ2 completed successfully!
+Task RRWH6ZJ77FDE4C6EVV5MNKOF is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...41 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...41 minTask RRWH6ZJ77FDE4C6EVV5MNKOF completed successfully!
+Task LUUIZE57G6QIQEU5HMPGV67A completed successfully!
+Task 2CDJYK76RUBZ2YJIXNPBUPL7 is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...42 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...42 minTask 2CDJYK76RUBZ2YJIXNPBUPL7 completed successfully!
+Task QV4LT6F7AIV3X77TIOHD323Q completed successfully!
+Task L2JMMDBC7675TXRO3HUODBRY is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...43 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...43 minTask L2JMMDBC7675TXRO3HUODBRY completed successfully!
+Task GGRKMVKSNJWYQO5AHZP6NPLV completed successfully!
+Task 7VBCULDIARRFBNKMYUHB5D4X is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...44 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...44 minTask 7VBCULDIARRFBNKMYUHB5D4X completed successfully!
+Task A34MAMXDM3KUKFX4UG5RBPPI completed successfully!
+Task QROY6G4TRSL5FL2V3YIHC2V6 is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...45 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...45 minTask QROY6G4TRSL5FL2V3YIHC2V6 is still running...1 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...46 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...46 minTask QROY6G4TRSL5FL2V3YIHC2V6 completed successfully!
+Task U7TQOV65QRATRDBXWMSMTONM completed successfully!
+Task NEYUSXILOIGGQXZU436Z52PY completed successfully!
+Task PTLLBZCK2ISBEJ7DV6666EFY is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...47 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...47 minTask PTLLBZCK2ISBEJ7DV6666EFY completed successfully!
+Task XHGI3UHAIAMYKNK45Q7UN7XO completed successfully!
+Task 7HXK6TUGVVZNUZDNUPJZCJBA completed successfully!
+Task MJD7WBYKVROH6SFTDZSNHEQ6 is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...48 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...48 minTask MJD7WBYKVROH6SFTDZSNHEQ6 completed successfully!
+Task BHAOIVRHPSGOZ7C6RIT3PFXC completed successfully!
+Task VRFKHHSRQ2ZW6XZTD2L75YVR is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO is still running...49 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...49 minTask VRFKHHSRQ2ZW6XZTD2L75YVR completed successfully!
+Task VIJLVWCWZCDDQMCB4PVAZ272 completed successfully!
+Task ZNVIYV54MZRGBY6IFORNMKWK is still running...0 minTask 6WDKB6LHUICTR36PBJ4K4BNO completed successfully!
+Task DC43JVNEHO2QYIFSJNXZWSSA is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...50 minTask ZNVIYV54MZRGBY6IFORNMKWK completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu
+Task O6S6GKN6LVGGZYKXVNFI2EIF is still running...0 minTask DC43JVNEHO2QYIFSJNXZWSSA completed successfully!
+Task Y5JHLKJ2YLNQ4KIDSALNBYBS is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...51 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...1 minTask Y5JHLKJ2YLNQ4KIDSALNBYBS completed successfully!
+Task M622Q2MWMSLIDHWMTSFFO6UG completed successfully!
+Task ENDPJCA4M4KEFYPJVCZYT5KK is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...52 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...2 minTask ENDPJCA4M4KEFYPJVCZYT5KK is still running...1 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...53 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...3 minTask ENDPJCA4M4KEFYPJVCZYT5KK completed successfully!
+Task JPBRGNXNK7OYN3UKOJBEEZLC completed successfully!
+Task CCQHLZFTOUZM7C6PEN7DSIIV is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...54 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...4 minTask CCQHLZFTOUZM7C6PEN7DSIIV completed successfully!
+Task AIXFDU6FDIKT2YXYEDJOHTDN completed successfully!
+Task OHIOOOWHUP5PCNYAFVC6JF4R is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...55 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...5 minTask OHIOOOWHUP5PCNYAFVC6JF4R completed successfully!
+Task JNVEDTNMZEEHDX53SIMVZTQZ completed successfully!
+Task W7GQ2IF3ZSCA55DUKIDJT4BG is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...56 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...6 minTask W7GQ2IF3ZSCA55DUKIDJT4BG is still running...1 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...57 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...7 minTask W7GQ2IF3ZSCA55DUKIDJT4BG completed successfully!
+Task KJFOH5R2A7ZTCVZFY3ZUD672 completed successfully!
+Task XUDLIESD7CP4VNRETP5P5DYZ completed successfully!
+Task LZQXLSIBNVLQVOLVN47IQIGJ is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...58 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...8 minTask LZQXLSIBNVLQVOLVN47IQIGJ completed successfully!
+Task L5E63HUVU5NJOLZ4MHBWGJTJ completed successfully!
+Task KF7ULTUMT7FGRM4WCBW6HDCA is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...59 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...9 minTask KF7ULTUMT7FGRM4WCBW6HDCA is still running...1 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...60 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...10 minTask KF7ULTUMT7FGRM4WCBW6HDCA completed successfully!
+Task 27XZ3F2BHSMYSUNUIIQW5X7C completed successfully!
+Task 6MDKQ6OGQJEVHNYDORIGB6U6 is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...61 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...11 minTask 6MDKQ6OGQJEVHNYDORIGB6U6 completed successfully!
+Task LW4XOVJRPLGFQ7EMSTYAVQNV completed successfully!
+Task HRCVHKVAOXDQD4T4ZP55576J is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...62 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...12 minTask HRCVHKVAOXDQD4T4ZP55576J completed successfully!
+Task VYLIZ2IYBOHU6NWNEPDG6G56 completed successfully!
+Task 42EHHVISODKO6QHEDZPFWAZL completed successfully!
+Task TRYB4233ZOOT5Q5MRA2H5K4A completed successfully!
+Task ELBHTIM4DZXUJNVPCLXF5VCV is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...63 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...13 minTask ELBHTIM4DZXUJNVPCLXF5VCV completed successfully!
+Task ZZHSHAYL2LIOA5X2QBRWTIJY is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...64 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...14 minTask ZZHSHAYL2LIOA5X2QBRWTIJY completed successfully!
+Task HQXTTRQOUXIW3WTNORYX5647 is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...65 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...15 minTask HQXTTRQOUXIW3WTNORYX5647 completed successfully!
+Task QJZDU75HQ7L4QGBP5KJI23EW completed successfully!
+Task QRDSYSZOUSYM4ONDUTCUXPIS is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...66 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...16 minTask QRDSYSZOUSYM4ONDUTCUXPIS completed successfully!
+Task PIHOVAZHEYB2FH6USEYXMIF7 completed successfully!
+Task C33AM2RRI7RRCY7ZSWBSEVXE is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...67 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...17 minTask C33AM2RRI7RRCY7ZSWBSEVXE completed successfully!
+Task K5V734WCWU3OAA2TNWHNIK62 completed successfully!
+Task 2XRH4IPAJTZJYA5L5F636A5V is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...68 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...18 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...69 minTask 2XRH4IPAJTZJYA5L5F636A5V completed successfully!
+Task K6KASHSNMEVOXKAL47FTWZWA is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...19 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...70 minTask K6KASHSNMEVOXKAL47FTWZWA completed successfully!
+Task 2WJSB5XAHCWBKC6ONYLQDWNF completed successfully!
+Task 4D7CYAMWYPCFWN4I3FIBDS4V is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...20 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...71 minTask 4D7CYAMWYPCFWN4I3FIBDS4V is still running...1 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...21 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...72 minTask 4D7CYAMWYPCFWN4I3FIBDS4V completed successfully!
+Task FWNCX4FRHEI7WW4UMNL42FIR completed successfully!
+Task QZBQQK2TE5H7U7AP4MYNODXT completed successfully!
+Task NGP75H57GQJNS5ANQXPGP63Y completed successfully!
+Task NVYWPQUERUMOVV2EBOYXSPGB is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...22 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...73 minTask NVYWPQUERUMOVV2EBOYXSPGB is still running...1 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...23 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...74 minTask NVYWPQUERUMOVV2EBOYXSPGB completed successfully!
+Task HZBRHT7RGEU6UROSCDCFADWZ completed successfully!
+Task 5OQWOQK7CX76MWIVIU7FNEVH completed successfully!
+Task JAE7ZCESJZ6K5AUSF5JTBFRC is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...24 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...75 minTask JAE7ZCESJZ6K5AUSF5JTBFRC completed successfully!
+Task CJSZLEQJ6QH3JKJXPJIOEWZY is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...25 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...76 minTask CJSZLEQJ6QH3JKJXPJIOEWZY completed successfully!
+Task ZOHWJXLHWFS53DT66AA7DTIB is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...26 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...77 minTask ZOHWJXLHWFS53DT66AA7DTIB completed successfully!
+Task PBXZR2BFT6CAELSSFH3ZL45T completed successfully!
+Task 4H4ZSRVR4HNQVAJXN3GGLKV2 is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...27 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...78 minTask 4H4ZSRVR4HNQVAJXN3GGLKV2 is still running...1 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...28 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...79 minTask 4H4ZSRVR4HNQVAJXN3GGLKV2 completed successfully!
+Task RE4ILFV2USOZI5YHKIFZPHR4 completed successfully!
+Task ASTNSPP3LXHLSHOHHJBR7QAR is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...29 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...80 minTask ASTNSPP3LXHLSHOHHJBR7QAR completed successfully!
+Task 3EN7Y4WLR6F5B6CRK53DB2O3 is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...30 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...81 minTask 3EN7Y4WLR6F5B6CRK53DB2O3 completed successfully!
+Task 3F6FD2IPETXAP5VLZ5PFO6TO is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...31 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...82 minTask 3F6FD2IPETXAP5VLZ5PFO6TO completed successfully!
+Task 5L2EY7NB7CIGBDDY4SDYJNTH completed successfully!
+Task 6ZTQUKRKW6QOGFLO4NL2TIZD is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...32 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...83 minTask 6ZTQUKRKW6QOGFLO4NL2TIZD completed successfully!
+Task 77P7WGNOHXMLUATUQ42CHOYL is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...33 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...84 minTask 77P7WGNOHXMLUATUQ42CHOYL completed successfully!
+Task 372EAKRULURBI26SQUO6PSXW completed successfully!
+Task KJGK7JCGCYKCMGAPLIQCWTMN is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...34 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...85 minTask KJGK7JCGCYKCMGAPLIQCWTMN completed successfully!
+Task WJICNOI327JSGCNR66LUG7MX completed successfully!
+Task JDCNEYU2IJOUTZ2IT2W3CTLU is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...35 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...86 minTask JDCNEYU2IJOUTZ2IT2W3CTLU is still running...1 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...36 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...87 minTask JDCNEYU2IJOUTZ2IT2W3CTLU completed successfully!
+Task HII57NFQ3CXAGPLZOVFYS5MM completed successfully!
+Task TIJXZIUBMRNCA7HGS43CYSM6 is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...37 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...88 minTask TIJXZIUBMRNCA7HGS43CYSM6 completed successfully!
+Task JGFRRD25ZWSQQOHQTVNTOYAO completed successfully!
+Task COG7XYFSMOL2HF6GAZPFYOLS is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...38 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...89 minTask COG7XYFSMOL2HF6GAZPFYOLS is still running...1 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...39 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...90 minTask COG7XYFSMOL2HF6GAZPFYOLS completed successfully!
+Task UKL7IJGAOPATAJQZXU3XA74N completed successfully!
+Task FZABERMHMFXMVRKH4MK3FMTD is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...40 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...91 minTask FZABERMHMFXMVRKH4MK3FMTD completed successfully!
+Task TJZKIKXCDDY3F6VDI3JZLRE5 completed successfully!
+Task Q2HPP5RXAF7B53GPTB7EIE5F is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...41 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...92 minTask Q2HPP5RXAF7B53GPTB7EIE5F completed successfully!
+Task SZNKAPA4LTXIZTRTFZ3KPCFX completed successfully!
+Task AFORYNKPWDV2NOSIZRK4RTP2 is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...42 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...93 minTask AFORYNKPWDV2NOSIZRK4RTP2 is still running...1 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...43 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...94 minTask AFORYNKPWDV2NOSIZRK4RTP2 completed successfully!
+Task TIBL636VKDU4NWPP6E7XMQR7 completed successfully!
+Task 24VI4EJDT565BJDY4NBJT5QO completed successfully!
+Task RNX3VQLTPDRQUDMUIC7DUZMO is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...44 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...95 minTask RNX3VQLTPDRQUDMUIC7DUZMO completed successfully!
+Task QBA5VFYUW6TTVNS2GSNA5UWT is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...45 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...96 minTask QBA5VFYUW6TTVNS2GSNA5UWT completed successfully!
+Task LM477MCNEAYWB7H3IBZI6X3D completed successfully!
+Task 3F7LQAF7JSMKHWNQOHWHOTBH is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...46 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...97 minTask 3F7LQAF7JSMKHWNQOHWHOTBH completed successfully!
+Task JH45PT57R45CBYES56HTJXRG completed successfully!
+Task O2LFBJ6PMPDWJEFGH5TJ2RCX is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...47 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...98 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...48 minTask O2LFBJ6PMPDWJEFGH5TJ2RCX completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu
+Task R6TMQ2UV6EAO5HEOZJRGYPD5 is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...99 minTask VJ44ZSIIJDAOBDFYNWREZMCJ completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag70_sample
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag70
+Task CTGT5LRCCDEGIZXPRD6G55NI is still running...0 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...49 minTask R6TMQ2UV6EAO5HEOZJRGYPD5 is still running...1 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...100 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...1 minTask O6S6GKN6LVGGZYKXVNFI2EIF is still running...50 minTask R6TMQ2UV6EAO5HEOZJRGYPD5 is still running...2 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...101 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...2 minTask R6TMQ2UV6EAO5HEOZJRGYPD5 is still running...3 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...102 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...3 minTask O6S6GKN6LVGGZYKXVNFI2EIF completed successfully!
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_000
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_001
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_002
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_003
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_004
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_005
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_006
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_007
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_008
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_009
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_010
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_011
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_012
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_013
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_014
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_015
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_016
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_017
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_018
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_019
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_020
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_021
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_022
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_023
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_024
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_025
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_026
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_027
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_028
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_029
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_030
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_031
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_032
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_033
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_034
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_035
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_036
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_037
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_038
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_039
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_040
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_041
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_042
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_043
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_044
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_045
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_046
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_047
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_048
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_049
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_050
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_051
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_052
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_053
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_054
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_055
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_056
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_057
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_058
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_059
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_060
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_061
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_062
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_063
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_064
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_065
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_066
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_067
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_068
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_069
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_070
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_071
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_072
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_073
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu_shard_074
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/blue-mts-bugnet_mag50_30mmu_parameter_file
+Task DW5ZTNM2DQQNXAQYBWTJEMFZ is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...103 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...4 minTask DW5ZTNM2DQQNXAQYBWTJEMFZ is still running...1 minTask R6TMQ2UV6EAO5HEOZJRGYPD5 completed successfully!
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_000
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_001
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_002
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_003
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_004
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_005
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_006
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_007
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_008
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_009
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_010
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_011
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_012
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_013
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_014
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_015
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_016
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_017
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_018
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_019
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_020
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_021
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_022
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_023
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_024
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_025
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_026
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_027
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_028
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_029
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_030
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_031
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_032
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_033
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_034
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_035
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_036
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_037
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_038
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_039
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_040
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_041
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_042
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_043
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_044
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_045
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_046
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_047
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_048
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_049
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_050
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_051
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_052
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_053
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_054
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_055
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_056
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_057
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_058
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_059
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_060
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_061
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_062
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_063
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_064
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_065
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_066
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_067
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_068
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_069
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_070
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_071
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_072
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_073
+deleted: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_074
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/blue-mts-bugnet_mag50_20mmu_parameter_file
+Task HH67SR3ALXSK4VAYCAECFYVA is still running...0 minTask C52OGHXE6JCOQY5A64KSLMOW is still running...104 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...5 minTask DW5ZTNM2DQQNXAQYBWTJEMFZ is still running...2 minTask HH67SR3ALXSK4VAYCAECFYVA is still running...1 minTask C52OGHXE6JCOQY5A64KSLMOW completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/labeled_option3_2023_mag60
+Task HZXS5KK46ALOVD64M422BYHN is still running...0 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...6 minTask DW5ZTNM2DQQNXAQYBWTJEMFZ completed successfully!
+Updating: projects/blue-mts-bugnet/assets/2023-v3/blue-mts-bugnet_mag50_10mmu_parameter_file
+Updating: projects/blue-mts-bugnet/assets/2023-v3/blue-mts-bugnet_mag50_30mmu_parameter_file
+Updating: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_change_img_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
+Updating: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C1_classified_polygons_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C4_classed_img_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
+Updating: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag50
+Updating: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag60
+Updating: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag70
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50_sample
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag60
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag60_sample
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag70_sample
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_10mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_20mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_30mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/labeled_option3_2023_mag50
+Task HH67SR3ALXSK4VAYCAECFYVA is still running...2 minTask HZXS5KK46ALOVD64M422BYHN is still running...1 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...7 minTask HH67SR3ALXSK4VAYCAECFYVA is still running...3 minTask HZXS5KK46ALOVD64M422BYHN is still running...2 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...8 minTask HH67SR3ALXSK4VAYCAECFYVA completed successfully!
+Updating: projects/blue-mts-bugnet/assets/2023-v3/blue-mts-bugnet_mag50_10mmu_parameter_file
+Updating: projects/blue-mts-bugnet/assets/2023-v3/blue-mts-bugnet_mag50_20mmu_parameter_file
+Updating: projects/blue-mts-bugnet/assets/2023-v3/blue-mts-bugnet_mag50_30mmu_parameter_file
+Updating: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_change_img_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
+Updating: projects/blue-mts-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C1_classified_polygons_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/C4_classed_img_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
+Updating: projects/blue-mts-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
+Updating: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag50
+Updating: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag60
+Updating: projects/blue-mts-bugnet/assets/2023-v3/Decline_option3_2023_mag70
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag50_sample
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag60
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag60_sample
+Updating: projects/blue-mts-bugnet/assets/2023-v3/KMeans_option3_2023_mag70_sample
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_10mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_20mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_30mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_10mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_30mmu
+Updating: projects/blue-mts-bugnet/assets/2023-v3/labeled_option3_2023_mag50
+[18:35:39] MAG=50: all MMUs complete
+Task HZXS5KK46ALOVD64M422BYHN is still running...3 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...9 minTask HZXS5KK46ALOVD64M422BYHN is still running...4 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...10 minTask HZXS5KK46ALOVD64M422BYHN is still running...5 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...11 minTask HZXS5KK46ALOVD64M422BYHN is still running...6 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...12 minTask HZXS5KK46ALOVD64M422BYHN is still running...7 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...13 minTask HZXS5KK46ALOVD64M422BYHN is still running...8 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...14 minTask HZXS5KK46ALOVD64M422BYHN is still running...9 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...15 minTask HZXS5KK46ALOVD64M422BYHN is still running...10 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...16 minTask HZXS5KK46ALOVD64M422BYHN is still running...11 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...17 minTask HZXS5KK46ALOVD64M422BYHN completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag60_10mmu
+Task PGREQ34IXPDTRBHVALJUUZN4 is still running...0 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...18 minTask PGREQ34IXPDTRBHVALJUUZN4 is still running...1 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...19 minTask PGREQ34IXPDTRBHVALJUUZN4 is still running...2 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...20 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...21 minTask PGREQ34IXPDTRBHVALJUUZN4 completed successfully!
+Asset exists: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_2023_mag60_10mmu
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag60_10mmu
+Task IH7IGHXC7MCQ627GKABKKHGT is still running...0 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...22 minTask IH7IGHXC7MCQ627GKABKKHGT completed successfully!
+Task C6YTH5RTZO7K727GLLH5WWPZ is still running...0 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...23 minTask C6YTH5RTZO7K727GLLH5WWPZ is still running...1 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...24 minTask C6YTH5RTZO7K727GLLH5WWPZ completed successfully!
+Task LNP3LMOQROAFNRQWJEUUL53Z is still running...0 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...25 minTask LNP3LMOQROAFNRQWJEUUL53Z completed successfully!
+Task FWMDFO66HGP3Q3WLWYR6D6HQ is still running...0 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...26 minTask FWMDFO66HGP3Q3WLWYR6D6HQ completed successfully!
+Task RJFVHWHD3U6UBXW7QKGYDYVF is still running...0 minTask CTGT5LRCCDEGIZXPRD6G55NI is still running...27 minTask RJFVHWHD3U6UBXW7QKGYDYVF is still running...1 minTask CTGT5LRCCDEGIZXPRD6G55NI completed successfully!
+Asset does not exist: projects/blue-mts-bugnet/assets/2023-v3/labeled_option3_2023_mag70
+Task LHCQWTHQXSMHM2R22UAT63BE is still running...0 minTask RJFVHWHD3U6UBXW7QKGYDYVF completed successfully!
+Task 7OMIVXBCLE7SJK357G656WEJ is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...1 minTask 7OMIVXBCLE7SJK357G656WEJ completed successfully!
+Task T2BSN2ZHEPM2ON4DMW7JJIKX completed successfully!
+Task RN3N76U26TINSBYME2TRO62T is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...2 minTask RN3N76U26TINSBYME2TRO62T completed successfully!
+Task HOCCYD3NKM7CHIWTMTXOCCE2 is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...3 minTask HOCCYD3NKM7CHIWTMTXOCCE2 completed successfully!
+Task JNJN3USHMWAUDHL7YXQ4HTPN completed successfully!
+Task PZ63LC7ZKMNXOHYM5E7NS542 is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...4 minTask PZ63LC7ZKMNXOHYM5E7NS542 completed successfully!
+Task UKS7ICDLZN7U22J3PHUTFDIU completed successfully!
+Task IKQAUOSKAAYRXZHHKXXRLURM is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...5 minTask IKQAUOSKAAYRXZHHKXXRLURM completed successfully!
+Task BJR2PEFC4RNAR5LQQWVQD63C is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...6 minTask BJR2PEFC4RNAR5LQQWVQD63C completed successfully!
+Task LWYX2JBLJHLUKICKNUDZ2RFY completed successfully!
+Task LXJYDMED5O32DSDLXFGMWSJX is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...7 minTask LXJYDMED5O32DSDLXFGMWSJX completed successfully!
+Task HJDLJHGISHR25SYLNRR6GEDZ completed successfully!
+Task U6T3QG35JLK2OIIGSRA2VH4W is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...8 minTask U6T3QG35JLK2OIIGSRA2VH4W completed successfully!
+Task KN3OYG74MER25QJVUIAU4YXK completed successfully!
+Task Z2LB64MSXPSIRBFTPWISN2WD is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...9 minTask Z2LB64MSXPSIRBFTPWISN2WD completed successfully!
+Task 2VI5LM5VG53NS67TMZH26R5Q is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...10 minTask 2VI5LM5VG53NS67TMZH26R5Q completed successfully!
+Task TNRQFTCLYJROHOWQ7XUV2EWF completed successfully!
+Task ARA7P5AJGNWHQY4FVYF36HMX is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...11 minTask ARA7P5AJGNWHQY4FVYF36HMX completed successfully!
+Task CHUNCXFZPHQJJDSS77BQQNHN completed successfully!
+Task ODQUGTM4RRSKVA755QONJEMH is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...12 minTask ODQUGTM4RRSKVA755QONJEMH completed successfully!
+Task YAR4YU6AX5CJXKWOA73KRAM7 is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...13 minTask YAR4YU6AX5CJXKWOA73KRAM7 completed successfully!
+Task WGNYQBJV3AQ4XXHSM6UKKMJE is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...14 minTask WGNYQBJV3AQ4XXHSM6UKKMJE completed successfully!
+Task TAQ3ENGK33XKV2SOQ3JECAWG completed successfully!
+Task VDXLFR7TTWIAKPYF7MFFGJQL is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...15 minTask VDXLFR7TTWIAKPYF7MFFGJQL completed successfully!
+Task 3OZDV5PY54HTLBRUZ4FREICW is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...16 minTask 3OZDV5PY54HTLBRUZ4FREICW is still running...1 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...17 minTask 3OZDV5PY54HTLBRUZ4FREICW completed successfully!
+Task TVXKFHJ7K5O77KP4I4F2LYHS completed successfully!
+Task NQPXDHP74E456P3DOPL3A76K is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...18 minTask NQPXDHP74E456P3DOPL3A76K completed successfully!
+Task COZRZDYEIHXMLO62K2IQIEMA completed successfully!
+Task WMRH6AQ4QOAVU6J5D53Q44DP is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...19 minTask WMRH6AQ4QOAVU6J5D53Q44DP completed successfully!
+Task KNNHSXD737BHFHY4OKSWPDEY completed successfully!
+Task L4PO7FFSEI3VFBFBBHE4MTEO is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...20 minTask L4PO7FFSEI3VFBFBBHE4MTEO is still running...1 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...21 minTask L4PO7FFSEI3VFBFBBHE4MTEO completed successfully!
+Task Q2KDJFZACGHHCZQZHQPT3WJ7 completed successfully!
+Task JSZYK6EPGQPT7FH2ZNHWTTHC completed successfully!
+Task CN54IIL5IZM5QMLW3L5ZMZJ7 is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...22 minTask CN54IIL5IZM5QMLW3L5ZMZJ7 completed successfully!
+Task GTANBYAG7EDCQCLF7F7NJDR3 is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...23 minTask GTANBYAG7EDCQCLF7F7NJDR3 completed successfully!
+Task WQVS5D6KEJUR2AO3756AYMTB completed successfully!
+Task 2PZNLUSXWG5EIN5MOXVN5YKQ completed successfully!
+Task PHZKIALF5PAHFHA4OKVG27TI is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...24 minTask PHZKIALF5PAHFHA4OKVG27TI completed successfully!
+Task 3MVRXP5TEJ7KTIPE3NQ4ZWT2 completed successfully!
+Task XXZZXYQSVXCAJITXSNEA2FD7 is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...25 minTask XXZZXYQSVXCAJITXSNEA2FD7 is still running...1 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...26 minTask XXZZXYQSVXCAJITXSNEA2FD7 completed successfully!
+Task T7O3R3XWTVD6R44YIHXHXYLM completed successfully!
+Task KFXQVAEII7JZU6SVWHBLPRQD is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...27 minTask KFXQVAEII7JZU6SVWHBLPRQD completed successfully!
+Task PXJSZGOTDJKI7QATOOXLSVH2 completed successfully!
+Task ATLPKVFG3KJUEANOPBSQHCRW is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...28 minTask ATLPKVFG3KJUEANOPBSQHCRW completed successfully!
+Task ESFJTFKM3TI367553SGSW5ZW completed successfully!
+Task 6AEROFL5RUAEKWQ3EGW4FXJL completed successfully!
+Task KMIFFUGM52UT6IBKQX4KHI3Q is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...29 minTask KMIFFUGM52UT6IBKQX4KHI3Q completed successfully!
+Task 2RDDHU35A7FYPMJBMLO5SUXD completed successfully!
+Task 6YQP3GW5AADREBL6NTLKHWN2 is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...30 minTask 6YQP3GW5AADREBL6NTLKHWN2 completed successfully!
+Task 5RLZWAUY6ULQRMH4F5YYJY3A completed successfully!
+Task XBTLO5MSE7M55OCWPSNQ3ERH is still running...0 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...31 minTask XBTLO5MSE7M55OCWPSNQ3ERH is still running...1 minTask LHCQWTHQXSMHM2R22UAT63BE is still running...32 min

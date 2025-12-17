@@ -106,7 +106,7 @@ param['bnet_buffered_polygons'] = f"bugnet_polygons_buffered_{param['target']}_m
 #parameters export
 param['parameter_file'] = f"{param['project_name']}_mag{param['decline_thresholds']['tcw']}_{param['bnet_polygon_mmu']}mmu_parameter_file"
 
-param['outputfile_prefix'] = f"Bugnet_{param['subregion']}_v{param['target']}-{param['version']}_Annual_Change" 
+param['outputfile_prefix'] = f"Bugnet_{param['subregion']}_v{param['target']}-{param['version']}" 
 
 
 if param["platform"] == 'HlS':
