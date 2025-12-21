@@ -8,7 +8,7 @@ set -euo pipefail
 PRO="coast-range"
 REGION="r6"
 YEAR="2025"
-VERSION="v3"
+VERSION="v2"
 OUT_NAME_PREFIX="${PRO}-bugnet-${YEAR}-${VERSION}"
 
 PARAM_DIR="/vol/v1/bugnet/lt-bnet-py/bugnet/parameters/${YEAR}/${REGION}/${VERSION}/${OUT_NAME_PREFIX}"
