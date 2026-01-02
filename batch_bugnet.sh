@@ -5,7 +5,7 @@ set -euo pipefail
 # DEFAULT SETTINGS (edit for your env)
 ########################################
 # “Ecoregion key” list (must match template filenames like <PRO>-template.py)
-ECOS=(blue-mts east-cascades)
+ECOS=(blue-mts east-cascades coast-range)
 
 # Region(s) (folder dimension). You said: for now just r6.
 REGIONS=(r6)

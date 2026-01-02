@@ -442,7 +442,7 @@ def CreatePredictorFittedImagery(lt,param):
 		return
 
 	else:
-		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
+		treeMask = ee.ImageCollection('JRC/GFC2020/V3').mosaic().unmask()		
 		fitted_img_p = bnet.get_fitted_stack(lt,'fitted_predictor',param).mask(treeMask).int16()
 		task = bnet.export_image(fitted_img_p,param, param['assetDir'],param['fitted_img_p'],param['pixel_scale'])
 		return task
@@ -478,7 +478,7 @@ def CreatePredictorChangeImagery(lt,param):
 
 	else:
 		#param['change_params']['years'] = {'start': param['composite_params']['end_date'].year-6, 'end': param['composite_params']['end_date'].year}
-		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
+		treeMask = ee.ImageCollection('JRC/GFC2020/V3').mosaic().unmask()		
 		change_img_p = lt.get_change_map(param['change_params']).mask(treeMask)
 		task = bnet.export_image(change_img_p,param, param['assetDir'],param['predictor_change_img'],param['pixel_scale'])
 
@@ -985,7 +985,7 @@ def CreateForestMask(param):
 			.multiply(highMagChange_img) \
 			.multiply(fire_img) \
 			.multiply(tassMap) \
-			.updateMask(ee.ImageCollection('JRC/GFC2020/V2').mosaic()) \
+			.updateMask(ee.ImageCollection('JRC/GFC2020/V3').mosaic()) \
 
 
 	# export image mask
@@ -1020,7 +1020,7 @@ def CreateForestMaskVis(param):
 	fire  = mtbs.filter(ee.Filter.And(ee.Filter.gte("Ig_Date", param['maskStartTime']),ee.Filter.lte("Ig_Date", param['maskEndTime']))).reduceToImage(["Map_ID"], ee.Reducer.mean()).gt(0).unmask(0).toInt()      # 0/1
 
 	# code = (tass<<3) | (fire<<2) | (high<<1) | (lcms<<0)
-	mask_code = (lcms.bitwiseOr(high.leftShift(1)).bitwiseOr(fire.leftShift(2)).bitwiseOr(tass.leftShift(3)).toInt16().clip(param['aoi']).updateMask(ee.ImageCollection('JRC/GFC2020/V2').mosaic()))
+	mask_code = (lcms.bitwiseOr(high.leftShift(1)).bitwiseOr(fire.leftShift(2)).bitwiseOr(tass.leftShift(3)).toInt16().clip(param['aoi']).updateMask(ee.ImageCollection('JRC/GFC2020/V3').mosaic()))
 
 	# export image mask
 	task_mask = ee.batch.Export.image.toAsset(
