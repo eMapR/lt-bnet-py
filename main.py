@@ -920,10 +920,6 @@ def buffer_classed_polygons(param):
 		else:
 			out = bnet.buffer_features(fc1, 100)
 
-
-
-
-
 		task = bnet.export_feature_collection(out, param['buffered_classes'], param['assetDir'])
 		return task
 
@@ -1771,6 +1767,27 @@ def calc_attri_fields(param):
       #'MMU': param['bnet_polygon_mmu'], 
       #'count': 14,
       #'bugnet_label': 1
+    };
+    fields = {
+      'ACRES': 0,
+      'CREATED_DATE': formatted_date,
+      'DAMAGE_TYPE': "null",
+      'DAMAGE_TYPE_CODE': 0,
+      'DCA': "null",
+      'DCA_CODE': 0,
+      'FEATURE_USER_ID': 'clarype@oregonstate.edu',
+      'HOST': "null",
+      'HOST_CODE': 0,
+      'HOST_GROUP': "null",
+      'HOST_GROUP_CODE': 0,
+      'NOTES': "null",
+      'REGION_ID': param['study_region'],
+      'US_AREA': 'CONUS',
+      'MODIFIED_DATE': 'na',
+      'SURVEY_YEAR': param['target'],
+      'buffered_acres': param['target'],
+      'pct_affected': param['target'],
+      'unbuffered_acres': param['target'],
     };
 
     return fields
