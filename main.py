@@ -1750,27 +1750,6 @@ def calc_attri_fields(param):
     fields = {
       'ACRES': 0,
       'CREATED_DATE': formatted_date,
-      'DAMAGE_TYPE_CODE': 0,
-      'DCA_CODE': 0,
-      'HOST_CODE': 0,
-      'HOST_GROUP_CODE': 0,
-      'IDS_DATA_SOURCE': 91,
-      #'KEY': 'clarype@oregonstate.edu',
-      'LABEL': 'Default Label',
-      'MODIFIED_DATE': '',
-      'NOTES': '',
-      'PERCENT_AFFECTED_CODE': 2,
-      #'SUB_REGION': param['sub_region'],
-      'REGION_ID': param['study_region'],
-      'SURVEY_YEAR': param['target'],
-      'US_AREA': 'CONUS',
-      #'MMU': param['bnet_polygon_mmu'], 
-      #'count': 14,
-      #'bugnet_label': 1
-    };
-    fields = {
-      'ACRES': 0,
-      'CREATED_DATE': formatted_date,
       'DAMAGE_TYPE': "null",
       'DAMAGE_TYPE_CODE': 0,
       'DCA': "null",
@@ -1792,6 +1771,66 @@ def calc_attri_fields(param):
 
     return fields
 
+##############################################################################
+# 
+##############################################################################
+def add_area_and_pct_affected_by_pixel_count(fc_buffered,
+                                             fc_unbuffered,
+                                             count_field='count',
+                                             pixel_size_meters=30):
+    """
+    Args:
+      fc_buffered (ee.FeatureCollection): buffered polygons
+      fc_unbuffered (ee.FeatureCollection): unbuffered polygons w/ pixel count field
+      count_field (str): property name holding per-feature pixel counts
+      pixel_size_meters (int|float): pixel size in meters (e.g., 30 for Landsat)
+
+    Returns:
+      ee.FeatureCollection: buffered features with added properties:
+        - buffered_acres
+        - pixel_count_sum
+        - unbuffered_acres
+        - pct_affected
+    """
+    ACRES_PER_SQ_M = 0.00024710538146717
+
+    acres_per_pixel = (ee.Number(pixel_size_meters)
+        .multiply(pixel_size_meters)
+        .multiply(ACRES_PER_SQ_M))
+
+    join = ee.Join.saveAll(matchesKey='matches')
+    filt = ee.Filter.contains(leftField='.geo', rightField='.geo')
+
+    joined = ee.FeatureCollection(join.apply(fc_buffered, fc_unbuffered, filt))
+
+    def _per_buffer(buf):
+        buf = ee.Feature(buf)
+
+        buffer_area_acres = ee.Number(buf.geometry().area(1)).multiply(ACRES_PER_SQ_M)
+
+        matches = ee.FeatureCollection(ee.List(buf.get('matches')))
+
+        pixel_count_sum = ee.Number(
+            ee.Algorithms.If(matches.size().gt(0),
+                             matches.aggregate_sum(count_field),
+                             0)
+        )
+
+        affected_acres = pixel_count_sum.multiply(acres_per_pixel)
+
+        pct_affected = ee.Number(
+            ee.Algorithms.If(buffer_area_acres.gt(0),
+                             affected_acres.divide(buffer_area_acres).multiply(100),
+                             0)
+        )
+
+        return (buf
+            .set('buffered_acres', buffer_area_acres)
+            .set('unbuffered_acres', affected_acres)  # same name as your JS
+            .set('pct_affected', pct_affected)
+            .set('matches', None))
+
+    return joined.map(_per_buffer)
 ##############################################################################
 # 
 ##############################################################################
@@ -1906,9 +1945,17 @@ def merge_buffer_buckets_and_finish(param, asset_ids):
 
     fc_attri = fc_bnet.map(rebuild_feature)
 
+    result = add_area_and_pct_affected_by_pixel_count(
+        fc_buffered=fc_attri,
+        fc_unbuffered=param['assetDir'] + param['bnet_polygonized'],
+        count_field='count',      # property holding pixel counts
+        pixel_size_meters=param['pixel_scale']      # Landsat; use 10 for Sentinel-2
+    )
+
+
     # Export final
     task = ee.batch.Export.table.toAsset(
-        collection=fc_attri,
+        collection=result,
         description=param['bnet_buffered_polygons'],
         assetId=param['assetDir'] + param['bnet_buffered_polygons']
 
