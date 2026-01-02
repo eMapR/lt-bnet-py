@@ -1785,9 +1785,9 @@ def calc_attri_fields(param):
       'US_AREA': 'CONUS',
       'MODIFIED_DATE': 'na',
       'SURVEY_YEAR': param['target'],
-      'buffered_acres': param['target'],
-      'pct_affected': param['target'],
-      'unbuffered_acres': param['target'],
+      'buffered_acres': 0,
+      'pct_affected': 0,
+      'unbuffered_acres': 0,
     };
 
     return fields
