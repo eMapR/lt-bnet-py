@@ -282,7 +282,14 @@ def export_to_cloud_storage(asset, bucket, path):
 # 
 ##############################################################################
 # Stable tails (region-agnostic) for items that include a varying region prefix
-DEFAULT_SUFFIXES = [
+DEFAULT_PREFIXES = (
+    "A_predictor_fitted_img_",
+    "C4_classed_img_",
+    "D_bugnet_forest_mask_",
+    "bugnet_polygons_buffered_",
+)
+
+DEFAULT_SUFFIXES = (
     "_mag50_10mmu_parameter_file",
     "_mag50_20mmu_parameter_file",
     "_mag50_30mmu_parameter_file",
@@ -292,30 +299,11 @@ DEFAULT_SUFFIXES = [
     "_mag70_10mmu_parameter_file",
     "_mag70_20mmu_parameter_file",
     "_mag70_30mmu_parameter_file",
-]
-
-# Exact basenames for items that don't include the region slug
-DEFAULT_BASENAMES = [
-    "A_predictor_fitted_img_2020_2025",
-    "C4_classed_img_2025",
-    "D_bugnet_forest_mask_2025",
-    "bugnet_polygons_buffered_2025_mag50_10mmu",
-    "bugnet_polygons_buffered_2025_mag50_20mmu",
-    "bugnet_polygons_buffered_2025_mag50_30mmu",
-    "bugnet_polygons_buffered_2025_mag60_10mmu",
-    "bugnet_polygons_buffered_2025_mag60_20mmu",
-    "bugnet_polygons_buffered_2025_mag60_30mmu",
-    "bugnet_polygons_buffered_2025_mag70_10mmu",
-    "bugnet_polygons_buffered_2025_mag70_20mmu",
-    "bugnet_polygons_buffered_2025_mag70_30mmu",
-]
+)
 
 def _is_default_asset(asset_id: str) -> bool:
-    """True if this asset matches our default selection rules."""
-    base = asset_id.rsplit('/', 1)[-1]  # basename
-    if base in DEFAULT_BASENAMES:
-        return True
-    return any(base.endswith(sfx) for sfx in DEFAULT_SUFFIXES)
+    base = asset_id.rsplit("/", 1)[-1]
+    return base.startswith(DEFAULT_PREFIXES) or base.endswith(DEFAULT_SUFFIXES)
 
 def export_assets(params, use_defaults=True):
     """Main function to export assets automatically or interactively."""

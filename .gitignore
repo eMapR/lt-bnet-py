@@ -1,3 +1,7 @@
 assets/
 entersound.txt
 __pycache__/
+logs/
+parameters/
+params_new/
+templates/
