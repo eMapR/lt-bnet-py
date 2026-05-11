@@ -5,24 +5,27 @@ set -euo pipefail
 # DEFAULT SETTINGS (edit for your env)
 ########################################
 # “Ecoregion key” list (must match template filenames like <PRO>-template.py)
-ECOS=(blue-mts east-cascades coast-range)
+#ECOS=(blue-mts east-cascades coast-range cascades north-cascades klamath-mts)
+#ECOS=(cascades north-cascades klamath-mts columbia-mts s2-north-cascades)
+ECOS=(blue-mts)
+#ECOS=(case-study)
 
 # Region(s) (folder dimension). You said: for now just r6.
 REGIONS=(r6)
 
 # Years to run (can be "2015-2025" or CSV "2015,2016,...")
-YEARS_SPEC="2015-2025"
+YEARS_SPEC="2025"
 
 VERSION="v3"
 
 # Canonical templates live here:
-TEMPLATES_DIR="/vol/v1/bugnet/lt-bnet-py/bugnet/templates/v3"
+TEMPLATES_DIR="/data/vol/clarype/bugnet/lt-bnet-py/bugnet/templates/v3"
 
 # Where run instance folders live:
-PARAM_ROOT="/vol/v1/bugnet/lt-bnet-py/bugnet/params_new"
+PARAM_ROOT="/data/vol/clarype/bugnet/lt-bnet-py/bugnet/params_new"
 
 # Program runner:
-PY_RUNNER="/vol/v1/bugnet/lt-bnet-py/bugnet/main.py"
+PY_RUNNER="/data/vol/clarype/bugnet/lt-bnet-py/bugnet/main.py"
 
 # Variant sweep
 MAGS=(50 60 70)
@@ -305,6 +308,24 @@ chain_for_mag() {
   fi
 }
 
+ensure_shared_predictor_assets() {
+  if (( DRY_RUN )); then
+    log "DRY: would seed shared predictor assets with mag${FIRST_MAG}-mmu${BASE_MMU} before parallel fan-out"
+    return 0
+  fi
+
+  log "Seeding shared predictor assets with mag${FIRST_MAG}-mmu${BASE_MMU} before parallel fan-out"
+  build_and_run_variant "$FIRST_MAG" "$BASE_MMU" || {
+    log "Shared predictor asset seed failed for mag${FIRST_MAG}-mmu${BASE_MMU}"
+    return 1
+  }
+
+  if [[ ! -f "$BOOTSTRAP_FLAG" ]]; then
+    touch "$BOOTSTRAP_FLAG"
+    log "Seed completed and marked ($BOOTSTRAP_FLAG)"
+  fi
+}
+
 run_one_context() {
   local max_year="$1"
 
@@ -326,19 +347,15 @@ run_one_context() {
   # Create base cfg for this year
   materialize_base_cfg "$YEAR" "$ltend"
 
-  # Bootstrap behavior per folder
+  # Bootstrap marker is informative, but shared predictor assets must still be
+  # seeded synchronously before variant fan-out to avoid duplicate GEE exports.
   if [[ ! -f "$BOOTSTRAP_FLAG" ]]; then
-    if (( DRY_RUN )); then
-      log "DRY: BOOTSTRAP -> run mag${FIRST_MAG}-mmu${BASE_MMU} ONLY, then touch $BOOTSTRAP_FLAG"
-    else
-      log "BOOTSTRAP: running mag${FIRST_MAG}-mmu${BASE_MMU} ONLY"
-      build_and_run_variant "$FIRST_MAG" "$BASE_MMU"
-      touch "$BOOTSTRAP_FLAG"
-      log "BOOTSTRAP: completed and marked ($BOOTSTRAP_FLAG)"
-    fi
+    log "Bootstrap marker missing; shared predictor assets will be seeded now"
   else
-    log "Bootstrap already done (found $BOOTSTRAP_FLAG)"
+    log "Bootstrap marker already present (found $BOOTSTRAP_FLAG)"
   fi
+
+  ensure_shared_predictor_assets
 
   if (( DRY_RUN )); then
     for mag in "${MAGS[@]}"; do
@@ -353,8 +370,8 @@ run_one_context() {
   for mag in "${MAGS[@]}"; do
     throttle
     (
-      if [[ "$mag" -eq "$FIRST_MAG" && -f "$BOOTSTRAP_FLAG" ]]; then
-        log "MAG=${mag}: base was done in bootstrap; launching remaining MMUs."
+      if [[ "$mag" -eq "$FIRST_MAG" ]]; then
+        log "MAG=${mag}: shared seed already ran; launching remaining MMUs only."
         local mmu
         for mmu in "${MMUS[@]}"; do
           [[ "$mmu" -eq "$BASE_MMU" ]] && continue
