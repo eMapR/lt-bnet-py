@@ -8,353 +8,14 @@ import time
 import datetime
 #from parameters import blue_mt_config_opt3_2023 as bnet_config
 import bnet as bnet
-import importlib.util
+from cli_utils import gui, load_parameters, walk_assets
+from export_utils import dict_to_feature_collection, export_assets
 
 
 # Authenticate the Earth Engine API (uncomment if needed for authentication)
 #ee.Authenticate(force=True)
 
 # Initialize the Earth Engine API with a specific project
-
-##############################################################################
-# export parameter file to assets
-##############################################################################
-def flatten_dict(d, parent_key='', sep='_'):
-    """
-    Recursively flatten a nested dictionary.
-
-    Parameters:
-        d (dict): The dictionary to flatten.
-        parent_key (str): The base key to prepend to each key.
-        sep (str): Separator to use for concatenating keys.
-
-    Returns:
-        dict: A flattened dictionary.
-    """
-    items = []
-    for k, v in d.items():
-        new_key = f"{parent_key}{sep}{k}" if parent_key else k
-        if isinstance(v, dict):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
-        elif isinstance(v, (ee.FeatureCollection, ee.Image, ee.ImageCollection ,LandsatComposite)):
-            items.append((new_key, "GEE object"))
-        else:
-            items.append((new_key, v))
-
-
-    transformed_list = []
-    for key, value in items:
-        if isinstance(value, list):  # Convert list to comma-separated string
-            if isinstance(value[0], int):
-                value = [str(element) for element in value]
-            transformed_list.append((key, ', '.join(value)))
-        elif isinstance(value, tuple):  # Convert tuple to list then string
-            value = list(value)
-            if isinstance(value[0], int):
-                value = [str(element) for element in value]
-            transformed_list.append((key, ', '.join(value)))
-
-        elif isinstance(value, datetime.date):  # Convert date object to string
-            transformed_list.append((key, value.strftime('%Y-%m-%d')))
-        else:  # Keep other types as they are
-            transformed_list.append((key, value))
-
-
-    return dict(transformed_list)
-
-##############################################################################
-# 
-##############################################################################
-def dict_to_feature_collection(param):
-    #(data_dict, asset_path)
-    """
-    Converts a dictionary to a Google Earth Engine FeatureCollection and exports it.
-
-    Parameters:
-        data_dict (dict): The input dictionary to convert.
-        asset_path (str): The asset path to save the FeatureCollection.
-
-    Returns:
-        None
-    """
-    # check to see if output asset exists
-    exists = asset_exists(param["assetDir"]+param['parameter_file'])
-
-    if exists:
-
-        return
-
-    else:
-
-        # Flatten the dictionary
-        flattened_data = flatten_dict(param)
-
-        # Create a single feature with the flattened data
-        feature = ee.Feature(param['aoi'].first().geometry().centroid(1), flattened_data)
-
-        # Create a FeatureCollection
-        feature_collection = ee.FeatureCollection([feature])
-
-        # Export the FeatureCollection to the specified asset path
-        task = ee.batch.Export.table.toAsset(
-            collection=feature_collection,
-            description=param['parameter_file'],
-            assetId=param['assetDir']+param['parameter_file']
-        )
-        task.start()
-
-        return task
-
-
-
-##############################################################################
-# export assets to location gdrive gbucket
-##############################################################################
-def list_assets(params):
-    """
-    Lists all assets in the specified asset directory.
-    
-    Parameters:
-        asset_directory (str): The full path to the asset directory.
-        
-    Returns:
-        list: A list of dictionaries with asset ID and type.
-    """
-    asset_list = []
-    try:
-        assets = ee.data.listAssets({'parent': params['assetDir']}).get('assets', [])
-        for asset in assets:
-            asset_list.append({'id': asset['name'], 'type': asset['type']})
-    except Exception as e:
-        print(f"Error accessing asset directory {asset_directory}: {e}")
-    return asset_list
-
-
-##############################################################################
-# 
-##############################################################################
-def get_user_input(prompt, options):
-    """Utility function to get user input with validation."""
-    for idx, option in enumerate(options):
-        print(f"{idx + 1}. {option}")
-    choice = input("Enter your choice: ")
-    while not choice.isdigit() or int(choice) < 1 or int(choice) > len(options):
-        print("Invalid choice. Please try again.")
-        choice = input("Enter your choice: ")
-    return options[int(choice) - 1]
-
-
-##############################################################################
-# 
-#######################remove_duplicate_substrings#######################################################
-def remove_duplicate_substrings(filename):
-    """
-    Removes duplicate substrings in a filename.
-    Substrings are defined as components separated by _ or -.
-    Keeps the first occurrence of each substring and removes the others.
-    Delimiters (_ and -) are preserved.
-    """
-    # Split into tokens AND keep delimiters
-    parts = re.split(r'([_-])', filename)
-
-    seen = set()
-    cleaned_parts = []
-
-    for part in parts:
-        if part in ['_', '-']:
-            # Keep delimiters exactly as they appear
-            cleaned_parts.append(part)
-        else:
-            # Keep only first occurrence of each substring
-            if part not in seen:
-                cleaned_parts.append(part)
-                seen.add(part)
-
-    result = "".join(cleaned_parts)
-
-    # 2. Collapse any mixed sequences of hyphens/underscores → single underscore
-    result = re.sub(r'[_-]+', '_', result)
-
-    # 3. Remove leading/trailing underscores if any appear
-    result = result.strip('_')
-
-    return result
-
-##############################################################################
-# 
-##############################################################################
-def export_to_drive(prefix, asset, folder,param):
-    """Exports an asset to Google Drive."""
-    if asset['type'] == 'TABLE':
-        print('table')
-        collection = ee.FeatureCollection(asset['id'])
-        if "parameter" in asset['id']:
-            print("param")
-            print(f"{prefix}_{asset['id'].split('/')[-1]}")
-            outname = f"{prefix}_{asset['id'].split('/')[-1]}"
-            outname2 = outname.replace('bugnet_','')
-            outname3 = remove_duplicate_substrings(outname2)
-            task = ee.batch.Export.table.toDrive(
-                collection=collection,
-                description=outname3,
-                folder=prefix,
-                fileFormat="CSV"
-            )
-        else:
-            print('shp')
-            outname = f"{prefix}_{asset['id'].split('/')[-1]}"
-            outname2 = outname.replace('bugnet_','')
-            outname3 = remove_duplicate_substrings(outname2)
-            task = ee.batch.Export.table.toDrive(
-                collection=collection,
-                description=outname3,
-                folder=prefix,
-                fileFormat="SHP"
-            )
-    elif asset['type'] == 'IMAGE':
-        image = ee.Image(asset['id'])
-        if "fitted" in asset['id']:
-            band_names = image.bandNames()
-            count = band_names.size()
-            last_three = band_names.slice(count.subtract(3), count)
-            last_three_bands = image.select(last_three)
-            outname = f"{prefix}_{asset['id'].split('/')[-1]}"
-            outname2 = outname.replace('bugnet_','')
-            outname3 = remove_duplicate_substrings(outname2)
-            task = ee.batch.Export.image.toDrive(
-                image=last_three_bands,
-                description=outname3,
-                folder=prefix,
-                scale=param['pixel_scale'],
-                region=image.geometry().bounds(),
-                maxPixels=1e13
-            )
-        else:
-            outname = f"{prefix}_{asset['id'].split('/')[-1]}"
-            outname2 = outname.replace('bugnet_','')
-            outname3 = remove_duplicate_substrings(outname2)
-            task = ee.batch.Export.image.toDrive(
-                image=image,
-                description=outname3,
-                folder=prefix,
-                scale=param['pixel_scale'],
-                region=image.geometry().bounds(),
-                maxPixels=1e13
-            )
-    else:
-        print(f"Unsupported asset type: {asset['type']}")
-        return
-    task.start()
-    print(f"Export task started for asset: {asset['id']} to Google Drive folder: {folder}")
-
-
-##############################################################################
-# 
-##############################################################################
-def export_to_cloud_storage(asset, bucket, path):
-    """Exports an asset to Google Cloud Storage."""
-    if asset['type'] == 'TABLE':
-        collection = ee.FeatureCollection(asset['id'])
-        task = ee.batch.Export.table.toCloudStorage(
-            collection=collection,
-            description=f"Export_{asset['id'].split('/')[-1]}",
-            bucket=bucket,
-            path=path
-        )
-    elif asset['type'] == 'IMAGE':
-        image = ee.Image(asset['id'])
-        task = ee.batch.Export.image.toCloudStorage(
-            image=image,
-            description=f"Export_{asset['id'].split('/')[-1]}",
-            bucket=bucket,
-            path=path,
-            scale=param['pixel_scale'],
-            region=image.geometry().bounds()
-        )
-    else:
-        print(f"Unsupported asset type: {asset['type']}")
-        return
-    task.start()
-    print(f"Export task started for asset: {asset['id']} to Cloud Storage bucket: {bucket}/{path}")
-
-
-##############################################################################
-# 
-##############################################################################
-# Stable tails (region-agnostic) for items that include a varying region prefix
-DEFAULT_PREFIXES = (
-    "A_predictor_fitted_img_",
-    "C4_classed_img_",
-    "D_bugnet_forest_mask_",
-    "bugnet_polygons_buffered_",
-)
-
-DEFAULT_SUFFIXES = (
-    "_mag50_10mmu_parameter_file",
-    "_mag50_20mmu_parameter_file",
-    "_mag50_30mmu_parameter_file",
-    "_mag60_10mmu_parameter_file",
-    "_mag60_20mmu_parameter_file",
-    "_mag60_30mmu_parameter_file",
-    "_mag70_10mmu_parameter_file",
-    "_mag70_20mmu_parameter_file",
-    "_mag70_30mmu_parameter_file",
-)
-
-def _is_default_asset(asset_id: str) -> bool:
-    base = asset_id.rsplit("/", 1)[-1]
-    return base.startswith(DEFAULT_PREFIXES) or base.endswith(DEFAULT_SUFFIXES)
-
-def export_assets(params, use_defaults=True):
-    """Main function to export assets automatically or interactively."""
-    location = get_user_input(
-        "Where would you like to export your assets?",
-        ['Google Drive', 'Google Cloud Storage']
-    )
-
-    assets = list_assets(params)
-
-    if use_defaults:
-        selected_assets = [a for a in assets if _is_default_asset(a['id'])]
-        print(f"Exporting {len(selected_assets)} default assets...")
-    else:
-        print("\nAvailable assets:")
-        for idx, asset in enumerate(assets):
-            print(f"{idx + 1}. {asset['id']} ({asset['type']})")
-        selected_indices = input(
-            "Enter the numbers of the assets you'd like to export (comma-separated): "
-        ).split(',')
-        selected_indices = [int(idx.strip()) - 1 for idx in selected_indices if idx.strip().isdigit()]
-        selected_assets = [assets[idx] for idx in selected_indices]
-
-    if location == 'Google Drive':
-        folder = input("Enter the Google Drive folder name: ")
-        for asset in selected_assets:
-            print(params['outputfile_prefix'], folder, params)
-            export_to_drive(params['outputfile_prefix'], asset, folder, params)
-    elif location == 'Google Cloud Storage':
-        bucket = input("Enter the Google Cloud Storage bucket name: ")
-        path = input("Enter the path within the bucket: ")
-        for asset in selected_assets:
-            export_to_cloud_storage(asset, bucket, path)
-    else:
-        print("Invalid location. Exiting.")
-
-
-##############################################################################
-# Load Parameter dictionary
-##############################################################################
-def load_parameters(file_path):
-    # Dynamically load the module from the file path
-    spec = importlib.util.spec_from_file_location("dynamic_params", file_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    # Check for the dictionary and return it
-    if hasattr(module, "param"):
-        return module.param
-    else:
-        raise ValueError("The provided script does not define 'parameters'.")
-
 
 ##############################################################################
 # Wait for Task to complete
@@ -430,7 +91,7 @@ def CreateTrainingFittedImagery(lt,param):
 
 	else:
 		fitted_img_t = bnet.get_fitted_stack(lt,'fitted_training',param)
-		task = bnet.export_image(fitted_img_t,param, param['assetDir_t'],param['fitted_img_t'],param['pixel_scale'])
+		task = bnet.export_image(fitted_img_t.int16(),param, param['assetDir_t'],param['fitted_img_t'],param['pixel_scale'])
 		return task
 
 def CreatePredictorFittedImagery(lt,param):
@@ -442,9 +103,9 @@ def CreatePredictorFittedImagery(lt,param):
 		return
 
 	else:
-		treeMask = ee.ImageCollection('JRC/GFC2020/V3').mosaic().unmask()		
+		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
 		fitted_img_p = bnet.get_fitted_stack(lt,'fitted_predictor',param).mask(treeMask).int16()
-		task = bnet.export_image(fitted_img_p,param, param['assetDir'],param['fitted_img_p'],param['pixel_scale'])
+		task = bnet.export_image(fitted_img_p.int16(),param, param['assetDir'],param['fitted_img_p'],param['pixel_scale'])
 		return task
 
 ##############################################################################
@@ -478,7 +139,7 @@ def CreatePredictorChangeImagery(lt,param):
 
 	else:
 		#param['change_params']['years'] = {'start': param['composite_params']['end_date'].year-6, 'end': param['composite_params']['end_date'].year}
-		treeMask = ee.ImageCollection('JRC/GFC2020/V3').mosaic().unmask()		
+		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
 		change_img_p = lt.get_change_map(param['change_params']).mask(treeMask)
 		task = bnet.export_image(change_img_p,param, param['assetDir'],param['predictor_change_img'],param['pixel_scale'])
 
@@ -985,7 +646,7 @@ def CreateForestMask(param):
 			.multiply(highMagChange_img) \
 			.multiply(fire_img) \
 			.multiply(tassMap) \
-			.updateMask(ee.ImageCollection('JRC/GFC2020/V3').mosaic()) \
+			.updateMask(ee.ImageCollection('JRC/GFC2020/V2').mosaic()) \
 
 
 	# export image mask
@@ -1020,7 +681,7 @@ def CreateForestMaskVis(param):
 	fire  = mtbs.filter(ee.Filter.And(ee.Filter.gte("Ig_Date", param['maskStartTime']),ee.Filter.lte("Ig_Date", param['maskEndTime']))).reduceToImage(["Map_ID"], ee.Reducer.mean()).gt(0).unmask(0).toInt()      # 0/1
 
 	# code = (tass<<3) | (fire<<2) | (high<<1) | (lcms<<0)
-	mask_code = (lcms.bitwiseOr(high.leftShift(1)).bitwiseOr(fire.leftShift(2)).bitwiseOr(tass.leftShift(3)).toInt16().clip(param['aoi']).updateMask(ee.ImageCollection('JRC/GFC2020/V3').mosaic()))
+	mask_code = (lcms.bitwiseOr(high.leftShift(1)).bitwiseOr(fire.leftShift(2)).bitwiseOr(tass.leftShift(3)).toInt16().clip(param['aoi']).updateMask(ee.ImageCollection('JRC/GFC2020/V2').mosaic()))
 
 	# export image mask
 	task_mask = ee.batch.Export.image.toAsset(
@@ -1967,50 +1628,10 @@ def merge_buffer_buckets_and_finish(param, asset_ids):
 
 
 ##############################################################################
-# set access 
-##############################################################################
-
-def walk(parent_id):
-    """Yield every child asset (recursively)."""
-    info = ee.data.getAsset(parent_id)                     # e.g., 'projects/your-project/assets/folder'
-    for child in ee.data.listAssets({'parent': info['name']}).get('assets', []):
-        t = child['type']
-        name = child['name']
-        if t in ('FOLDER', 'IMAGE_COLLECTION'):
-            for x in walk(name):
-                yield x
-        else:
-            yield name
-
-##############################################################################
 # export metadata
 ##############################################################################
 def export_parameter_file(param):
 	return 0
-##############################################################################
-# Wait for Task to complete
-##############################################################################
-def gui():
-	print("Welcome to bugnet!")
-	print("How would you like to continue? Enter ...")
-	print("    1 - Run bugnet.")
-	print("    2 - Run bugnet no training.")
-	print("    3 - Export.")
-	print("    4 - Clean.")
-	mode = input(':')
-	if mode == '2':
-		return mode
-	elif mode == '5':
-		return mode
-	elif mode == '4':
-		return mode
-	elif mode == '3':
-		return mode
-	elif mode == '1':
-		return mode
-	else:
-		print('bye')
-		sys.exit()
 
 ##############################################################################
 # MAIN
@@ -2045,7 +1666,7 @@ def main():
 		# Example: make everything under a folder publicly readable
 		parent = param['assetDir']
 		acl_update = {'all_users_can_read': True}  # public-read
-		for asset in walk(parent):
+		for asset in walk_assets(parent):
 			print('Updating:', asset)
 			ee.data.setAssetAcl(asset, acl_update)
 
@@ -2130,7 +1751,7 @@ def main():
 		task_buffer = buffer_bnet_polygons(param)
 		wait_for_task(task_buffer)
 
-		task_params = dict_to_feature_collection(param)
+		task_params = dict_to_feature_collection(param, asset_exists)
 		wait_for_task(task_params)
 
 	elif mode == '2':
@@ -2242,7 +1863,7 @@ def main():
 			task_buffer2 = merge_buffer_buckets_and_finish(param, assets_ids)
 			wait_for_task(task_buffer2)
 
-			task_params = dict_to_feature_collection(param)
+			task_params = dict_to_feature_collection(param, asset_exists)
 			wait_for_task(task_params)
 		else:
 			
@@ -2276,13 +1897,13 @@ def main():
 			if not exists:
 				print(1)
 
-			task_params = dict_to_feature_collection(param)
+			task_params = dict_to_feature_collection(param, asset_exists)
 			wait_for_task(task_params)
 
 			# Example: make everything under a folder publicly readable
 			parent = param['assetDir']
 			acl_update = {'all_users_can_read': True}  # public-read
-			for asset in walk(parent):
+			for asset in walk_assets(parent):
 				print('Updating:', asset)
 				ee.data.setAssetAcl(asset, acl_update)
 
