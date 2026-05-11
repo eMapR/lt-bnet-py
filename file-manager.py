@@ -14,7 +14,7 @@ Organize BugNet exports:
     * One METADATA.txt in each Shapefiles/<basename>/ folder
 """
 
-import argparse, re, shutil, sys, datetime, subprocess
+import argparse, re, shutil, sys, subprocess
 from pathlib import Path
 
 # ---------------- Config ----------------
@@ -31,9 +31,9 @@ PATTERNS = {
     "mask":   re.compile(LEAD + r"D_forest_mask_(?P<prod_year>\d{4})$", re.I),
     "polys":  re.compile(LEAD + r"polygons_buffered_(?P<prod_year>\d{4})_mag(?P<mag>\d+)_(?P<mmu>\d+)mmu$", re.I),
 }
-# Parameter CSVs: region is before "-bugnet"
+# Parameter CSVs
 PARAMS = re.compile(
-    LEAD + r"_mag(?P<mag>\d+)_(?P<mmu>\d+)mmu_parameter_file$", re.I
+    LEAD + r"mag(?P<mag>\d+)_(?P<mmu>\d+)mmu_parameter_file$", re.I
 )
 
 # Chunk suffix patterns on STEM (no extension): -00000 or -##########-##########
@@ -88,9 +88,7 @@ def is_tif_like(p: Path) -> bool:
     return (p.suffix.lower() in TIF_SIMPLE) or pl.endswith(".tif.aux.xml") or pl.endswith(".tif.ovr")
 
 def parse_params_tokens(stem: str):
-    print(PARAMS.pattern)
     m = PARAMS.match(stem)
-    print(m)
     if not m:
         return None
     gd = m.groupdict()
@@ -277,7 +275,6 @@ def main():
     for f in files:
         nm = strip_compound_tif(f.name); stem = Path(nm).stem
         if f.suffix.lower() == ".csv":
-            print(stem)
             t = parse_params_tokens(stem)
             if t: tokens = t; break
     if not tokens:
@@ -314,7 +311,6 @@ def main():
         by_stem.setdefault(stem, []).append(f)
 
     for stem, flist in sorted(by_stem.items()):
-        kind, _ = classify_kind(stem)
         is_shape = any(p.suffix.lower() in SHAPE_EXTS for p in flist)
         has_tif = any(is_tif_like(p) for p in flist)
         is_param = any(p.suffix.lower() == ".csv" for p in flist)
@@ -354,7 +350,6 @@ def main():
     # -------- IMAGE METADATA PHASE (after merges) --------
     # Build targets: prefer merged outputs; otherwise one intended base per chunked set; plus all non-chunked tifs
     tifs_now = list(root.glob("*.tif"))
-    names_now = {p.name for p in tifs_now}
     final_targets = {}  # base_stem -> output_name.tif
 
     # From any chunk parts present, decide merged targets
