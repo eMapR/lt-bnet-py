@@ -1,5 +1,4 @@
 import ee
-from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 import os
 import sys
 import re
@@ -10,6 +9,7 @@ import datetime
 import bnet as bnet
 from cli_utils import gui, load_parameters, walk_assets
 from export_utils import dict_to_feature_collection, export_assets
+from pipeline_modes import apply_public_read_acl, run_mode_1, run_mode_2
 
 
 # Authenticate the Earth Engine API (uncomment if needed for authentication)
@@ -1633,6 +1633,46 @@ def merge_buffer_buckets_and_finish(param, asset_ids):
 def export_parameter_file(param):
 	return 0
 
+
+def build_mode_dependencies():
+	return {
+		"ee": ee,
+		"wait_for_task": wait_for_task,
+		"delete_assets": delete_assets,
+		"asset_exists": asset_exists,
+		"walk_assets": walk_assets,
+		"CreateTrainingFittedImagery": CreateTrainingFittedImagery,
+		"CreatePredictorFittedImagery": CreatePredictorFittedImagery,
+		"CreateTrainingChangeImagery": CreateTrainingChangeImagery,
+		"CreatePredictorChangeImagery": CreatePredictorChangeImagery,
+		"CreateTrainingDisturbancePolygons": CreateTrainingDisturbancePolygons,
+		"CreatePredictorDisturbancePolygons": CreatePredictorDisturbancePolygons,
+		"merge_selected_feature_collections": merge_selected_feature_collections,
+		"attributeTrainingPolygons": attributeTrainingPolygons,
+		"attributePredictorPolygons": attributePredictorPolygons,
+		"classify_polygons": classify_polygons,
+		"filter_classes": filter_classes,
+		"buffer_classed_polygons": buffer_classed_polygons,
+		"rasterize_classed_polygons": rasterize_classed_polygons,
+		"CreateForestMask": CreateForestMask,
+		"CreateForestMaskVis": CreateForestMaskVis,
+		"DecliningLTSD": DecliningLTSD,
+		"SNIC": SNIC,
+		"DecliningSNIC": DecliningSNIC,
+		"buildKMeansSample": buildKMeansSample,
+		"kMeansImage": kMeansImage,
+		"kMeansProporitonsADSsample": kMeansProporitonsADSsample,
+		"proportionCalc": proportionCalc,
+		"predict": predict,
+		"polygonize_bnet": polygonize_bnet,
+		"buffer_bnet_polygons": buffer_bnet_polygons,
+		"merge_buffer_buckets_and_finish": merge_buffer_buckets_and_finish,
+		"get_unique_pixel_values": get_unique_pixel_values,
+		"prompt_reclassification_mapping": prompt_reclassification_mapping,
+		"reclassify_image": reclassify_image,
+		"dict_to_feature_collection": dict_to_feature_collection,
+	}
+
 ##############################################################################
 # MAIN
 ##############################################################################
@@ -1663,249 +1703,13 @@ def main():
 
 
 	if mode == '5':
-		# Example: make everything under a folder publicly readable
-		parent = param['assetDir']
-		acl_update = {'all_users_can_read': True}  # public-read
-		for asset in walk_assets(parent):
-			print('Updating:', asset)
-			ee.data.setAssetAcl(asset, acl_update)
-
+		apply_public_read_acl(param, ee, walk_assets)
 
 	elif mode == '1':
-
-		lt = LandTrendr(**param['lt_params'])
-
-		task1 = CreateTrainingFittedImagery(lt,param)
-		task2 = CreatePredictorFittedImagery(lt,param)
-		task3 = CreateTrainingChangeImagery(lt,param)
-		task4 = CreatePredictorChangeImagery(lt,param)
-		wait_for_task(task1)
-		wait_for_task(task2)
-		wait_for_task(task3)
-		wait_for_task(task4)
-
-		task5 = CreateTrainingDisturbancePolygons(param)
-		task6 = CreatePredictorDisturbancePolygons(param)
-		wait_for_task(task5)
-
-		if isinstance(task6, list):
-			for t in task6[1]:
-				wait_for_task(t)
-			task66 = merge_selected_feature_collections(param['assetDir'],task6[2],param['disturbance_polygons_predictor'],"testing")
-			wait_for_task(task66)
-		else:
-			wait_for_task(task6)
-
-		task7 = attributeTrainingPolygons(param)
-		task8 = attributePredictorPolygons(param)
-		wait_for_task(task7)
-		wait_for_task(task8)
-
-		task9 = classify_polygons(param)
-		wait_for_task(task9)
-
-		task10 = filter_classes(param)
-		wait_for_task(task10)
-
-		task11 = buffer_classed_polygons(param)
-		wait_for_task(task11)
-
-		task12 = rasterize_classed_polygons(param)
-		wait_for_task(task12)
-
-		task_mask = CreateForestMask(param)	
-		wait_for_task(task_mask)
-
-		if '3' in param['configName']:
-
-			task_decline = DecliningLTSD(param)
-			wait_for_task(task_decline)
-
-		else:
-
-			task_snic = SNIC(param)
-			wait_for_task(task_snic)
-
-			task_decline_snic = DecliningSNIC(param)
-			wait_for_task(task_decline_snic)
-
-		task_kmeans_sample = buildKMeansSample(param)
-		wait_for_task(task_kmeans_sample)
-
-		task_kmeans = kMeansImage(param)
-		wait_for_task(task_kmeans)
-
-		task_sample = kMeansProporitonsADSsample(param)
-		wait_for_task(task_sample)
-
-		task_proportion = proportionCalc(param)
-		wait_for_task(task_proportion)
-
-		task_predict = predict(param)
-		wait_for_task(task_predict)
-
-		task_poly = polygonize_bnet(param)
-
-		wait_for_task(task_poly)
-
-		task_buffer = buffer_bnet_polygons(param)
-		wait_for_task(task_buffer)
-
-		task_params = dict_to_feature_collection(param, asset_exists)
-		wait_for_task(task_params)
+		run_mode_1(param, build_mode_dependencies())
 
 	elif mode == '2':
-
-		lt = LandTrendr(**param['lt_params'])
-
-		task2 = CreatePredictorFittedImagery(lt,param)
-		task4 = CreatePredictorChangeImagery(lt,param)
-		wait_for_task(task2)
-		wait_for_task(task4)
-
-		res = CreatePredictorDisturbancePolygons(param,param['polygon-split-method'])  # returns {'mode','tasks','asset_paths','subregions'}
-		if res !=0:
-
-			# 1) Wait for all started exports (skip Nones from "exists, skipping")
-			tasks = [t for t in res.get('tasks', []) if t is not None]
-			for t in tasks:
-				wait_for_task(t)
-
-			# 2) Merge shards only if there’s more than one asset
-			asset_paths = res.get('asset_paths', [])
-			if len(asset_paths) > 1:
-				base_name  = param['disturbance_polygons_predictor']
-				asset_dir  = param['assetDir']
-				merged_name = f"{base_name}"
-				merged_task = merge_selected_feature_collections(asset_dir, asset_paths, merged_name, "merged predictor shards")
-				wait_for_task(merged_task)
-
-				# ---- CLEANUP (delete shards) ----
-				merged_path = f"{asset_dir}{merged_name}"
-	
-				def looks_like_shard(aid: str) -> bool:
-					name = aid.split('/')[-1]
-					# keep only pieces like "<base_name>_*" but not the merged or any grid export you want to keep
-					if name == merged_name:
-						return False
-					if name.startswith(f"{base_name}_grid_"):   # keep the grid index asset if you export it
-						return False
-					return name.startswith(base_name + "_")
-	
-				# Prefer deleting only shards created in THIS run; fall back to all shards if list is empty
-				candidates = res['created_asset_paths'] if res['created_asset_paths'] else asset_paths
-				to_delete  = [a for a in candidates if looks_like_shard(a)]
-
-				# Dry-run first if you want to preview
-				#delete_assets(to_delete, dry_run=True)
-
-				delete_assets(to_delete, dry_run=False, pause_sec=0.2)
-
-			else:
-				# Single asset (full AOI) — nothing to merge
-				pass
-
-		task8 = attributePredictorPolygons(param)
-		wait_for_task(task8)
-
-		task9 = classify_polygons(param)
-		wait_for_task(task9)
-
-		task10 = filter_classes(param)
-		wait_for_task(task10)
-
-		task11 = buffer_classed_polygons(param)
-		wait_for_task(task11)
-
-		task12 = rasterize_classed_polygons(param)
-		wait_for_task(task12)
-
-		task_mask = CreateForestMaskVis(param)	
-		task_mask = CreateForestMask(param)	
-		wait_for_task(task_mask)
-
-		if '3' in param['configName']:
-
-			task_decline = DecliningLTSD(param)
-			wait_for_task(task_decline)
-
-		else:
-
-			task_snic = SNIC(param)
-			wait_for_task(task_snic)
-
-			task_decline_snic = DecliningSNIC(param)
-			wait_for_task(task_decline_snic)
-
-		buildKMeansSample(param)
-		#wait_for_task(task_kmeans_sample)
-
-		task_kmeans = kMeansImage(param)
-		wait_for_task(task_kmeans)
-
-		# if ADS exists do this
-		if param['ADS_path']["on"]:
-			task_sample = kMeansProporitonsADSsample(param)
-			wait_for_task(task_sample)
-
-			task_proportion = proportionCalc(param)
-			wait_for_task(task_proportion)
-
-			task_predict = predict(param)
-			wait_for_task(task_predict)
-		
-			task_poly = polygonize_bnet(param)
-			wait_for_task(task_poly)
-
-			task_buffer, assets_ids = buffer_bnet_polygons(param)
-			wait_for_task(task_buffer)
-
-			task_buffer2 = merge_buffer_buckets_and_finish(param, assets_ids)
-			wait_for_task(task_buffer2)
-
-			task_params = dict_to_feature_collection(param, asset_exists)
-			wait_for_task(task_params)
-		else:
-			
-			unique_vals = get_unique_pixel_values(param)
-
-			if unique_vals:  
-
-				from_vals, to_vals = prompt_reclassification_mapping(unique_vals)
-
-				task_p = reclassify_image(param, from_vals, to_vals)
-				wait_for_task(task_p)
-
-				task_poly = polygonize_bnet(param)
-				wait_for_task(task_poly)
-
-			task_poly = polygonize_bnet(param)
-			wait_for_task(task_poly)
-
-			task_buffer, assets_ids = buffer_bnet_polygons(param)
-
-			if isinstance(task_buffer, list):
-
-				for t in task_buffer:
-					wait_for_task(t)
-
-				task_buffer2 = merge_buffer_buckets_and_finish(param, assets_ids)
-				wait_for_task(task_buffer2)
-				delete_assets(assets_ids, dry_run=False)
-
-			exists = asset_exists(param["assetDir"]+param['bnet_buffered_polygons'])
-			if not exists:
-				print(1)
-
-			task_params = dict_to_feature_collection(param, asset_exists)
-			wait_for_task(task_params)
-
-			# Example: make everything under a folder publicly readable
-			parent = param['assetDir']
-			acl_update = {'all_users_can_read': True}  # public-read
-			for asset in walk_assets(parent):
-				print('Updating:', asset)
-				ee.data.setAssetAcl(asset, acl_update)
+		run_mode_2(param, build_mode_dependencies())
 
 	else:
 		print('bye')
