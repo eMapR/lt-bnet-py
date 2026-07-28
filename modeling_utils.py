@@ -7,7 +7,8 @@ import bnet
 
 def create_forest_mask(param, asset_exists):
     """Create and export the forest mask."""
-    exists = asset_exists(param["assetDir"] + param["forestMaskName"])
+    asset_dir = param.get("sharedAssetDir", param["assetDir"])
+    exists = asset_exists(asset_dir + param["forestMaskName"])
     if exists:
         return
 
@@ -40,7 +41,7 @@ def create_forest_mask(param, asset_exists):
     task_mask = ee.batch.Export.image.toAsset(
         image=mask.byte(),
         description=param["forestMaskName"],
-        assetId=param["assetDir"] + param["forestMaskName"],
+        assetId=asset_dir + param["forestMaskName"],
         region=param["aoi"].geometry(),
         scale=param["pixel_scale"],
         maxPixels=1e13,
@@ -51,7 +52,8 @@ def create_forest_mask(param, asset_exists):
 
 def create_forest_mask_vis(param, asset_exists):
     """Create and export a diagnostic labeled forest mask."""
-    exists = asset_exists(param["assetDir"] + param["forestMaskName"] + "_label")
+    asset_dir = param.get("sharedAssetDir", param["assetDir"])
+    exists = asset_exists(asset_dir + param["forestMaskName"] + "_label")
     if exists:
         return
 
@@ -84,7 +86,7 @@ def create_forest_mask_vis(param, asset_exists):
     task_mask = ee.batch.Export.image.toAsset(
         image=mask_code.int16(),
         description=param["forestMaskName"] + "_label",
-        assetId=param["assetDir"] + param["forestMaskName"] + "_label",
+        assetId=asset_dir + param["forestMaskName"] + "_label",
         region=param["aoi"].geometry(),
         scale=param["pixel_scale"],
         maxPixels=1e13,

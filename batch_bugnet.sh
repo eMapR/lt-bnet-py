@@ -7,7 +7,7 @@ set -euo pipefail
 # “Ecoregion key” list (must match template filenames like <PRO>-template.py)
 #ECOS=(blue-mts east-cascades coast-range cascades north-cascades klamath-mts)
 #ECOS=(cascades north-cascades klamath-mts columbia-mts s2-north-cascades)
-ECOS=(blue-mts)
+ECOS=(williams-sound)
 #ECOS=(case-study)
 
 # Region(s) (folder dimension). You said: for now just r6.
@@ -17,6 +17,7 @@ REGIONS=(r6)
 YEARS_SPEC="2025"
 
 VERSION="v3"
+SHARED_VERSION=""
 
 # Canonical templates live here:
 TEMPLATES_DIR="/data/vol/clarype/bugnet/lt-bnet-py/bugnet/templates/v3"
@@ -93,6 +94,7 @@ while [[ $# -gt 0 ]]; do
     --regions) parse_csv_to_array "$2" REGIONS; shift 2 ;;     # e.g. --regions r6,r10
     --years) YEARS_SPEC="$2"; shift 2 ;;                       # e.g. --years 2015-2025 or 2015,2016
     --version) VERSION="$2"; shift 2 ;;
+    --shared-version) SHARED_VERSION="$2"; shift 2 ;;
     --templates-dir) TEMPLATES_DIR="$2"; shift 2 ;;
     --param-root) PARAM_ROOT="$2"; shift 2 ;;
     --runner) PY_RUNNER="$2"; shift 2 ;;
@@ -109,6 +111,26 @@ log() { printf '%s %s\n' "[$(date +%H:%M:%S)]" "$*"; }
 
 require() {
   [[ -f "$1" ]] || { echo "Missing file: $1" >&2; exit 1; }
+}
+
+version_suffix_from_label() {
+  local raw="${1,,}"
+  raw="${raw//[[:space:]]/}"
+  raw="${raw#version}"
+  raw="${raw#v}"
+
+  [[ "$raw" =~ ^[0-9]+(-[0-9]+)?$ ]] || {
+    echo "Bad VERSION value: '$1' (use v3, v3-1, 3, 3-1, version3, ...)" >&2
+    exit 1
+  }
+
+  echo "$raw"
+}
+
+logic_version_from_label() {
+  local suffix
+  suffix="$(version_suffix_from_label "$1")"
+  echo "${suffix%%-*}"
 }
 
 # throttle background jobs to <= JOBS
@@ -165,10 +187,14 @@ cfg_path_variant() {
 #    - set param['ltendYear'] = min(YEAR+2, MAX_YEAR)
 materialize_base_cfg() {
   local year="$1" ltend="$2"
+  local version_suffix logic_version shared_suffix
+  version_suffix="$(version_suffix_from_label "$VERSION")"
+  logic_version="$(logic_version_from_label "$VERSION")"
+  shared_suffix="$(version_suffix_from_label "${SHARED_VERSION:-v${logic_version}}")"
 
   if (( DRY_RUN )); then
     log "DRY: would mkdir -p '$PARAM_DIR'"
-    log "DRY: would create base config: $BASE_CFG (target=$year, ltendYear=$ltend) from $TEMPLATE_CANON"
+    log "DRY: would create base config: $BASE_CFG (target=$year, ltendYear=$ltend, version=$version_suffix, logic_version=$logic_version, shared_version=$shared_suffix) from $TEMPLATE_CANON"
     return 0
   fi
 
@@ -179,12 +205,15 @@ materialize_base_cfg() {
     return 0
   fi
 
-  python3 - "$TEMPLATE_CANON" "$BASE_CFG" "$year" "$ltend" <<'PYBASE'
+  python3 - "$TEMPLATE_CANON" "$BASE_CFG" "$year" "$ltend" "$version_suffix" "$logic_version" "$shared_suffix" <<'PYBASE'
 import re, sys, os
 
-src, dst, year_s, ltend_s = sys.argv[1:5]
+src, dst, year_s, ltend_s, version_s, logic_version_s, shared_version_s = sys.argv[1:8]
 year = int(year_s)
 ltend = int(ltend_s)
+version = version_s
+logic_version = logic_version_s
+shared_version = shared_version_s
 
 with open(src, "r", encoding="utf-8") as f:
     txt = f.read()
@@ -199,6 +228,31 @@ def set_int_param(txt, key, value):
 
 txt, _ = set_int_param(txt, "target", year)
 txt, _ = set_int_param(txt, "ltendYear", ltend)
+txt = re.sub(
+    r"""param\[\s*['"]version['"]\s*\]\s*=\s*['"][^'"]+['"]""",
+    f"param['version'] = '{version}'",
+    txt,
+    count=1,
+)
+txt = re.sub(
+    r"""param\[\s*['"]configName['"]\s*\]\s*=\s*['"][^'"]+['"]""",
+    f"param['configName'] = 'option{logic_version}'",
+    txt,
+    count=1,
+)
+
+def set_str_param(txt, key, value):
+    pat = rf"""param\[\s*['"]{re.escape(key)}['"]\s*\]\s*=\s*['"][^'"]+['"]"""
+    repl = f"param['{key}'] = '{value}'"
+    if re.search(pat, txt):
+        return re.sub(pat, repl, txt, count=1)
+    anchor = r"""param\[\s*['"]version['"]\s*\]\s*=\s*['"][^'"]+['"]"""
+    if re.search(anchor, txt):
+        return re.sub(anchor, lambda m: m.group(0) + f"\n{repl}", txt, count=1)
+    return txt.rstrip() + f"\n{repl}\n"
+
+txt = set_str_param(txt, "logic_version", logic_version)
+txt = set_str_param(txt, "shared_version", shared_version)
 
 os.makedirs(os.path.dirname(dst), exist_ok=True)
 with open(dst, "w", encoding="utf-8") as f:
@@ -402,6 +456,7 @@ log "ECOS=${ECOS[*]}"
 log "REGIONS=${REGIONS[*]}"
 log "YEARS=${YEARS[*]} (max=${MAX_YEAR_GLOBAL})"
 log "VERSION=${VERSION}"
+log "SHARED_VERSION=${SHARED_VERSION:-auto}"
 log "TEMPLATES_DIR=${TEMPLATES_DIR}"
 log "PARAM_ROOT=${PARAM_ROOT}"
 log "Runner=${PY_RUNNER}"

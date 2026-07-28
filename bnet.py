@@ -158,10 +158,11 @@ def attribute_with_reference_data(params,who):
 		out_fc = in_fc.filter(ee.Filter.And(ee.Filter.gt('count',params['trainingMin']),ee.Filter.lt('count',params['trainingMax']))).map(_process_polygon) 
 		return out_fc 
 	else:
-		in_img = ee.Image(params['assetDir'] + params['fitted_img_p']).addBands(ee.Image(params['assetDir'] + params['predictor_change_img']))
+		asset_dir = params.get('sharedAssetDir', params['assetDir'])
+		in_img = ee.Image(asset_dir + params['fitted_img_p']).addBands(ee.Image(asset_dir + params['predictor_change_img']))
 		bandnameslower = in_img.bandNames().map(renameLower) 
 		in_img = in_img.rename(bandnameslower)
-		in_fc = ee.FeatureCollection(params['assetDir'] + params['disturbance_polygons_predictor']).filter(ee.Filter.gte('yod', params['target']-6))
+		in_fc = ee.FeatureCollection(asset_dir + params['disturbance_polygons_predictor']).filter(ee.Filter.gte('yod', params['target']-6))
 		return in_fc.map(_process_polygon)
 
 
@@ -857,7 +858,7 @@ def decline_image(param):
         logic_template (str): Logic string using placeholders, e.g., '{nbr} || ({tcg} && {tcw})'.
         num_years (int): How many years back to include (default = 5).
     """
-    im = ee.Image(param['assetDir'] + param['fitted_img_p'])
+    im = ee.Image(param.get('sharedAssetDir', param['assetDir']) + param['fitted_img_p'])
     # Build band dictionary
     band_dict = {}
     for index in param['fit']:
@@ -882,7 +883,7 @@ def decline_image(param):
     return im.mask(im.expression("((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
 
 def LTSD_decline_score(param, base_thresholds={'tcb': 70, 'tcg': 50, 'tcw': 50}, taper_step=10, min_years_declining=2, return_score=False):
-    im = ee.Image(param['assetDir'] + param['fitted_img_p'])
+    im = ee.Image(param.get('sharedAssetDir', param['assetDir']) + param['fitted_img_p'])
     std_end_year = param['target']
     base_thresholds = param['decline_thresholds']
     taper_step= param['decline_step']
@@ -1025,4 +1026,3 @@ def ltcalc(year, feat):
     target = target.map(lambda fe: fe.set('perimeter', fe.perimeter(1)))
     target = target.map(lambda fe: fe.set('rati', fe.getNumber('area').divide(fe.getNumber('perimeter'))))
     return target.filter(ee.Filter.Or(ee.Filter.gt('rati', 20), ee.Filter.gt('area', 9500000)))
-

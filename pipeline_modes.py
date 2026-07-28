@@ -59,7 +59,7 @@ def run_mode_1(param, deps):
         for task in task6[1]:
             wait_for_task(task)
         task66 = merge_selected_feature_collections(
-            param["assetDir"],
+            param.get("sharedAssetDir", param["assetDir"]),
             task6[2],
             param["disturbance_polygons_predictor"],
             "testing",
@@ -173,7 +173,7 @@ def run_mode_2(param, deps):
         asset_paths = res.get("asset_paths", [])
         if len(asset_paths) > 1:
             base_name = param["disturbance_polygons_predictor"]
-            asset_dir = param["assetDir"]
+            asset_dir = param.get("sharedAssetDir", param["assetDir"])
             merged_name = f"{base_name}"
             merged_task = merge_selected_feature_collections(
                 asset_dir,

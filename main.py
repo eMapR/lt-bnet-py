@@ -56,8 +56,31 @@ def wait_for_task(task):
         print(f"Task {task.id} completed successfully!")
         return 1
     else:
-        print(f"Task {task.id} failed with error: {task.status()['error_message']}")
-        return 0
+        error_message = task.status().get('error_message', 'Unknown Earth Engine task error')
+        print(f"Task {task.id} failed with error: {error_message}")
+        raise RuntimeError(f"Task {task.id} failed: {error_message}")
+
+
+def ensure_asset_folder(asset_dir):
+    """Create a one-level Earth Engine asset folder if it is missing."""
+    folder_id = asset_dir.rstrip("/")
+    try:
+        ee.data.getAsset(folder_id)
+        return
+    except Exception:
+        pass
+
+    print(f"Creating asset folder: {folder_id}")
+    ee.data.createAsset({"type": "FOLDER"}, folder_id)
+
+
+def ensure_output_asset_folders(param):
+    """Ensure shared and run-specific output folders exist before exports start."""
+    for asset_dir in dict.fromkeys(
+        [param.get("sharedAssetDir"), param.get("assetDir")]
+    ):
+        if asset_dir:
+            ensure_asset_folder(asset_dir)
 
 ##############################################################################
 # delete assets
@@ -120,7 +143,8 @@ def CreateTrainingFittedImagery(lt,param):
 
 def CreatePredictorFittedImagery(lt,param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['fitted_img_p'])
+	asset_dir = param.get("sharedAssetDir", param["assetDir"])
+	exists = asset_exists(asset_dir+param['fitted_img_p'])
 
 	if exists:
 
@@ -129,7 +153,7 @@ def CreatePredictorFittedImagery(lt,param):
 	else:
 		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
 		fitted_img_p = bnet.get_fitted_stack(lt,'fitted_predictor',param).mask(treeMask).int16()
-		task = bnet.export_image(fitted_img_p.int16(),param, param['assetDir'],param['fitted_img_p'],param['pixel_scale'])
+		task = bnet.export_image(fitted_img_p.int16(),param, asset_dir,param['fitted_img_p'],param['pixel_scale'])
 		return task
 
 ##############################################################################
@@ -155,7 +179,8 @@ def CreateTrainingChangeImagery(lt,param):
 ##############################################################################
 def CreatePredictorChangeImagery(lt,param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['predictor_change_img'])
+	asset_dir = param.get("sharedAssetDir", param["assetDir"])
+	exists = asset_exists(asset_dir+param['predictor_change_img'])
 
 	if exists:
 
@@ -165,7 +190,7 @@ def CreatePredictorChangeImagery(lt,param):
 		#param['change_params']['years'] = {'start': param['composite_params']['end_date'].year-6, 'end': param['composite_params']['end_date'].year}
 		treeMask = ee.ImageCollection('JRC/GFC2020/V2').mosaic().unmask()		
 		change_img_p = lt.get_change_map(param['change_params']).mask(treeMask)
-		task = bnet.export_image(change_img_p,param, param['assetDir'],param['predictor_change_img'],param['pixel_scale'])
+		task = bnet.export_image(change_img_p,param, asset_dir,param['predictor_change_img'],param['pixel_scale'])
 
 		return task
 
@@ -330,13 +355,14 @@ def CreatePredictorDisturbancePolygons(
           - subregions:  list[str]  (mirrors asset_paths for convenience)
     """
     # check to see if output asset exists
-    exists = asset_exists(param["assetDir"]+param['disturbance_polygons_predictor'])
+    asset_dir = param.get("sharedAssetDir", param["assetDir"])
+    exists = asset_exists(asset_dir+param['disturbance_polygons_predictor'])
 
     if exists:
         return 0
     # Helpers
     def _base_name():
-        return f"{param['assetDir']}{param['disturbance_polygons_predictor']}"
+        return f"{asset_dir}{param['disturbance_polygons_predictor']}"
 
     def _asset_path(suffix=""):
         return f"{_base_name()}{suffix}"
@@ -344,12 +370,12 @@ def CreatePredictorDisturbancePolygons(
     created_paths = []  # track assets created in THIS run
 
     def _export(fc, suffix=""):
-        asset_id = f"{param['assetDir']}{param['disturbance_polygons_predictor']}{suffix}"
+        asset_id = f"{asset_dir}{param['disturbance_polygons_predictor']}{suffix}"
         if asset_exists(asset_id):
             print(f"exists, skipping: {asset_id}")
             return None, asset_id
         desc = param['disturbance_polygons_predictor'] + suffix
-        task = bnet.export_feature_collection(fc, desc, param['assetDir'])  # starts inside your wrapper
+        task = bnet.export_feature_collection(fc, desc, asset_dir)  # starts inside your wrapper
         created_paths.append(asset_id)  # record only when we actually create one
         return task, asset_id
 
@@ -363,7 +389,7 @@ def CreatePredictorDisturbancePolygons(
         return {"mode": "full", "tasks": [], "asset_paths": [_asset_path()], "created_asset_paths": created_paths,"subregions": [_asset_path()]}
 
     # 1) Load change image
-    change_img = ee.Image(param["assetDir"] + param["predictor_change_img"])
+    change_img = ee.Image(asset_dir + param["predictor_change_img"])
 
     # ---------- Attempt 1: FULL AOI ----------
     def attempt_full():
@@ -516,7 +542,8 @@ def attributeTrainingPolygons(param):
 
 def attributePredictorPolygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['attributed_polygons_predictor'])
+	asset_dir = param.get("sharedAssetDir", param["assetDir"])
+	exists = asset_exists(asset_dir+param['attributed_polygons_predictor'])
 
 	if exists:
 
@@ -524,7 +551,7 @@ def attributePredictorPolygons(param):
 
 	else:
 		gee_attributed_fc = bnet.attribute_with_reference_data(param,'predictor')
-		task = bnet.export_feature_collection(gee_attributed_fc,param['attributed_polygons_predictor'],param['assetDir'] )
+		task = bnet.export_feature_collection(gee_attributed_fc,param['attributed_polygons_predictor'],asset_dir )
 		return task
 
 ##############################################################################
@@ -532,7 +559,8 @@ def attributePredictorPolygons(param):
 ##############################################################################
 def classify_polygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['classified_fc'])
+	asset_dir = param.get("sharedAssetDir", param["assetDir"])
+	exists = asset_exists(asset_dir+param['classified_fc'])
 
 	if exists:
 
@@ -541,7 +569,7 @@ def classify_polygons(param):
 	else:
 
 		labeled_fc = ee.FeatureCollection(param['assetDir_t']+param['attributed_polygons_training']) #.filter(ee.Filter.lt('mode_value',101))
-		unlabeled_fc = ee.FeatureCollection(param['assetDir']+param['attributed_polygons_predictor'])
+		unlabeled_fc = ee.FeatureCollection(asset_dir+param['attributed_polygons_predictor'])
 
 		predictor_variables = unlabeled_fc.first().propertyNames()
 		labeled_fc = bnet.drop_null_features(labeled_fc,predictor_variables).filter(ee.Filter.neq('mode_value', 160))
@@ -550,7 +578,7 @@ def classify_polygons(param):
 		trained_classifier = bnet.train_classifier(labeled_fc,"mode_value",predictor_variables,param['num_trees'])
 		classified_fc = bnet.classify_features(unlabeled_fc, trained_classifier,param['class_heavy'])
 
-		task = bnet.export_feature_collection(classified_fc,param['classified_fc'],param['assetDir'])
+		task = bnet.export_feature_collection(classified_fc,param['classified_fc'],asset_dir)
 		return task
 
 ##############################################################################
@@ -558,16 +586,17 @@ def classify_polygons(param):
 ##############################################################################
 def filter_classes(param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['filtered_classes'])
+	asset_dir = param.get("sharedAssetDir", param["assetDir"])
+	exists = asset_exists(asset_dir+param['filtered_classes'])
 
 	if exists:
 
 		return
 
 	else:
-		fc1 = bnet.filter_by_mode_value(ee.FeatureCollection(param['assetDir'] + param['classified_fc']), 19, 41, 60, 90)
+		fc1 = bnet.filter_by_mode_value(ee.FeatureCollection(asset_dir + param['classified_fc']), 19, 41, 60, 90)
 
-		task = bnet.export_feature_collection(fc1, param['filtered_classes'], param['assetDir'])
+		task = bnet.export_feature_collection(fc1, param['filtered_classes'], asset_dir)
 
 		return task
 
@@ -576,13 +605,14 @@ def filter_classes(param):
 ##############################################################################
 def buffer_classed_polygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['buffered_classes'])
+	asset_dir = param.get("sharedAssetDir", param["assetDir"])
+	exists = asset_exists(asset_dir+param['buffered_classes'])
 	if exists:
 
 		return
 
 	else:
-		fc1 = ee.FeatureCollection(param["assetDir"]+param['filtered_classes'])
+		fc1 = ee.FeatureCollection(asset_dir+param['filtered_classes'])
 		fc2 = bnet.buffer_features(fc1, 100)
 
 		#High Magnitude -- makes a raster mask from vector layer of clear cuts fire etc 
@@ -605,7 +635,7 @@ def buffer_classed_polygons(param):
 		else:
 			out = bnet.buffer_features(fc1, 100)
 
-		task = bnet.export_feature_collection(out, param['buffered_classes'], param['assetDir'])
+		task = bnet.export_feature_collection(out, param['buffered_classes'], asset_dir)
 		return task
 
 ##############################################################################
@@ -613,16 +643,17 @@ def buffer_classed_polygons(param):
 ##############################################################################
 def rasterize_classed_polygons(param):
 	# check to see if output asset exists
-	exists = asset_exists(param["assetDir"]+param['rasterize_classes'])
+	asset_dir = param.get("sharedAssetDir", param["assetDir"])
+	exists = asset_exists(asset_dir+param['rasterize_classes'])
 
 	if exists:
 
 		return
 
 	else:
-		fc2 = ee.FeatureCollection(param["assetDir"]+param['buffered_classes'])
+		fc2 = ee.FeatureCollection(asset_dir+param['buffered_classes'])
 		img = bnet.rasterize_polygons(fc2, 'classification', param['pixel_scale'], region=param['aoi'])
-		task = bnet.export_image(img, param, param['assetDir'],param['rasterize_classes'])
+		task = bnet.export_image(img, param, asset_dir,param['rasterize_classes'])
 
 		return task
 
@@ -699,6 +730,7 @@ def main():
 		sys.exit(1)
 
 	ee.Initialize(project=param["project_name"])
+	ensure_output_asset_folders(param)
 
 	mode = gui()
 
