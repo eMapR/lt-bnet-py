@@ -18,7 +18,8 @@ final polygons — all as GEE assets.
 
 | Path | Purpose |
 |---|---|
-| `main.py` | CLI entry point. Loads a parameter file, initializes EE, presents the mode menu, and defines most of the per-stage pipeline functions (`Create*`, `attribute*Polygons`, `classify_polygons`, `filter_classes`, `buffer_classed_polygons`, `rasterize_classed_polygons`). |
+| `main.py` | CLI entry point. Loads a parameter file, initializes EE, presents the mode menu, and wires the stage functions (from `disturbance_utils.py`/`modeling_utils.py`/`postprocess_utils.py`) into `build_mode_dependencies()` for `pipeline_modes.py` to call. |
+| `disturbance_utils.py` | Fitted-imagery and change-imagery creation (training + predictor), disturbance-polygon vectorization (with grid/bucket fallback splitting for large AOIs), attribution, and the classify → filter → buffer → rasterize chain. |
 | `pipeline_modes.py` | Orchestrates the stage functions into `run_mode_1` (full training + predictor run) and `run_mode_2` (predictor-only run against an existing trained classifier), plus `apply_public_read_acl`. |
 | `bnet.py` | Core GEE logic: fitted-stack construction, change vectorization, attribution against reference/cMonster data, classifier training/inference, decline scoring (LTSD/SNIC), masks, geometry helpers, asset cleanup. |
 | `modeling_utils.py` | Forest mask, SNIC/decline image, KMeans sampling/clustering, proportion calc, and final `predict()` (Random Forest classify) stage functions. |
@@ -110,17 +111,12 @@ Observations from the initial review, to work through incrementally:
   `coast_range_2025_v1.log`, `williams_sound.log`) are batch-run output
   redirected to the repo root instead of `logs/`. `.gitignore` doesn't
   currently exclude `*.log`, so these show up as untracked clutter.
-- **`main.py` is doing too much**: it still owns most of the per-stage
-  pipeline functions (`Create*Imagery`, `Create*DisturbancePolygons`,
-  `attribute*Polygons`, `classify_polygons`, `filter_classes`,
-  `buffer_classed_polygons`, `rasterize_classed_polygons`, plus the
-  grid/split helpers) — these read like natural candidates to join
-  `modeling_utils.py`/`postprocess_utils.py`, continuing the extraction
-  pattern already used for those two modules.
-  Grid/splitting helpers (`grid_over_feature`, `split_*`) are also unused
-  by anything else in `main.py` outside `CreatePredictorDisturbancePolygons`
-  and could move to a small `geometry_utils.py`.
-- **Mixed indentation**: `main.py` and `bnet.py` mix tabs and spaces
+- **`main.py` is thinned out** (758 → ~227 lines): the per-stage pipeline
+  functions now live in `disturbance_utils.py`, `modeling_utils.py`, and
+  `postprocess_utils.py`; `main.py` is down to `wait_for_task`, the
+  asset-folder/asset-exists/delete helpers, `build_mode_dependencies()`,
+  and `main()`.
+- **Mixed indentation**: `bnet.py` still mixes tabs and spaces
   between functions (visible as inconsistent indent width when viewing
   diffs) — worth a pass with a formatter.
 - **`bnet.py` scope**: at ~1000 lines it mixes GEE compositing, ADS/agent
@@ -131,10 +127,10 @@ Observations from the initial review, to work through incrementally:
   one implementation.
 - **No automated tests** — all validation today is running an actual GEE
   job end-to-end. Even lightweight unit tests around the pure-Python
-  helpers (`cli_utils.normalize_parameters`, `modeling_utils` filename/regex
-  helpers in `export_utils.py`, `file-manager.py` filename parsing) would
-  help catch regressions like the `sharedAssetDir` fix currently in
-  progress across `main.py`/`bnet.py`/`modeling_utils.py`.
+  helpers (`cli_utils.normalize_parameters`, filename/regex helpers in
+  `export_utils.py`, `file-manager.py` filename parsing) would help catch
+  regressions like the ones the `sharedAssetDir` consistency pass and the
+  `main.py` extraction just fixed by hand.
 - **`file-manager.py`** uses a hyphenated filename (not importable as a
   module) — fine as a standalone script, but worth renaming to
   `file_manager.py` if it's ever imported elsewhere.
