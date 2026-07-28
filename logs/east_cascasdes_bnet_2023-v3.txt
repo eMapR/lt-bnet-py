@@ -1,311 +1,0 @@
-[09:23:14] Starting. DRY_RUN=0 JOBS=4
-[09:23:14] Template: /vol/v1/bugnet/lt-bnet-py/bugnet/params_new/2023/r6/v3/east-cascades-bugnet-2023-v3/east-cascades-bugnet-2023-v3-config.py
-[09:23:14] Runner:   /vol/v1/bugnet/lt-bnet-py/bugnet/main.py
-[09:23:14] Output to: /vol/v1/bugnet/lt-bnet-py/bugnet/params_new/2023/r6/v3/east-cascades-bugnet-2023-v3
-[09:23:14] Plan: MAGS=50 60 70 MMUS=10 20 30 (BASE_MMU=10)
-[09:23:14] Bootstrap already done (found /vol/v1/bugnet/lt-bnet-py/bugnet/params_new/2023/r6/v3/east-cascades-bugnet-2023-v3/.bootstrap_done)
-[09:23:14] Queued MAG=50 chain
-[09:23:14] MAG=50: base was done in bootstrap; launching remaining MMUs.
-[09:23:14] MAG=50: queued MMU=20
-[09:23:14] MAG=50: queued MMU=30
-[09:23:14] Queued MAG=60 chain
-[09:23:14] MAG=60: starting base MMU=10
-[09:23:14] Queued MAG=70 chain
-[09:23:14] MAG=70: starting base MMU=10
-[09:23:14] RUN: MAG=50 MMU=30
-[09:23:14] RUN: MAG=50 MMU=20
-[09:23:14] RUN: MAG=60 MMU=10
-[09:23:14] RUN: MAG=70 MMU=10
-Welcome to bugnet!
-How would you like to continue? Enter ...
-    1 - Run bugnet.
-    2 - Run bugnet no training.
-    3 - Export.
-    4 - Clean.
-:/home/clarype/.conda/envs/lt-bnet-py/lib/python3.12/site-packages/ee/deprecation.py:207: DeprecationWarning: 
-
-Attention required for JRC/GFC2020/V2! You are using a deprecated asset.
-To ensure continued functionality, please update it.
-Learn more: https://developers.google.com/earth-engine/datasets/catalog/JRC_GFC2020_V2
-
-  warnings.warn(warning, category=DeprecationWarning)
-Welcome to bugnet!
-How would you like to continue? Enter ...
-    1 - Run bugnet.
-    2 - Run bugnet no training.
-    3 - Export.
-    4 - Clean.
-:Welcome to bugnet!
-How would you like to continue? Enter ...
-    1 - Run bugnet.
-    2 - Run bugnet no training.
-    3 - Export.
-    4 - Clean.
-:Welcome to bugnet!
-How would you like to continue? Enter ...
-    1 - Run bugnet.
-    2 - Run bugnet no training.
-    3 - Export.
-    4 - Clean.
-:/home/clarype/.conda/envs/lt-bnet-py/lib/python3.12/site-packages/ee/deprecation.py:207: DeprecationWarning: 
-
-Attention required for JRC/GFC2020/V2! You are using a deprecated asset.
-To ensure continued functionality, please update it.
-Learn more: https://developers.google.com/earth-engine/datasets/catalog/JRC_GFC2020_V2
-
-  warnings.warn(warning, category=DeprecationWarning)
-/home/clarype/.conda/envs/lt-bnet-py/lib/python3.12/site-packages/ee/deprecation.py:207: DeprecationWarning: 
-
-Attention required for JRC/GFC2020/V2! You are using a deprecated asset.
-To ensure continued functionality, please update it.
-Learn more: https://developers.google.com/earth-engine/datasets/catalog/JRC_GFC2020_V2
-
-  warnings.warn(warning, category=DeprecationWarning)
-/home/clarype/.conda/envs/lt-bnet-py/lib/python3.12/site-packages/ee/deprecation.py:207: DeprecationWarning: 
-
-Attention required for JRC/GFC2020/V2! You are using a deprecated asset.
-To ensure continued functionality, please update it.
-Learn more: https://developers.google.com/earth-engine/datasets/catalog/JRC_GFC2020_V2
-
-  warnings.warn(warning, category=DeprecationWarning)
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_change_img_2023
-Task RJS6GBS22FUH5ATT6TUYGKXY is still running...0 minAsset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_change_img_2023
-Task M7BEIYNM6W7ON53WH6RTMV5X is still running...0 minAsset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_change_img_2023
-Task GDBINKBDE27GO3UZSAD2IBSX is still running...0 minAsset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_change_img_2023
-Task 6IJH64ZPMQEUTWFUALDXZOJ4 is still running...0 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...1 minTask M7BEIYNM6W7ON53WH6RTMV5X is still running...1 minTask 6IJH64ZPMQEUTWFUALDXZOJ4 is still running...1 minTask GDBINKBDE27GO3UZSAD2IBSX is still running...1 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...2 minTask M7BEIYNM6W7ON53WH6RTMV5X is still running...2 minTask 6IJH64ZPMQEUTWFUALDXZOJ4 is still running...2 minTask GDBINKBDE27GO3UZSAD2IBSX is still running...2 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...3 minTask M7BEIYNM6W7ON53WH6RTMV5X is still running...3 minTask 6IJH64ZPMQEUTWFUALDXZOJ4 is still running...3 minTask GDBINKBDE27GO3UZSAD2IBSX is still running...3 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...4 minTask M7BEIYNM6W7ON53WH6RTMV5X is still running...4 minTask 6IJH64ZPMQEUTWFUALDXZOJ4 is still running...4 minTask GDBINKBDE27GO3UZSAD2IBSX is still running...4 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...5 minTask M7BEIYNM6W7ON53WH6RTMV5X is still running...5 minTask 6IJH64ZPMQEUTWFUALDXZOJ4 is still running...5 minTask GDBINKBDE27GO3UZSAD2IBSX is still running...5 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...6 minTask M7BEIYNM6W7ON53WH6RTMV5X is still running...6 minTask 6IJH64ZPMQEUTWFUALDXZOJ4 is still running...6 minTask GDBINKBDE27GO3UZSAD2IBSX is still running...6 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...7 minTask M7BEIYNM6W7ON53WH6RTMV5X is still running...7 minTask 6IJH64ZPMQEUTWFUALDXZOJ4 is still running...7 minTask GDBINKBDE27GO3UZSAD2IBSX is still running...7 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...8 minTraceback (most recent call last):
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2241, in <module>
-    main()
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2090, in main
-    wait_for_task(task2)
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 386, in wait_for_task
-    print(f"Task {task.id} failed with error: {task.status()['error_message']}")
-                                               ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-KeyError: 'error_message'
-[09:31:24] MAG=70: base MMU=10 failed; skipping follow-ups
-Traceback (most recent call last):
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2241, in <module>
-    main()
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2090, in main
-    wait_for_task(task2)
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 386, in wait_for_task
-    print(f"Task {task.id} failed with error: {task.status()['error_message']}")
-                                               ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-KeyError: 'error_message'
-[09:31:25] MAG=60: base MMU=10 failed; skipping follow-ups
-Traceback (most recent call last):
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2241, in <module>
-    main()
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2090, in main
-    wait_for_task(task2)
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 386, in wait_for_task
-    print(f"Task {task.id} failed with error: {task.status()['error_message']}")
-                                               ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-KeyError: 'error_message'
-Task RJS6GBS22FUH5ATT6TUYGKXY is still running...9 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...10 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...11 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...12 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...13 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...14 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...15 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...16 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...17 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...18 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...19 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...20 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...21 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...22 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...23 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...24 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...25 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...26 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...27 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...28 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...29 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...30 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...31 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...32 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...33 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...34 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...35 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...36 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...37 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...38 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...39 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...40 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...41 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...42 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...43 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...44 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...45 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...46 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...47 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...48 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...49 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...50 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...51 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...52 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...53 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...54 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...55 minTask RJS6GBS22FUH5ATT6TUYGKXY is still running...56 minTask RJS6GBS22FUH5ATT6TUYGKXY completed successfully!
-Task T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...0 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...1 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...2 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...3 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...4 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...5 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...6 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...7 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...8 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...9 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...10 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...11 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...12 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...13 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...14 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...15 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...16 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...17 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...18 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...19 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...20 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...21 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...22 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...23 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...24 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...25 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...26 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...27 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...28 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...29 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...30 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...31 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...32 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...33 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...34 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...35 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...36 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...37 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...38 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...39 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...40 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...41 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...42 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...43 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...44 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...45 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...46 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...47 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...48 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...49 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...50 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...51 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...52 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...53 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...54 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...55 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...56 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...57 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...58 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...59 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...60 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...61 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...62 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...63 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...64 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...65 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...66 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...67 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...68 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...69 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...70 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...71 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...72 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...73 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...74 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...75 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...76 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...77 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...78 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...79 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...80 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...81 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...82 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...83 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...84 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...85 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...86 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...87 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...88 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...89 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...90 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...91 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...92 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...93 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...94 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...95 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...96 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...97 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...98 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...99 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...100 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...101 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...102 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...103 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...104 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...105 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...106 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...107 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...108 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...109 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...110 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...111 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...112 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...113 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...114 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...115 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...116 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...117 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...118 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...119 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...120 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...121 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...122 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 is still running...123 minTask T7J5A5GS2KQ2L6U5I34CZXQ4 completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
-Task NZHXNQHTM5QOKXYA2ODDUE5P is still running...0 minTask NZHXNQHTM5QOKXYA2ODDUE5P is still running...1 minTask NZHXNQHTM5QOKXYA2ODDUE5P is still running...2 minTask NZHXNQHTM5QOKXYA2ODDUE5P is still running...3 minTask NZHXNQHTM5QOKXYA2ODDUE5P is still running...4 minTask NZHXNQHTM5QOKXYA2ODDUE5P completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
-Task GOIQIR4T3IQRMA7X6STPWSP3 is still running...0 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...1 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...2 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...3 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...4 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...5 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...6 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...7 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...8 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...9 minTask GOIQIR4T3IQRMA7X6STPWSP3 is still running...10 minTask GOIQIR4T3IQRMA7X6STPWSP3 completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/C1_classified_polygons_2023
-Task Z6HTRYRUPYXDHQUFZWTSEDUB is still running...0 minTask Z6HTRYRUPYXDHQUFZWTSEDUB is still running...1 minTask Z6HTRYRUPYXDHQUFZWTSEDUB completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
-Task CURK5CSNEXW2NTO22KRHWKLJ is still running...0 minTask CURK5CSNEXW2NTO22KRHWKLJ is still running...1 minTask CURK5CSNEXW2NTO22KRHWKLJ is still running...2 minTask CURK5CSNEXW2NTO22KRHWKLJ is still running...3 minTask CURK5CSNEXW2NTO22KRHWKLJ is still running...4 minTask CURK5CSNEXW2NTO22KRHWKLJ completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
-Task O5V4L4PFQBJQRGWD7635SYW5 is still running...0 minTask O5V4L4PFQBJQRGWD7635SYW5 is still running...1 minTask O5V4L4PFQBJQRGWD7635SYW5 is still running...2 minTask O5V4L4PFQBJQRGWD7635SYW5 is still running...3 minTask O5V4L4PFQBJQRGWD7635SYW5 is still running...4 minTask O5V4L4PFQBJQRGWD7635SYW5 is still running...5 minTask O5V4L4PFQBJQRGWD7635SYW5 is still running...6 minTask O5V4L4PFQBJQRGWD7635SYW5 is still running...7 minTask O5V4L4PFQBJQRGWD7635SYW5 completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/C4_classed_img_2023
-Task 7KTAFO3NIBM73GFVV7SADDKG is still running...0 minTask 7KTAFO3NIBM73GFVV7SADDKG is still running...1 minTask 7KTAFO3NIBM73GFVV7SADDKG is still running...2 minTask 7KTAFO3NIBM73GFVV7SADDKG is still running...3 minTask 7KTAFO3NIBM73GFVV7SADDKG is still running...4 minTask 7KTAFO3NIBM73GFVV7SADDKG is still running...5 minTask 7KTAFO3NIBM73GFVV7SADDKG is still running...6 minTask 7KTAFO3NIBM73GFVV7SADDKG is still running...7 minTask 7KTAFO3NIBM73GFVV7SADDKG is still running...8 minTask 7KTAFO3NIBM73GFVV7SADDKG is still running...9 minTask 7KTAFO3NIBM73GFVV7SADDKG completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
-Task 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...0 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...1 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...2 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...3 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...4 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...5 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...6 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...7 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...8 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...9 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...10 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...11 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...12 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 is still running...13 minTask 4LH7XDXVSSUBFKBSBE7XWXZ3 completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/Decline_option3_2023_mag50
-Task R4RNZAIYJ2QLSB54MLPS2Y4R is still running...0 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...1 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...2 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...3 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...4 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...5 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...6 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...7 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...8 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...9 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...10 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...11 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...12 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...13 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...14 minTask R4RNZAIYJ2QLSB54MLPS2Y4R is still running...15 minTask R4RNZAIYJ2QLSB54MLPS2Y4R completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/KMeans_option3_2023_mag50_sample
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/KMeans_option3_2023_mag50
-Task EWQW2JW5PBIR7Y2SSXMVPC5Q is still running...0 minTask EWQW2JW5PBIR7Y2SSXMVPC5Q is still running...1 minTask EWQW2JW5PBIR7Y2SSXMVPC5Q is still running...2 minTask EWQW2JW5PBIR7Y2SSXMVPC5Q is still running...3 minTask EWQW2JW5PBIR7Y2SSXMVPC5Q is still running...4 minTask EWQW2JW5PBIR7Y2SSXMVPC5Q is still running...5 minTask EWQW2JW5PBIR7Y2SSXMVPC5Q completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/labeled_option3_2023_mag50
-Task LRL7F5CLJ2TZ3PPH2NOP66WY is still running...0 minTask LRL7F5CLJ2TZ3PPH2NOP66WY is still running...1 minTask LRL7F5CLJ2TZ3PPH2NOP66WY is still running...2 minTask LRL7F5CLJ2TZ3PPH2NOP66WY is still running...3 minTask LRL7F5CLJ2TZ3PPH2NOP66WY is still running...4 minTask LRL7F5CLJ2TZ3PPH2NOP66WY is still running...5 minTask LRL7F5CLJ2TZ3PPH2NOP66WY is still running...6 minTask LRL7F5CLJ2TZ3PPH2NOP66WY is still running...7 minTask LRL7F5CLJ2TZ3PPH2NOP66WY is still running...8 minTask LRL7F5CLJ2TZ3PPH2NOP66WY completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_20mmu
-Task G4J4MKJGCRVB4YPE6LFGT36I is still running...0 minTask G4J4MKJGCRVB4YPE6LFGT36I completed successfully!
-Asset exists: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_20mmu
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu
-Task YHHTJFUAQHUW3J2QO6BCNHIU is still running...0 minTask YHHTJFUAQHUW3J2QO6BCNHIU completed successfully!
-Task NXOBK6BXPTGL5J43P43VIJNU completed successfully!
-Task MUTY2KQMZ2T3W2ASM2XFLEZL completed successfully!
-Task HHN3I3HPIKSGN4LUMEP7EM75 completed successfully!
-Task 5SZKL2OSAMYQXM2THDICVZVI completed successfully!
-Task XJJPO7DT6OIKODWWFNZAEPKC is still running...0 minTask XJJPO7DT6OIKODWWFNZAEPKC is still running...1 minTask XJJPO7DT6OIKODWWFNZAEPKC completed successfully!
-Task 2XK7LEOIZPRBKJLTLEAEZYHH completed successfully!
-Task W3KMEMSWQLLAVFGSBODL2TYQ completed successfully!
-Task K7DEICERA3IQSC4UP3KONRZR completed successfully!
-Task CKZ3YHGQ4DGFR5O5OWAEODAL completed successfully!
-Task 7DZUKMVP4SO5DXBRBANWMINS completed successfully!
-Task GFA7SAEVPYENJ2HLDISANNM7 is still running...0 minTask GFA7SAEVPYENJ2HLDISANNM7 completed successfully!
-Task RR4EEJ2ALD3JAHR4VLEH44FP completed successfully!
-Task 223W5UQPAVMMDRGUSQVLSBHU completed successfully!
-Task 6PLBT6JLFYS2R4GO6Z7SKUQY completed successfully!
-Task SA5XDXXUOE574EL4JRSWLUVO is still running...0 minTask SA5XDXXUOE574EL4JRSWLUVO completed successfully!
-Task SH34A3Q3YESFAPLUCCQWYZ6M completed successfully!
-Task QN2DU7FU7R3PEARG3YKTK3AY completed successfully!
-Task XZYMVGMZVZTVYBH2NVMDKVFC is still running...0 minTask XZYMVGMZVZTVYBH2NVMDKVFC completed successfully!
-Task OUCGT665LVSBE4D7JKIC62SI completed successfully!
-Task RORDLTIFMPU5B36Q4TKPWZOP completed successfully!
-Task XPK3MBBT75YXTJZ6KZCRWYVC completed successfully!
-Task ZKZQNBUW56JUIQSGWADI7Q72 completed successfully!
-Task KP53Z2C5OGZPLIVWSJXJ2RIH is still running...0 minTask KP53Z2C5OGZPLIVWSJXJ2RIH completed successfully!
-Task B2IJKI6V2VUTKBJ7ZHKBFVYN completed successfully!
-Task HT4BSYZSAPGJWNPD2EVAUPM7 completed successfully!
-Task SURSAQACYOIFMVJDLWSJMUZ5 completed successfully!
-Task 2IE2BJO33YX3BVJSVN275JGI completed successfully!
-Task VQBOPS4MR2T232VHXXRHM2W7 is still running...0 minTask VQBOPS4MR2T232VHXXRHM2W7 completed successfully!
-Task XLBL3UNPI5IQWKHG2BRMOXZH is still running...0 minTask XLBL3UNPI5IQWKHG2BRMOXZH is still running...1 minTask XLBL3UNPI5IQWKHG2BRMOXZH completed successfully!
-Task 3ADDVO6YKSS3QI6BV3I7A7IR completed successfully!
-Task EUFCPA4VEI7OWFRFZORLJP6Z completed successfully!
-Task XCHK2HV2SR2DWAZREQ4ZCCCW completed successfully!
-Task EOXTXCZC7SN2PCOZOLRVCNMQ completed successfully!
-Task CU4RRIMMSZCMSYVPIDW3DCIH completed successfully!
-Task TGSDGJPHCII7UJNTYKXM2A2A completed successfully!
-Task O6D2NRYTSDTZ5U5BTIUCVA4O completed successfully!
-Task VWQ4E26VAE7WIEB7U3BABHPZ is still running...0 minTask VWQ4E26VAE7WIEB7U3BABHPZ completed successfully!
-Task KFF5LWTLSC5NEGZBVSTNHHAI completed successfully!
-Task YMGP7BW3UGQFTMGBJLHR57BF completed successfully!
-Task OYJEVF4JJWSQBACMUT3Y4UZ6 completed successfully!
-Task PRJFDAOVMSSFC2BU5C56UT7C completed successfully!
-Task 4JGO72N33XIQCKCNQOGCPML5 completed successfully!
-Task AA7FQYZ4H3PT5PPMZMUOPLDC is still running...0 minTask AA7FQYZ4H3PT5PPMZMUOPLDC completed successfully!
-Task SW3W53SXVOLA4PBMK7UYDY7N is still running...0 minTask SW3W53SXVOLA4PBMK7UYDY7N completed successfully!
-Task HU3NIK5UBVHCJT7UEHCFA73M completed successfully!
-Task VWG3MBQSPROHQWI3DUNWX2HV completed successfully!
-Task LVKACZFDA6LDRJF2DVQRCRLH completed successfully!
-Task QO7IFTU6G37RSBY6VJZIYPAH completed successfully!
-Task QZJ3RZDG7YS7MDXD6NGKHUTL completed successfully!
-Task 2G36FK7ZG6I3LXAO5VQKWVLV completed successfully!
-Task SPZJSZT6MHUVYRZMZLVYM7Q5 is still running...0 minTask SPZJSZT6MHUVYRZMZLVYM7Q5 completed successfully!
-Task AAUFZ6EQ5DDSHDAO3M552KGZ completed successfully!
-Task J7P6F5L4MSAGOWMQHZAG5JC6 completed successfully!
-Task MNIOHWN62L7RM2HIEC6RNIFG is still running...0 minTask MNIOHWN62L7RM2HIEC6RNIFG completed successfully!
-Task O72OJGBV2TRUJIX5VRZPNH4D completed successfully!
-Task GZLSOYALW6ZW4PO7WNYSD2UZ completed successfully!
-Task 7IAKGFUTLSKW43FNFZIH743G is still running...0 minTask 7IAKGFUTLSKW43FNFZIH743G completed successfully!
-Task 2CBL42FZCBGADIQSLDQD337A completed successfully!
-Task E4NN23AHAEPJYGR2ERF33LGS completed successfully!
-Task UBHRGTXVBKKZFOWEV2LI66T3 completed successfully!
-Task KWP7KTPKU3DIBT73LJWPJFSC completed successfully!
-Task PJAJPZACYC4L7YD5IXQ4NPHR is still running...0 minTask PJAJPZACYC4L7YD5IXQ4NPHR completed successfully!
-Task 776RMUFXF3FH45GLRR6NRYEC completed successfully!
-Task 3UVDFMM4BOJQAZLBBABRGY3R completed successfully!
-Task KGRAOU56U5U5UEZA5PT2W7MJ completed successfully!
-Task WZWUAZPD5K6NY6UTS7JADI6Z completed successfully!
-Task 6YYF6M6KARASB5KNH3XDLOAM is still running...0 minTask 6YYF6M6KARASB5KNH3XDLOAM completed successfully!
-Task LM6M4NREQLJ3VCIVU35F3RDX completed successfully!
-Task GWOHOJIZKYR2KMM3WS65CC73 completed successfully!
-Task LK5SGEW5UWK6PHZNCVHRTWVG is still running...0 minTask LK5SGEW5UWK6PHZNCVHRTWVG completed successfully!
-Task NYACBHF2YTRMSTB5WPHSLDCO completed successfully!
-Task EU22BHGK4QGIQ2COQOLBQ4OB completed successfully!
-Task CCK5DAQBCTJ42MTCM5ARYLCU completed successfully!
-Task T7I27D773JPQ4EOVCP3ULMKW completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu
-Task ATHBMES4AH23OTOSE5KXWH3H is still running...0 minTask ATHBMES4AH23OTOSE5KXWH3H is still running...1 minTask ATHBMES4AH23OTOSE5KXWH3H completed successfully!
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_000
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_001
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_002
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_003
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_004
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_005
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_006
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_007
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_008
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_009
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_010
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_011
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_012
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_013
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_014
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_015
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_016
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_017
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_018
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_019
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_020
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_021
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_022
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_023
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_024
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_025
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_026
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_027
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_028
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_029
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_030
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_031
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_032
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_033
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_034
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_035
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_036
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_037
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_038
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_039
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_040
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_041
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_042
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_043
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_044
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_045
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_046
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_047
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_048
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_049
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_050
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_051
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_052
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_053
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_054
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_055
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_056
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_057
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_058
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_059
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_060
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_061
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_062
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_063
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_064
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_065
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_066
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_067
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_068
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_069
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_070
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_071
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_072
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_073
-deleted: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu_shard_074
-Asset exists: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2023-v3/eastern-cascades-bugnet_mag50_20mmu_parameter_file
-Task NJOYH4K4O6YTNQWC54XXNNKK is still running...0 minTask NJOYH4K4O6YTNQWC54XXNNKK completed successfully!
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/eastern-cascades-bugnet_mag50_20mmu_parameter_file
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_change_img_2023
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/A_predictor_fitted_img_2020_2025
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/B1_predictor_disturbance_polygons_2023
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/B2_attributed_predictor_polygons_2023
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/C1_classified_polygons_2023
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/C2_classified_polygons_filtered_2023
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/C3_classified_polygons_buffered_2023
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/C4_classed_img_2023
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/D_bugnet_forest_mask_2023_label
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/Decline_option3_2023_mag50
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/KMeans_option3_2023_mag50
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/KMeans_option3_2023_mag50_sample
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_2023_mag50_20mmu
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/bugnet_polygons_buffered_2023_mag50_20mmu
-Updating: projects/eastern-cascades-bugnet/assets/2023-v3/labeled_option3_2023_mag50
-[14:21:32] MAG=50: all MMUs complete
-[14:21:32] All iterations complete.

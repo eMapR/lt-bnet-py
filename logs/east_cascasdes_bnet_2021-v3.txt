@@ -1,335 +1,0 @@
-[11:58:22] Starting. DRY_RUN=0 JOBS=4
-[11:58:22] Template: /vol/v1/bugnet/lt-bnet-py/bugnet/params_new/2021/r6/v3/east-cascades-bugnet-2021-v3/east-cascades-bugnet-2021-v3-config.py
-[11:58:22] Runner:   /vol/v1/bugnet/lt-bnet-py/bugnet/main.py
-[11:58:22] Output to: /vol/v1/bugnet/lt-bnet-py/bugnet/params_new/2021/r6/v3/east-cascades-bugnet-2021-v3
-[11:58:22] Plan: MAGS=50 60 70 MMUS=10 20 30 (BASE_MMU=10)
-[11:58:22] Bootstrap already done (found /vol/v1/bugnet/lt-bnet-py/bugnet/params_new/2021/r6/v3/east-cascades-bugnet-2021-v3/.bootstrap_done)
-[11:58:22] Queued MAG=50 chain
-[11:58:22] MAG=50: base was done in bootstrap; launching remaining MMUs.
-[11:58:22] MAG=50: queued MMU=20
-[11:58:22] MAG=50: queued MMU=30
-[11:58:22] Queued MAG=60 chain
-[11:58:22] MAG=60: starting base MMU=10
-[11:58:22] Queued MAG=70 chain
-[11:58:22] MAG=70: starting base MMU=10
-[11:58:22] RUN: MAG=50 MMU=20
-[11:58:22] RUN: MAG=50 MMU=30
-[11:58:22] RUN: MAG=60 MMU=10
-[11:58:22] RUN: MAG=70 MMU=10
-Welcome to bugnet!
-How would you like to continue? Enter ...
-    1 - Run bugnet.
-    2 - Run bugnet no training.
-    3 - Export.
-    4 - Clean.
-:Welcome to bugnet!
-How would you like to continue? Enter ...
-    1 - Run bugnet.
-    2 - Run bugnet no training.
-    3 - Export.
-    4 - Clean.
-:/home/clarype/.conda/envs/lt-bnet-py/lib/python3.12/site-packages/ee/deprecation.py:207: DeprecationWarning: 
-
-Attention required for JRC/GFC2020/V2! You are using a deprecated asset.
-To ensure continued functionality, please update it.
-Learn more: https://developers.google.com/earth-engine/datasets/catalog/JRC_GFC2020_V2
-
-  warnings.warn(warning, category=DeprecationWarning)
-/home/clarype/.conda/envs/lt-bnet-py/lib/python3.12/site-packages/ee/deprecation.py:207: DeprecationWarning: 
-
-Attention required for JRC/GFC2020/V2! You are using a deprecated asset.
-To ensure continued functionality, please update it.
-Learn more: https://developers.google.com/earth-engine/datasets/catalog/JRC_GFC2020_V2
-
-  warnings.warn(warning, category=DeprecationWarning)
-Welcome to bugnet!
-How would you like to continue? Enter ...
-    1 - Run bugnet.
-    2 - Run bugnet no training.
-    3 - Export.
-    4 - Clean.
-:Welcome to bugnet!
-How would you like to continue? Enter ...
-    1 - Run bugnet.
-    2 - Run bugnet no training.
-    3 - Export.
-    4 - Clean.
-:/home/clarype/.conda/envs/lt-bnet-py/lib/python3.12/site-packages/ee/deprecation.py:207: DeprecationWarning: 
-
-Attention required for JRC/GFC2020/V2! You are using a deprecated asset.
-To ensure continued functionality, please update it.
-Learn more: https://developers.google.com/earth-engine/datasets/catalog/JRC_GFC2020_V2
-
-  warnings.warn(warning, category=DeprecationWarning)
-/home/clarype/.conda/envs/lt-bnet-py/lib/python3.12/site-packages/ee/deprecation.py:207: DeprecationWarning: 
-
-Attention required for JRC/GFC2020/V2! You are using a deprecated asset.
-To ensure continued functionality, please update it.
-Learn more: https://developers.google.com/earth-engine/datasets/catalog/JRC_GFC2020_V2
-
-  warnings.warn(warning, category=DeprecationWarning)
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_fitted_img_2020_2025
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021
-Task LHHQD7DSFJNEYV3O3HLDKFCU is still running...0 minAsset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_fitted_img_2020_2025
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021
-Task IMDX2KM4ULVOZDZXNJB33KQS is still running...0 minAsset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_fitted_img_2020_2025
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021
-Task NDEZRRV2LXMTRSNWRF7LYK45 is still running...0 minAsset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_fitted_img_2020_2025
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021
-Task R4KD5DYARNHPA3B5YYZFJWY7 is still running...0 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...1 minTask R4KD5DYARNHPA3B5YYZFJWY7 failed with error: Cancelled.
-Task 5WCARIQFMV43PJLQ6BSC6FN3 failed with error: Cancelled.
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-attempt_full failed: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-attempt_bucket failed: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-grid
-attempt_grid failed: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-Traceback (most recent call last):
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2241, in <module>
-    main()
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2093, in main
-    res = CreatePredictorDisturbancePolygons(param,param['polygon-split-method'])  # returns {'mode','tasks','asset_paths','subregions'}
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 781, in CreatePredictorDisturbancePolygons
-    raise RuntimeError(f"All strategies failed. Last error: {last_err}")
-RuntimeError: All strategies failed. Last error: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-[11:59:36] MAG=60: base MMU=10 failed; skipping follow-ups
-Task IMDX2KM4ULVOZDZXNJB33KQS failed with error: Cancelled.
-Task GVCQYS6S62RO566XSRCFQV2T failed with error: Cancelled.
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-attempt_full failed: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-attempt_bucket failed: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-grid
-attempt_grid failed: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-Traceback (most recent call last):
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2241, in <module>
-    main()
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2093, in main
-    res = CreatePredictorDisturbancePolygons(param,param['polygon-split-method'])  # returns {'mode','tasks','asset_paths','subregions'}
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 781, in CreatePredictorDisturbancePolygons
-    raise RuntimeError(f"All strategies failed. Last error: {last_err}")
-RuntimeError: All strategies failed. Last error: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-Task NDEZRRV2LXMTRSNWRF7LYK45 failed with error: Cancelled.
-Task ITDH2AKPSU2GUUFGTSLUJVXM failed with error: Cancelled.
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-attempt_full failed: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-attempt_bucket failed: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-grid
-attempt_grid failed: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-Traceback (most recent call last):
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2241, in <module>
-    main()
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 2093, in main
-    res = CreatePredictorDisturbancePolygons(param,param['polygon-split-method'])  # returns {'mode','tasks','asset_paths','subregions'}
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/vol/v1/bugnet/lt-bnet-py/bugnet/main.py", line 781, in CreatePredictorDisturbancePolygons
-    raise RuntimeError(f"All strategies failed. Last error: {last_err}")
-RuntimeError: All strategies failed. Last error: Image.load: Image asset 'projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021' not found (does not exist or caller does not have access).
-[11:59:38] MAG=70: base MMU=10 failed; skipping follow-ups
-Task LHHQD7DSFJNEYV3O3HLDKFCU is still running...2 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...3 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...4 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...5 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...6 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...7 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...8 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...9 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...10 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...11 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...12 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...13 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...14 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...15 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...16 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...17 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...18 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...19 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...20 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...21 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...22 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...23 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...24 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...25 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...26 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...27 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...28 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...29 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...30 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...31 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...32 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...33 minTask LHHQD7DSFJNEYV3O3HLDKFCU is still running...34 minTask LHHQD7DSFJNEYV3O3HLDKFCU completed successfully!
-Task AWMIC6LY27SOFUTR6WUT7C2D is still running...0 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...1 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...2 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...3 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...4 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...5 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...6 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...7 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...8 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...9 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...10 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...11 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...12 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...13 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...14 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...15 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...16 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...17 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...18 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...19 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...20 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...21 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...22 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...23 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...24 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...25 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...26 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...27 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...28 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...29 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...30 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...31 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...32 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...33 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...34 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...35 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...36 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...37 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...38 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...39 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...40 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...41 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...42 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...43 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...44 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...45 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...46 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...47 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...48 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...49 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...50 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...51 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...52 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...53 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...54 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...55 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...56 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...57 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...58 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...59 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...60 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...61 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...62 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...63 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...64 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...65 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...66 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...67 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...68 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...69 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...70 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...71 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...72 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...73 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...74 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...75 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...76 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...77 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...78 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...79 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...80 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...81 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...82 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...83 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...84 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...85 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...86 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...87 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...88 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...89 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...90 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...91 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...92 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...93 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...94 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...95 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...96 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...97 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...98 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...99 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...100 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...101 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...102 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...103 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...104 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...105 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...106 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...107 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...108 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...109 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...110 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...111 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...112 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...113 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...114 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...115 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...116 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...117 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...118 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...119 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...120 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...121 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...122 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...123 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...124 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...125 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...126 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...127 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...128 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...129 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...130 minTask AWMIC6LY27SOFUTR6WUT7C2D is still running...131 minTask AWMIC6LY27SOFUTR6WUT7C2D completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-Task 5DUQJQUL6LEMGKMXDBNJSQTT is still running...0 minTask 5DUQJQUL6LEMGKMXDBNJSQTT is still running...1 minTask 5DUQJQUL6LEMGKMXDBNJSQTT is still running...2 minTask 5DUQJQUL6LEMGKMXDBNJSQTT completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/B2_attributed_predictor_polygons_2021
-Task YLFSFJ4L7VUNUCEQY7UQHKWO is still running...0 minTask YLFSFJ4L7VUNUCEQY7UQHKWO is still running...1 minTask YLFSFJ4L7VUNUCEQY7UQHKWO is still running...2 minTask YLFSFJ4L7VUNUCEQY7UQHKWO is still running...3 minTask YLFSFJ4L7VUNUCEQY7UQHKWO is still running...4 minTask YLFSFJ4L7VUNUCEQY7UQHKWO is still running...5 minTask YLFSFJ4L7VUNUCEQY7UQHKWO completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/C1_classified_polygons_2021
-Task 5XTNJRGVKAYTAYT4FA75FJUA is still running...0 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...1 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...2 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...3 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...4 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...5 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...6 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...7 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...8 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...9 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...10 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...11 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...12 minTask 5XTNJRGVKAYTAYT4FA75FJUA is still running...13 minTask 5XTNJRGVKAYTAYT4FA75FJUA completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/C2_classified_polygons_filtered_2021
-Task AD4X2MP43AY4SGG26VXVJABU is still running...0 minTask AD4X2MP43AY4SGG26VXVJABU is still running...1 minTask AD4X2MP43AY4SGG26VXVJABU is still running...2 minTask AD4X2MP43AY4SGG26VXVJABU is still running...3 minTask AD4X2MP43AY4SGG26VXVJABU completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/C3_classified_polygons_buffered_2021
-Task KCHBNBYUKAKQLPBLJPN4Y4AI is still running...0 minTask KCHBNBYUKAKQLPBLJPN4Y4AI is still running...1 minTask KCHBNBYUKAKQLPBLJPN4Y4AI is still running...2 minTask KCHBNBYUKAKQLPBLJPN4Y4AI is still running...3 minTask KCHBNBYUKAKQLPBLJPN4Y4AI is still running...4 minTask KCHBNBYUKAKQLPBLJPN4Y4AI is still running...5 minTask KCHBNBYUKAKQLPBLJPN4Y4AI is still running...6 minTask KCHBNBYUKAKQLPBLJPN4Y4AI is still running...7 minTask KCHBNBYUKAKQLPBLJPN4Y4AI is still running...8 minTask KCHBNBYUKAKQLPBLJPN4Y4AI completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/C4_classed_img_2021
-Task BT5HIXDPW6SYPB6IEN6ZPXSS is still running...0 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...1 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...2 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...3 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...4 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...5 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...6 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...7 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...8 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...9 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...10 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...11 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...12 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...13 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...14 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...15 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...16 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...17 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...18 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...19 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...20 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...21 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...22 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...23 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...24 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...25 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...26 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...27 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...28 minTask BT5HIXDPW6SYPB6IEN6ZPXSS is still running...29 minTask BT5HIXDPW6SYPB6IEN6ZPXSS completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/D_bugnet_forest_mask_2021_label
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/D_bugnet_forest_mask_2021
-Task IVS7KRJPPYVDQZA4F6XXKGGG is still running...0 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...1 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...2 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...3 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...4 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...5 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...6 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...7 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...8 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...9 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...10 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...11 minTask IVS7KRJPPYVDQZA4F6XXKGGG is still running...12 minTask IVS7KRJPPYVDQZA4F6XXKGGG completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/Decline_option3_2021_mag50
-Task 2L6VOT4MNSS3CVA2WNRVKNRM is still running...0 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...1 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...2 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...3 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...4 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...5 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...6 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...7 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...8 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...9 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...10 minTask 2L6VOT4MNSS3CVA2WNRVKNRM is still running...11 minTask 2L6VOT4MNSS3CVA2WNRVKNRM completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/KMeans_option3_2021_mag50_sample
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/KMeans_option3_2021_mag50
-Task QYIQ4KHMXXRDIOFR5D3TY3GP is still running...0 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...1 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...2 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...3 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...4 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...5 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...6 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...7 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...8 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...9 minTask QYIQ4KHMXXRDIOFR5D3TY3GP is still running...10 minTask QYIQ4KHMXXRDIOFR5D3TY3GP completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/labeled_option3_2021_mag50
-Task ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...0 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...1 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...2 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...3 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...4 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...5 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...6 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...7 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...8 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...9 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 is still running...10 minTask ZDR64TDDLKWXU2IAGQ6CQOR4 completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_2021_mag50_30mmu
-Task WBJRZBKRY44S2O3OPXRNQ5SL is still running...0 minTask WBJRZBKRY44S2O3OPXRNQ5SL is still running...1 minTask WBJRZBKRY44S2O3OPXRNQ5SL completed successfully!
-Asset exists: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_2021_mag50_30mmu
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu
-Task 7TJXNVCLKGCIFGE4R2SW7DSG is still running...0 minTask 7TJXNVCLKGCIFGE4R2SW7DSG completed successfully!
-Task VZQV3HI32GSACU5PLSFWRJTN completed successfully!
-Task KALSG4FRVPZXM2DXCFONZV4T completed successfully!
-Task LWUCWSQMBUNJPKJ6AW4PEDQJ completed successfully!
-Task J7GNZC764L2NCAHWRELC35KA completed successfully!
-Task DA56V6FNFTAVSTJAZDTDNSL7 is still running...0 minTask DA56V6FNFTAVSTJAZDTDNSL7 completed successfully!
-Task NOFTREWRDNFCOLVKVGXJZEWL completed successfully!
-Task H6X65I6R3HX3UWBMOBMEQODD completed successfully!
-Task K3F5E52KG4UMAMRPQNWZA62X is still running...0 minTask K3F5E52KG4UMAMRPQNWZA62X completed successfully!
-Task JY375HMGNWR2X7FZ2HBIPJE3 completed successfully!
-Task NU4EJ2YJ5CZLS2JAWSNBU5TN completed successfully!
-Task IWZONBNWTDMXFQSCS4NTIUHA completed successfully!
-Task TNDQWHCDQOOPOVJWBUCCR36C is still running...0 minTask TNDQWHCDQOOPOVJWBUCCR36C completed successfully!
-Task CENRMLO4GXS4JXILBZWR2SVF completed successfully!
-Task YMCDAVOSRAXXZL27GY7DAP4A completed successfully!
-Task QJFYRASXQHEQM4C4VL4IMEES completed successfully!
-Task B7OFVT35AEN6AIJVWFMFD6QH completed successfully!
-Task WI7QXCBJGLPADM6TH2MNZF7K is still running...0 minTask WI7QXCBJGLPADM6TH2MNZF7K completed successfully!
-Task YRRJM6PMVEW2K4GYEVMSEKCC completed successfully!
-Task ZALFCM5FTDP2RUTAEOFYPNYW completed successfully!
-Task 3KFF65RKTDM3BFJPW723SWHA completed successfully!
-Task FUYNQACSOZAETW6VUQ52PNQL completed successfully!
-Task MNEOX46MLBMSI7D4WZW2NQPU completed successfully!
-Task 42NH3HVK2LYH5H6NQLJWAC7D completed successfully!
-Task 6MRB4XAD2V7A3CW5I345RTMS completed successfully!
-Task 2CPLUMA7LNJYCZOMUK3UV4C7 completed successfully!
-Task EYINIPNES3OMJ7I4VWE4VCG5 completed successfully!
-Task D2HBSQGASXFNPVKZ72MEMYMT is still running...0 minTask D2HBSQGASXFNPVKZ72MEMYMT completed successfully!
-Task 36ZBO6TD5SS2MJERRJADQBIF completed successfully!
-Task CBXOQUGP62Q7AR4JHTVBPYQW completed successfully!
-Task FBGXB2O5DFLWHXXTMPLHKXDG is still running...0 minTask FBGXB2O5DFLWHXXTMPLHKXDG completed successfully!
-Task V2ARGGL7566PQS3HEURIYDZB completed successfully!
-Task H22X4HCHFYHW643QXXO3IOGK completed successfully!
-Task PK6TKMRBTJHKPGQOV5ANRYHY completed successfully!
-Task VFTG5E7SPXRTP2MFWTBIVA2S completed successfully!
-Task ZRFLLN5ED3BLLVP4JXAWY6PF completed successfully!
-Task ZA2OV4LIB6IGWZQJSRFFS6ID is still running...0 minTask ZA2OV4LIB6IGWZQJSRFFS6ID completed successfully!
-Task RJ7466HA7YFKL76ZBW54XEX2 completed successfully!
-Task HAF4AWWD4B7TT57GKC6SIGCP completed successfully!
-Task WLZQWE5REKQDYM7EJBIXXXQ4 completed successfully!
-Task 2FW6Z6HTNIA43HYXF2FQ4WXS is still running...0 minTask 2FW6Z6HTNIA43HYXF2FQ4WXS completed successfully!
-Task EN2LAIYK2NQ3LDFWQYZ6UEKN completed successfully!
-Task DDOQCIRQ4R37XWRP62TNRYZ5 completed successfully!
-Task GHDUNEQCJQEQSJT6WQ42BBLJ completed successfully!
-Task QPN3E6XBZUTPIP6KSEDHGNE6 completed successfully!
-Task WBXPJP2HZRTO4NZULY43DF6L completed successfully!
-Task ZYHWSHTLQDXPYY3AYOXSK5IA completed successfully!
-Task FX5A7ESWRHXEGWJ77YUQTMPH is still running...0 minTask FX5A7ESWRHXEGWJ77YUQTMPH completed successfully!
-Task NPLFSZ2ARYMRYYS3VNSVP6IW completed successfully!
-Task MOPGEHKWST4AUZOQTTBXCGEK completed successfully!
-Task 2AEM6WBZ6MUGUYMYLTY3UDWD completed successfully!
-Task EIFDSL3IZVHQNHMAIJ4X5X75 completed successfully!
-Task DTWFCZVQKTUIRLICMLBMGBW2 is still running...0 minTask DTWFCZVQKTUIRLICMLBMGBW2 completed successfully!
-Task O5ROH7AHBSNK6QOGEUJKOYBK completed successfully!
-Task 5CXSN3UV2TXV7IVTZQHL5HAS completed successfully!
-Task DZWR46OLM3TLXPVOAOZZNXGP completed successfully!
-Task FPHRBCPFEHTWGPRXK6CBF7AI completed successfully!
-Task PJEX7MVMGUEOTGYBUPAYFOC4 completed successfully!
-Task 6DNWLOPNYNZQ6RDZXZ3TAGXW completed successfully!
-Task ABJRGCLIBIN4VWJHWHORF5CI is still running...0 minTask ABJRGCLIBIN4VWJHWHORF5CI completed successfully!
-Task QFFXXJIKYKDSF67ZICI6C7VF completed successfully!
-Task 3ZWHMUNZYZYKZWWEL6EMLCZQ is still running...0 minTask 3ZWHMUNZYZYKZWWEL6EMLCZQ completed successfully!
-Task DMYLPCPLMJQCCE5PQZC6BT7D completed successfully!
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_001: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_001' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_007: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_007' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_008: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_008' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_022: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_022' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_038: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_038' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_039: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_039' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_053: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_053' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_058: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_058' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_064: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_064' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_067: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_067' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_071: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_071' not found.
-Skipping shard projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_074: Collection.loadTable: Collection asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_074' not found.
-Task 3IM4JHCQHQEDCYAS5BCEBACU is still running...0 minTask 3IM4JHCQHQEDCYAS5BCEBACU is still running...1 minTask 3IM4JHCQHQEDCYAS5BCEBACU is still running...2 minTask 3IM4JHCQHQEDCYAS5BCEBACU is still running...3 minTask 3IM4JHCQHQEDCYAS5BCEBACU is still running...4 minTask 3IM4JHCQHQEDCYAS5BCEBACU completed successfully!
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_000
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_001: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_001' does not exist or doesn't allow this operation.
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_002
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_003
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_004
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_005
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_006
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_007: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_007' does not exist or doesn't allow this operation.
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_008: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_008' does not exist or doesn't allow this operation.
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_009
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_010
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_011
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_012
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_013
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_014
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_015
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_016
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_017
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_018
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_019
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_020
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_021
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_022: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_022' does not exist or doesn't allow this operation.
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_023
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_024
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_025
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_026
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_027
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_028
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_029
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_030
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_031
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_032
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_033
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_034
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_035
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_036
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_037
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_038: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_038' does not exist or doesn't allow this operation.
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_039: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_039' does not exist or doesn't allow this operation.
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_040
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_041
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_042
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_043
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_044
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_045
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_046
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_047
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_048
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_049
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_050
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_051
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_052
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_053: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_053' does not exist or doesn't allow this operation.
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_054
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_055
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_056
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_057
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_058: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_058' does not exist or doesn't allow this operation.
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_059
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_060
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_061
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_062
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_063
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_064: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_064' does not exist or doesn't allow this operation.
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_065
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_066
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_067: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_067' does not exist or doesn't allow this operation.
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_068
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_069
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_070
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_071: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_071' does not exist or doesn't allow this operation.
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_072
-deleted: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_073
-skip projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_074: Asset 'projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu_shard_074' does not exist or doesn't allow this operation.
-Asset exists: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu
-Asset does not exist: projects/eastern-cascades-bugnet/assets/2021-v3/eastern-cascades-bugnet_mag50_30mmu_parameter_file
-Task BWQGKPX4FWQWOB3GMMJ3BVSL is still running...0 minTask BWQGKPX4FWQWOB3GMMJ3BVSL is still running...1 minTask BWQGKPX4FWQWOB3GMMJ3BVSL is still running...2 minTask BWQGKPX4FWQWOB3GMMJ3BVSL is still running...3 minTask BWQGKPX4FWQWOB3GMMJ3BVSL is still running...4 minTask BWQGKPX4FWQWOB3GMMJ3BVSL is still running...5 minTask BWQGKPX4FWQWOB3GMMJ3BVSL is still running...6 minTask BWQGKPX4FWQWOB3GMMJ3BVSL is still running...7 minTask BWQGKPX4FWQWOB3GMMJ3BVSL is still running...8 minTask BWQGKPX4FWQWOB3GMMJ3BVSL is still running...9 minTask BWQGKPX4FWQWOB3GMMJ3BVSL completed successfully!
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/eastern-cascades-bugnet_mag50_30mmu_parameter_file
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_change_img_2021
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/A_predictor_fitted_img_2020_2025
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/B1_predictor_disturbance_polygons_2021
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/B2_attributed_predictor_polygons_2021
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/C1_classified_polygons_2021
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/C2_classified_polygons_filtered_2021
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/C3_classified_polygons_buffered_2021
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/C4_classed_img_2021
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/D_bugnet_forest_mask_2021
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/D_bugnet_forest_mask_2021_label
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/Decline_option3_2021_mag50
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/KMeans_option3_2021_mag50
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/KMeans_option3_2021_mag50_sample
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_2021_mag50_30mmu
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/bugnet_polygons_buffered_2021_mag50_30mmu
-Updating: projects/eastern-cascades-bugnet/assets/2021-v3/labeled_option3_2021_mag50
-[17:17:04] MAG=50: all MMUs complete
-[17:17:04] All iterations complete.
