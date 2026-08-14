@@ -848,6 +848,43 @@ def snic_image(img):
     return ee.Algorithms.Image.Segmentation.SNIC(image=img, size=5, compactness=1)
 
 
+def SNIC_decline_image(im, std_end_year):
+    """
+    Restored verbatim from commit d379494 (last version before it was
+    commented out, pre-dating the refactor-bugnet-cleanup branch). NOT
+    currently called anywhere - modeling_utils.declining_snic raises
+    NotImplementedError instead of calling this, because it has not been
+    validated against the current SNIC pipeline output.
+
+    Known mismatch: expects bands named 'yr_<year>_nbr_mean' /
+    '_tcg_mean' / '_tcw_mean' (bnet.rename_img's output convention), but
+    the modeling_utils.snic() stage exports the SNIC-segmented image with
+    its original (un-renamed) band names. Needs review/adaptation before
+    it can be wired back into declining_snic.
+    """
+    years = {i: str(std_end_year - i) for i in [0, 1, 2, 5, 9]}
+    expression = 'nbr_3 > nbr_4 > nbr_5 && tcg_3 > tcg_4 > tcg_5 && tcw_3 > tcw_4 > tcw_5 && rate > 20 && rate < 100 && dur < 6 && dur > 2'
+    return im.mask(im.expression(expression, {
+        'nbr_1': im.select('yr_' + years[9] + '_nbr_mean'),
+        'nbr_2': im.select('yr_' + years[5] + '_nbr_mean'),
+        'nbr_3': im.select('yr_' + years[2] + '_nbr_mean'),
+        'nbr_4': im.select('yr_' + years[1] + '_nbr_mean'),
+        'nbr_5': im.select('yr_' + years[0] + '_nbr_mean'),
+        'tcg_1': im.select('yr_' + years[9] + '_tcg_mean'),
+        'tcg_2': im.select('yr_' + years[5] + '_tcg_mean'),
+        'tcg_3': im.select('yr_' + years[2] + '_tcg_mean'),
+        'tcg_4': im.select('yr_' + years[1] + '_tcg_mean'),
+        'tcg_5': im.select('yr_' + years[0] + '_tcg_mean'),
+        'tcw_1': im.select('yr_' + years[9] + '_tcw_mean'),
+        'tcw_2': im.select('yr_' + years[5] + '_tcw_mean'),
+        'tcw_3': im.select('yr_' + years[2] + '_tcw_mean'),
+        'tcw_4': im.select('yr_' + years[1] + '_tcw_mean'),
+        'tcw_5': im.select('yr_' + years[0] + '_tcw_mean'),
+        'rate': im.select('rate_mean'),
+        'dur': im.select('dur_mean')
+    }))
+
+
 def decline_image(param):
     """
     Parameters:

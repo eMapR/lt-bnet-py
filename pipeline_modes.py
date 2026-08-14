@@ -13,6 +13,7 @@ def apply_public_read_acl(param, ee_module, walk_assets):
 def run_mode_1(param, deps):
     """Run the full training + predictor workflow."""
     wait_for_task = deps["wait_for_task"]
+    delete_assets = deps["delete_assets"]
     asset_exists = deps["asset_exists"]
     create_training_fitted_imagery = deps["CreateTrainingFittedImagery"]
     create_predictor_fitted_imagery = deps["CreatePredictorFittedImagery"]
@@ -52,21 +53,38 @@ def run_mode_1(param, deps):
     wait_for_task(task4)
 
     task5 = create_training_disturbance_polygons(param)
-    task6 = create_predictor_disturbance_polygons(param)
+    res6 = create_predictor_disturbance_polygons(param)
     wait_for_task(task5)
 
-    if isinstance(task6, list):
-        for task in task6[1]:
+    if res6 != 0:
+        tasks6 = [task for task in res6.get("tasks", []) if task is not None]
+        for task in tasks6:
             wait_for_task(task)
-        task66 = merge_selected_feature_collections(
-            param.get("sharedAssetDir", param["assetDir"]),
-            task6[2],
-            param["disturbance_polygons_predictor"],
-            "testing",
-        )
-        wait_for_task(task66)
-    else:
-        wait_for_task(task6)
+
+        asset_paths = res6.get("asset_paths", [])
+        if len(asset_paths) > 1:
+            base_name = param["disturbance_polygons_predictor"]
+            asset_dir = param.get("sharedAssetDir", param["assetDir"])
+            merged_name = f"{base_name}"
+            merged_task = merge_selected_feature_collections(
+                asset_dir,
+                asset_paths,
+                merged_name,
+                "merged predictor shards",
+            )
+            wait_for_task(merged_task)
+
+            def looks_like_shard(asset_id: str) -> bool:
+                name = asset_id.split("/")[-1]
+                if name == merged_name:
+                    return False
+                if name.startswith(f"{base_name}_grid_"):
+                    return False
+                return name.startswith(base_name + "_")
+
+            candidates = res6["created_asset_paths"] if res6["created_asset_paths"] else asset_paths
+            to_delete = [asset_id for asset_id in candidates if looks_like_shard(asset_id)]
+            delete_assets(to_delete, dry_run=False, pause_sec=0.2)
 
     task7 = attribute_training_polygons(param)
     task8 = attribute_predictor_polygons(param)
@@ -98,8 +116,7 @@ def run_mode_1(param, deps):
         task_decline_snic = declining_snic(param)
         wait_for_task(task_decline_snic)
 
-    task_kmeans_sample = build_kmeans_sample(param)
-    wait_for_task(task_kmeans_sample)
+    build_kmeans_sample(param)
 
     task_kmeans = kmeans_image(param)
     wait_for_task(task_kmeans)
