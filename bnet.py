@@ -834,6 +834,14 @@ def agg_ads(startyear, focus_year, ads_col):
     return agent_image.reduce(ee.Reducer.sum()).selfMask()
 
 def dNBR(lt, start, end, indx, ftvLt, roi):
+    """
+    Dead code, not called anywhere in this repo (pre-dates
+    refactor-bugnet-cleanup; already broken on master). Also buggy as
+    written: `ltgee.getFittedData` doesn't exist - the ltgee package only
+    has `LandTrendr.get_fitted_data(self, ...)` as an instance method.
+    Left unfixed since nothing calls it; fix or delete if it's ever wired
+    up for real.
+    """
     def get_year_band_names(start, end):
         return ['yr_' + str(i) for i in range(start, end + 1)]
 
