@@ -98,6 +98,22 @@ See the flags block at the top of the script for all overrides
 - `trashGEE.py --root <asset_path> [--delete] [--delete-containers]` removes
   a GEE asset subtree; dry-run unless `--delete` is passed.
 
+## Testing
+
+`tests/` covers the pure, non-GEE helper functions — string/regex parsing
+in `export_utils.py` (`remove_duplicate_substrings`,
+`_sanitize_shapefile_field_name`) and `file-manager.py` (stem parsing,
+chunk-suffix detection, `unique_path`'s collision handling). Anything that
+builds an `ee.*` object (e.g. `disturbance_utils.grid_over_feature`) is out
+of scope here — it's a server-side computation graph, not a pure function,
+and would need live GEE credentials or heavy mocking to exercise for real.
+
+```bash
+conda activate lt-bnet-py
+pip install pytest   # not in lt-bnet-py.yml yet
+pytest
+```
+
 ## Cleanup notes (for the upcoming pass)
 
 Observations from the initial review, to work through incrementally:
