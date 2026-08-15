@@ -856,41 +856,63 @@ def snic_image(img):
     return ee.Algorithms.Image.Segmentation.SNIC(image=img, size=5, compactness=1)
 
 
-def SNIC_decline_image(im, std_end_year):
+def SNIC_decline_image(param, min_years_declining=2):
     """
-    Restored verbatim from commit d379494 (last version before it was
-    commented out, pre-dating the refactor-bugnet-cleanup branch). NOT
-    currently called anywhere - modeling_utils.declining_snic raises
-    NotImplementedError instead of calling this, because it has not been
-    validated against the current SNIC pipeline output.
+    Score decline on the SNIC-segmented predictor fitted stack
+    (param['snicName']), mirroring LTSD_decline_score's year-over-year
+    tapered-threshold logic but reading bands the way SNIC actually names
+    them instead of the fictional 'yr_<offset>_nbr_mean' convention the
+    old (pre-refactor) version of this function assumed.
 
-    Known mismatch: expects bands named 'yr_<year>_nbr_mean' /
-    '_tcg_mean' / '_tcw_mean' (bnet.rename_img's output convention), but
-    the modeling_utils.snic() stage exports the SNIC-segmented image with
-    its original (un-renamed) band names. Needs review/adaptation before
-    it can be wired back into declining_snic.
+    bnet.snic_image() runs ee.Algorithms.Image.Segmentation.SNIC on
+    param['LTSDdir'] + param['LTSDname'], which every real parameter file
+    sets equal to param['fitted_img_p'] (confirmed against templates in
+    git history, e.g. commit f72a314^:parameters/2024/v2/
+    sw_oregon_bentley_config_opt3_2022.py). SNIC names each output band
+    "<input_band>_mean", and fitted_img_p's bands are named
+    "{INDEX}_ftv_{year}" (bnet.get_fitted_stack / rename_bands_by_year,
+    INDEX matching entries in param['fit'], e.g. "TCG_ftv_2020") - so the
+    segmented image's bands are "TCG_ftv_2020_mean" etc., plus a
+    "clusters" band.
+
+    Like LTSD_decline_score's own hardcoded expression, this only tests
+    TCG/TCW (not TCB) - and unlike the pre-refactor version, it doesn't
+    reference NBR, rate, or dur: rate/dur are LandTrendr change-detection
+    stats that are never merged into fitted_img_p, so no band on this
+    image could ever satisfy them.
     """
-    years = {i: str(std_end_year - i) for i in [0, 1, 2, 5, 9]}
-    expression = 'nbr_3 > nbr_4 > nbr_5 && tcg_3 > tcg_4 > tcg_5 && tcw_3 > tcw_4 > tcw_5 && rate > 20 && rate < 100 && dur < 6 && dur > 2'
-    return im.mask(im.expression(expression, {
-        'nbr_1': im.select('yr_' + years[9] + '_nbr_mean'),
-        'nbr_2': im.select('yr_' + years[5] + '_nbr_mean'),
-        'nbr_3': im.select('yr_' + years[2] + '_nbr_mean'),
-        'nbr_4': im.select('yr_' + years[1] + '_nbr_mean'),
-        'nbr_5': im.select('yr_' + years[0] + '_nbr_mean'),
-        'tcg_1': im.select('yr_' + years[9] + '_tcg_mean'),
-        'tcg_2': im.select('yr_' + years[5] + '_tcg_mean'),
-        'tcg_3': im.select('yr_' + years[2] + '_tcg_mean'),
-        'tcg_4': im.select('yr_' + years[1] + '_tcg_mean'),
-        'tcg_5': im.select('yr_' + years[0] + '_tcg_mean'),
-        'tcw_1': im.select('yr_' + years[9] + '_tcw_mean'),
-        'tcw_2': im.select('yr_' + years[5] + '_tcw_mean'),
-        'tcw_3': im.select('yr_' + years[2] + '_tcw_mean'),
-        'tcw_4': im.select('yr_' + years[1] + '_tcw_mean'),
-        'tcw_5': im.select('yr_' + years[0] + '_tcw_mean'),
-        'rate': im.select('rate_mean'),
-        'dur': im.select('dur_mean')
-    }))
+    im = ee.Image(param["assetDir"] + param["snicName"])
+    std_end_year = param['target']
+    base_thresholds = param['decline_thresholds']
+    taper_step = param['decline_step']
+
+    # Generate 5 consecutive years: oldest (1) to most recent (5)
+    years = {i: str(std_end_year - (5 - i)) for i in range(1, 6)}
+
+    bands = {
+        f'tcg_{i}': im.select(f'TCG_ftv_{years[i]}_mean') for i in range(1, 6)
+    } | {
+        f'tcw_{i}': im.select(f'TCW_ftv_{years[i]}_mean') for i in range(1, 6)
+    }
+
+    diffs = []
+    for i in range(1, 5):  # year-pairs: 1-2, 2-3, 3-4, 4-5
+        taper = taper_step * (4 - i)  # newest gets 0, oldest gets highest taper
+
+        t_tcg = base_thresholds['tcg'] - taper
+        t_tcw = base_thresholds['tcw'] - taper
+
+        diff_tcg = bands[f'tcg_{i}'].subtract(bands[f'tcg_{i + 1}']).gt(t_tcg)
+        diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i + 1}']).gt(t_tcw)
+
+        diffs.append(diff_tcg.And(diff_tcw))
+
+    decline_score = diffs[0]
+    for d in diffs[1:]:
+        decline_score = decline_score.add(d)
+
+    return im.updateMask(decline_score.gte(min_years_declining)) \
+             .addBands(decline_score.rename('decline_score'))
 
 
 def decline_image(param):

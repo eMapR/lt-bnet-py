@@ -49,30 +49,34 @@ param = {
     "shared_version": "3",
 
     # Optional. Controls which branch of the pipeline logic runs, NOT
-    # just a label. Both branches still feed into the same downstream
-    # KMeans-clustering -> ADS-proportion-labeling -> RF-classifier chain
-    # (build_kmeans_sample/kmeans_image/kmeans_ads_sample/proportion_calc/
-    # predict all run either way) - what differs is how the decline image
-    # they cluster on gets built:
-    #   - anything WITHOUT "3" -> snic() + declining_snic(): this is the
+    # just a label. Both branches feed KMeans clustering
+    # (build_kmeans_sample/kmeans_image) - what differs is how the
+    # decline image they cluster on gets built:
+    #   - anything WITHOUT "3" -> snic() + declining_snic(): the
     #     canonical BugNet method (SNIC-segments the fitted imagery into
     #     spectrally-similar patches first, "honing"/denoising the
     #     landscape, THEN scores decline on those patches - see the
-    #     project writeup). As of this branch it's BROKEN:
-    #     declining_snic() raises NotImplementedError because the
-    #     restored bnet.SNIC_decline_image() expects renamed bands
-    #     ('yr_<year>_nbr_mean' etc.) that snic()'s current output
-    #     doesn't have. This is the primary documented algorithm, not a
-    #     minor unused branch - fixing the band-naming mismatch is real
-    #     work, not optional cleanup.
+    #     project writeup). declining_snic() calls
+    #     bnet.SNIC_decline_image(), fixed 2026-08-15 to read SNIC's
+    #     actual band-naming convention ("{INDEX}_ftv_{year}_mean") -
+    #     previously it looked up a naming scheme ('yr_<offset>_nbr_mean')
+    #     that never existed on real SNIC output and raised
+    #     NotImplementedError unconditionally.
     #   - configName containing "3" (e.g. "option3") -> declining_ltsd():
     #     a continuous decline-score variant that skips SNIC
     #     patchification entirely and scores decline directly off the
-    #     fitted imagery (bnet.LTSD_decline_score). This is the only path
-    #     that currently runs end-to-end.
+    #     fitted imagery (bnet.LTSD_decline_score). Every real parameter
+    #     file found in git history uses this path.
     #   - configName containing "2" also switches modeling_utils.py's
     #     proportion_calc()/predict() between bnet.rename_img (opt2) and
-    #     bnet.rename_img_opt3 (everything else).
+    #     bnet.rename_img_opt3 (everything else) - but proportion_calc/
+    #     predict only run when ADS_path['on'] is true (see below), and no
+    #     real run found in git history sets it true. rename_img's
+    #     positional band-renaming scheme doesn't match what
+    #     declining_ltsd/declining_snic actually produce (band-count
+    #     mismatch, separate from the SNIC fix above) - if you're the
+    #     first to flip ADS_path['on'] to true, expect to debug that path
+    #     too.
     # Defaults to f"option{logic_version}" if omitted - you usually don't
     # need to set this explicitly unless logic_version doesn't match the
     # branch you want.
@@ -98,10 +102,12 @@ param = {
     "aoi": None,  # e.g. ee.FeatureCollection("projects/.../assets/blue_mts_boundary")
 
     # String key matched against LCMS's 'study_area' property in
-    # bnet.lcms_forest_mask() (e.g. "R6", "PNW" - whatever your LCMS
-    # collection uses). Also written verbatim into the final buffered
-    # polygons' REGION_ID field (postprocess_utils.calc_attri_fields).
-    "study_region": "PNW",
+    # bnet.lcms_forest_mask(). Real templates use "CONUS" or "AK" (per
+    # their own inline comment: "AK or CONUS" - whatever your LCMS
+    # collection's study_area values actually are). Also written verbatim
+    # into the final buffered polygons' REGION_ID field
+    # (postprocess_utils.calc_attri_fields).
+    "study_region": "CONUS",
 
     # Export/attribution scale in meters. Read by nearly every
     # ee.batch.Export.image.toAsset call and every reduceRegion/
@@ -222,13 +228,19 @@ param = {
     # LTSD_decline_score both read this).
     "agent_lookback": 5,
 
-    # Per-index (t1, t2) magnitude thresholds used to build the
-    # decline-detection boolean expression - keys must match entries in
-    # `fit` (bnet.decline_image's decline_expr, LTSD_decline_score).
+    # Per-index magnitude threshold read by the two LIVE decline scorers,
+    # LTSD_decline_score and SNIC_decline_image - both access these as
+    # single numbers via fixed lowercase keys ('tcb'/'tcg'/'tcw', NOT
+    # matched against `fit`), e.g. base_thresholds['tcg']. Every real
+    # template in git history uses exactly this lowercase/single-number
+    # shape. (bnet.decline_image, a separate function that's never called
+    # anywhere, expects a different shape - uppercase keys matched
+    # against `fit`, (t1, t2) tuple values - don't follow its
+    # docstring/expectations, they don't apply to the live path.)
     "decline_thresholds": {
-        "TCB": (70, 40),
-        "TCG": (50, 30),
-        "TCW": (50, 30),
+        "tcb": 70,
+        "tcg": 50,
+        "tcw": 50,
     },
 
     # Taper step used by LTSD_decline_score's continuous decline-score
@@ -269,10 +281,12 @@ param = {
 
     # Gates whether run_mode_2 does the full ADS-proportion/predict/
     # buffer chain or falls back to the interactive reclassification path
-    # (pipeline_modes.run_mode_2). Keep "on": False for a first pass on a
-    # region with no ADS coverage yet.
+    # (pipeline_modes.run_mode_2). Every real run found in git history
+    # keeps this False - the ADS/predict/rename_img path is essentially
+    # unexercised code (see the configName note above for why that
+    # matters if you're the one to turn it on for the first time).
     "ADS_path": {
-        "on": True,
+        "on": False,
     },
 
     # wekaCascadeKMeans cluster count (both min and max - modeling_utils

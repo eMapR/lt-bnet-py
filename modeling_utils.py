@@ -121,14 +121,17 @@ def declining_snic(param, asset_exists):
     if exists:
         return
 
-    raise NotImplementedError(
-        "The SNIC decline path (configName without '3', e.g. non-option3 "
-        "configs) is unsupported: bnet.SNIC_decline_image expects bands "
-        "renamed via bnet.rename_img ('yr_<year>_<index>_mean'), but the "
-        "snic() stage exports un-renamed SNIC output, and this combination "
-        "has not been validated. See bnet.SNIC_decline_image's docstring. "
-        "Use an option3 config (declining_ltsd) or fix this path deliberately."
+    decline = bnet.SNIC_decline_image(param).updateMask(param["Mask"])
+    task_decline = ee.batch.Export.image.toAsset(
+        image=decline.toInt16(),
+        description=param["declineName"],
+        assetId=param["assetDir"] + param["declineName"],
+        region=param["aoi"].geometry(),
+        scale=param["pixel_scale"],
+        maxPixels=1e13,
     )
+    task_decline.start()
+    return task_decline
 
 
 def declining_ltsd(param, asset_exists):
