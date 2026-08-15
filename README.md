@@ -42,6 +42,16 @@ conda activate lt-bnet-py
 python -c "import ee; ee.Authenticate()"   # one-time GEE auth
 ```
 
+## Parameter reference
+
+`docs/parameter_reference_template.py` documents every key a parameter
+file's `param` dict can/must define - what it controls, which pipeline
+stage reads it, and how it interacts with `configName` (which picks
+between the SNIC-based and LTSD-based decline paths - see that file for
+why one of those is currently broken). Templates you actually run from
+live in `templates/`/`params_new/` (gitignored, not in this checkout);
+this file is documentation, not a runnable config.
+
 ## Running a single job
 
 ```bash
