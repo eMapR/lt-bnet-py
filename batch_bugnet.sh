@@ -241,6 +241,21 @@ txt = re.sub(
     count=1,
 )
 
+# The SNIC decline path (configName without "3") reads
+# param['LTSDdir']+param['LTSDname'] and exports param['snicName'] -
+# modeling_utils.snic()/declining_snic() in the main repo. Every real
+# hand-written SNIC-path config sets LTSDname = fitted_img_p, but a
+# template written for the "3" (LTSD) path has no reason to have either
+# key - if --version ever selects a non-"3" logic_version against such a
+# template, inject them here so the generated config can't silently ship
+# without them (this is exactly how coast-range/williams-sound/
+# columbia-mts's 2025-v1 configs ended up missing both).
+if "3" not in logic_version and "param['LTSDname']" not in txt and 'param["LTSDname"]' not in txt:
+    txt = txt.rstrip() + (
+        "\nparam['LTSDname'] = param['fitted_img_p']\n"
+        "param['snicName'] = f\"SNIC_{param['configName']}_{param['target']}\"\n"
+    )
+
 def set_str_param(txt, key, value):
     pat = rf"""param\[\s*['"]{re.escape(key)}['"]\s*\]\s*=\s*['"][^'"]+['"]"""
     repl = f"param['{key}'] = '{value}'"
