@@ -23,8 +23,6 @@ TIF_SIMPLE = {".tif", ".tiff"}
 
 # Common lead (non-parameter files)
 LEAD = r"^(?P<project>[A-Za-z0-9]+)_(?P<region>[a-z0-9\-_]+)_(?P<ver>v(?P<year>\d{4})_(?P<vernum>\d+))_Annual_Change_"
-#LEAD = r"^(?P<project>[A-Za-z0-9]+)_(?P<region>[a-z0-9\-]+)_(?P<ver>v(?P<year>\d{4})-(?P<vernum>\d+))_Annual_Change_"
-#LEAD = r"^(?P<project>[A-Za-z0-9]+)_(?P<region>[a-z0-9\-]+)_(?P<ver>v(?P<year>\d{4})-(?P<vernum>\d+))_"
 PATTERNS = {
     "fitted": re.compile(LEAD + r"A_predictor_fitted_img_(?P<y1>\d{4})_(?P<y2>\d{4})$", re.I),
     "classed": re.compile(LEAD + r"C4_classed_img_(?P<prod_year>\d{4})$", re.I),
@@ -92,7 +90,7 @@ def parse_params_tokens(stem: str):
     if not m:
         return None
     gd = m.groupdict()
-    region_slug = gd.get("region2") or gd.get("region")
+    region_slug = gd.get("region")
     return {
         "project": gd.get("project"),
         "region_slug": region_slug,
