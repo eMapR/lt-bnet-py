@@ -307,13 +307,11 @@ def dataframe_to_geojson_features(df):
     
     # Iterate over each row in the DataFrame
     for _, row in df.iterrows():
-        centroid = row["geometry"].centroid
         # Convert each row to a GeoJSON feature
         feature = {
             "type": "Feature",
             "properties": row.drop("geometry").to_dict(),  # Exclude geometry from properties
-            #"geometry": mapping(row["geometry"])  # Convert geometry to GeoJSON format
-            "geometry": {"type": "MultiPolygon","coordinates": [[[(2, 2), (3, 3), (3, 2), (2, 2)]]]}  # Convert geometry to GeoJSON format
+            "geometry": mapping(row["geometry"])
         }
         features.append(feature)
     
