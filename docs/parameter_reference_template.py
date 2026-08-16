@@ -3,17 +3,20 @@ Annotated reference for BugNet parameter files.
 
 This is NOT loaded by main.py - it's documentation. A real parameter file
 is a .py script that defines a module-level `param` dict (see any file
-under templates/ or params_new/) and gets passed as
-`python main.py <path-to-that-file>`.
+under templates/ or run_configs/) and gets passed as
+`python main.py <path-to-that-file>`. See docs/config-layout.md for how
+templates/, run_configs/, and legacy_parameters/ relate to each other.
 
 Every key below was found by reading how it's actually consumed across
 main.py, cli_utils.py, pipeline_modes.py, disturbance_utils.py,
 modeling_utils.py, postprocess_utils.py, export_utils.py, and bnet.py as
 of the refactor-bugnet-cleanup branch (2026-08-14) - not copied from an
-existing template, since templates/, parameters/, and params_new/ are all
-gitignored and empty in this checkout. Two spots are marked TODO because
-the code that builds them lives in your per-run template files, not in
-this repo: confirm against a real template before trusting those two.
+existing template; templates/, legacy_parameters/, and run_configs/ were
+gitignored and empty in this checkout when this was first written (real
+files were found in git history and, later, on disk - see
+docs/config-layout.md). Two spots are marked TODO because the code that
+builds them lives in your per-run template files, not in this repo:
+confirm against a real template before trusting those two.
 
 Keys are grouped by what stage of the pipeline reads them, not
 alphabetically, so you can find "everything the classifier stage needs"

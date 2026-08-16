@@ -3,6 +3,6 @@ entersound.txt
 __pycache__/
 logs/
 *.log
-parameters/
-params_new/
+legacy_parameters/
+run_configs/
 templates/

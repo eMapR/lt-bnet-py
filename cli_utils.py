@@ -5,8 +5,9 @@ import ee
 
 
 # Keys every real parameter file in this repo sets directly (confirmed
-# against params_new/2025/r6/v1/*, templates/v3/*, and parameters/2024/v3/*
-# - the current live schemas, not the retired parameters/2024/v1/ one).
+# against run_configs/2025/r6/v1/*, templates/v3/*, and
+# legacy_parameters/2024/v3/* - the current live schemas, not the retired
+# legacy_parameters/2024/v1/ one).
 # Deliberately excludes:
 #   - version/shared_version/logic_version/assetDir/sharedAssetDir/LTSDdir/
 #     ltchange/Mask: optional or derived by normalize_parameters().
@@ -50,7 +51,7 @@ def validate_parameters(param):
     # the SNIC path (pipeline_modes.run_mode_1/2: `if "3" in configName`
     # picks declining_ltsd instead, which doesn't need either). Found
     # missing from every real 2025 SNIC-path config
-    # (params_new/2025/r6/v1/*-config.py and their mag/mmu variants) -
+    # (run_configs/2025/r6/v1/*-config.py and their mag/mmu variants) -
     # this is exactly the gap that let KeyError: 'LTSDname' happen deep
     # inside a live GEE run instead of at load time.
     if "3" not in str(param.get("configName", "")):

@@ -30,7 +30,8 @@ final polygons — all as GEE assets.
 | `file-manager.py` | Standalone post-export script: organizes downloaded/exported files into a folder structure, merges chunked GeoTIFFs with `gdal_merge.py`, and writes metadata sidecars. |
 | `trashGEE.py` | Standalone CLI to recursively delete a GEE asset subtree (dry-run by default). |
 | `templates/v3/` | Canonical per-ecoregion parameter templates used by `batch_bugnet.sh` to materialize run configs. |
-| `params_new/`, `parameters/` | Generated, run-specific parameter files (by year/region/version). `parameters/` is the legacy tree; `params_new/` is current. |
+| `run_configs/` | Generated, run-specific parameter files (by year/region/version) - what `batch_bugnet.sh` writes and `main.py` actually runs. Was named `params_new/` before 2026-08-15. |
+| `legacy_parameters/` | Retired, hand-authored parameter files from before `batch_bugnet.sh` existed - some predate the current schema and won't load. Was named `parameters/` before 2026-08-15. See `docs/config-layout.md`. |
 | `logs/` | Historical run logs (text dumps of stdout). |
 | `lt-bnet-py.yml` | Conda environment spec (Python 3.12, Earth Engine API, geopandas, rasterio, scikit-learn, etc.). |
 
@@ -47,10 +48,10 @@ python -c "import ee; ee.Authenticate()"   # one-time GEE auth
 `docs/parameter_reference_template.py` documents every key a parameter
 file's `param` dict can/must define - what it controls, which pipeline
 stage reads it, and how it interacts with `configName` (which picks
-between the SNIC-based and LTSD-based decline paths - see that file for
-why one of those is currently broken). Templates you actually run from
-live in `templates/`/`params_new/` (gitignored, not in this checkout);
-this file is documentation, not a runnable config.
+between the SNIC-based and LTSD-based decline paths). This file is
+documentation, not a runnable config - see `docs/config-layout.md` for
+where the templates/configs you actually run from live
+(`templates/`/`run_configs/`, gitignored) and how they relate.
 
 ## Running a single job
 
@@ -128,11 +129,13 @@ pytest
 
 Observations from the initial review, to work through incrementally:
 
-- **Git hygiene**: `__pycache__/*.pyc` (4 files) and the legacy `parameters/`
-  tree (477 files) are tracked in git despite being covered by
-  `.gitignore` — they were committed before the ignore rules existed.
-  Worth `git rm --cached` on both (parameters/ looks fully superseded by
-  `params_new/`). `logs/` (8 files) is tracked too and is pure run output.
+- **Git hygiene**: `__pycache__/*.pyc` (4 files) and the legacy
+  `legacy_parameters/` tree (477 files, named `parameters/` before
+  2026-08-15) were tracked in git despite being covered by `.gitignore` —
+  they were committed before the ignore rules existed. Already untracked
+  via `git rm --cached` (see `docs/config-layout.md` for how this tree
+  relates to `run_configs/`). `logs/` (8 files) is tracked too and is pure
+  run output.
 - **Untracked root-level `.log` files** (`case_study*.log`,
   `coast_range_2025_v1.log`, `williams_sound.log`) are batch-run output
   redirected to the repo root instead of `logs/`. `.gitignore` doesn't

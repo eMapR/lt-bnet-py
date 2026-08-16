@@ -23,7 +23,7 @@ SHARED_VERSION=""
 TEMPLATES_DIR="/data/vol/clarype/bugnet/lt-bnet-py/bugnet/templates/v3"
 
 # Where run instance folders live:
-PARAM_ROOT="/data/vol/clarype/bugnet/lt-bnet-py/bugnet/params_new"
+PARAM_ROOT="/data/vol/clarype/bugnet/lt-bnet-py/bugnet/run_configs"
 
 # Program runner:
 PY_RUNNER="/data/vol/clarype/bugnet/lt-bnet-py/bugnet/main.py"
