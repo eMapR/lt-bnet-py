@@ -58,11 +58,25 @@ made it easy to assume "v1" meant "just an older/simpler variant," not
   what *new* GEE assets get named - existing assets are untouched).
   Omit it to keep the legacy `--version`-derived behavior byte-for-byte.
 
-**Not done**: there's still no actual `snic`-path template under
-`templates/` for `batch_bugnet.sh --decline-path snic` to generate from
-- `templates/v3/` is entirely LTSD-path. The three real 2025 SNIC-path
-configs (coast-range/williams-sound/columbia-mts) were hand-authored
-directly into `run_configs/`, bypassing the template flow, which is how
-they went unnoticed. Creating real templates for those regions using the
-new convention would change their asset names going forward, so that's
-deliberately left as a separate decision rather than done here.
+**`templates/v1/` added 2026-08-15** for the three real SNIC-path
+regions (coast-range, williams-sound, columbia-mts) - built from their
+now-fixed `run_configs/2025/r6/v1/*` files, keeping `configName='option1'`
+(the legacy convention, not the new self-describing one) deliberately:
+these three already have real GEE asset history under that naming, and
+switching to `configName='snic'` would produce different future asset
+names than what's already there. Verified by materializing each new
+template through `batch_bugnet.sh`'s embedded transform in legacy mode
+(`--version v1`, no `--decline-path`) and diffing against the real
+existing config for that region - only cosmetic differences (a comment,
+where `LTSDname`/`snicName` land in the file). `batch_bugnet.sh --ecos
+coast-range,williams-sound,columbia-mts --version v1 --templates-dir
+templates/v1 ...` now has a real template to generate from, closing the
+original gap (these three were hand-authored directly into
+`run_configs/`, bypassing the template flow, which is how they went
+unnoticed in the first place).
+
+New regions on the SNIC path going forward should use `--decline-path
+snic` (self-describing `configName`) instead of copying this `v1`
+convention - `templates/v1/` exists only to match the three regions'
+existing asset-naming history, not as the recommended pattern for new
+work.

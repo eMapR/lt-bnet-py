@@ -29,7 +29,7 @@ final polygons — all as GEE assets.
 | `batch_bugnet.sh` | Batch-generates per-year/per-variant parameter files from a template and runs `main.py` across an ecoregion × region × year × magnitude × MMU sweep, with bounded parallelism. |
 | `file-manager.py` | Standalone post-export script: organizes downloaded/exported files into a folder structure, merges chunked GeoTIFFs with `gdal_merge.py`, and writes metadata sidecars. |
 | `trashGEE.py` | Standalone CLI to recursively delete a GEE asset subtree (dry-run by default). |
-| `templates/v3/` | Canonical per-ecoregion parameter templates used by `batch_bugnet.sh` to materialize run configs. |
+| `templates/v3/`, `templates/v1/` | Canonical per-ecoregion parameter templates used by `batch_bugnet.sh` to materialize run configs. `v3/` is the LTSD decline path; `v1/` (coast-range, williams-sound, columbia-mts) is the SNIC path - see `docs/config-layout.md`. |
 | `run_configs/` | Generated, run-specific parameter files (by year/region/version) - what `batch_bugnet.sh` writes and `main.py` actually runs. Was named `params_new/` before 2026-08-15. |
 | `legacy_parameters/` | Retired, hand-authored parameter files from before `batch_bugnet.sh` existed - some predate the current schema and won't load. Was named `parameters/` before 2026-08-15. See `docs/config-layout.md`. |
 | `logs/` | Historical run logs (text dumps of stdout). |
