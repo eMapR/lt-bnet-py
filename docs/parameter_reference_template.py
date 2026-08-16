@@ -71,16 +71,18 @@ param = {
     #     patchification entirely and scores decline directly off the
     #     fitted imagery (bnet.LTSD_decline_score). Every real parameter
     #     file found in git history uses this path.
-    #   - configName containing "2" also switches modeling_utils.py's
-    #     proportion_calc()/predict() between bnet.rename_img (opt2) and
-    #     bnet.rename_img_opt3 (everything else) - but proportion_calc/
-    #     predict only run when ADS_path['on'] is true (see below), and no
-    #     real run found in git history sets it true. rename_img's
-    #     positional band-renaming scheme doesn't match what
-    #     declining_ltsd/declining_snic actually produce (band-count
-    #     mismatch, separate from the SNIC fix above) - if you're the
-    #     first to flip ADS_path['on'] to true, expect to debug that path
-    #     too.
+    #   - proportion_calc()/predict() only run when ADS_path['on'] is true
+    #     (see below); no real run found in git history sets it true, but
+    #     the code path itself was fixed 2026-08-16 -
+    #     bnet.select_decline_predictor_bands() (decline_path-aware,
+    #     replaces the old rename_img/rename_img_opt3 pair, which
+    #     expected a band shape that stopped existing when LTSDname was
+    #     simplified to fitted_img_p) is validated against real decline
+    #     images on both paths. If you're the first to flip
+    #     ADS_path['on'] to true, this part should now just work - the
+    #     remaining unknown is kmeans_proportions_ads_sample(), which
+    #     needs a real param['ads'] FeatureCollection nobody has
+    #     supplied yet.
     # Defaults to f"option{logic_version}" if omitted - you usually don't
     # need to set this explicitly unless logic_version doesn't match the
     # branch you want.
@@ -286,9 +288,10 @@ param = {
     # Gates whether run_mode_2 does the full ADS-proportion/predict/
     # buffer chain or falls back to the interactive reclassification path
     # (pipeline_modes.run_mode_2). Every real run found in git history
-    # keeps this False - the ADS/predict/rename_img path is essentially
-    # unexercised code (see the configName note above for why that
-    # matters if you're the one to turn it on for the first time).
+    # keeps this False, so this remains unexercised end-to-end - but the
+    # predict()/proportion_calc() code itself was fixed 2026-08-16 (see
+    # the configName note above). cli_utils.validate_parameters() now
+    # requires this key when ADS_path['on'] is true.
     "ADS_path": {
         "on": False,
     },
