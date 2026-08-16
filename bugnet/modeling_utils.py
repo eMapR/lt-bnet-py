@@ -404,10 +404,7 @@ def proportion_calc(param, asset_exists):
     label_img = diclist.keys().map(label_img_function)
     sample_img = ee.ImageCollection(label_img).sum().selfMask().rename(["label"])
     ref_img = ee.Image(param["assetDir"] + param["declineName"])
-    if "2" in param["configName"]:
-        ref_img = bnet.rename_img(ref_img, param["target"]).addBands(kmeans).addBands(sample_img)
-    else:
-        ref_img = bnet.rename_img_opt3(ref_img, param["target"]).addBands(kmeans).addBands(sample_img)
+    ref_img = bnet.select_decline_predictor_bands(ref_img, param["target"], param["fit"], param["decline_path"]).addBands(kmeans).addBands(sample_img)
 
     sample = ref_img.stratifiedSample(
         numPoints=param["proportion_strat_sample_size"],
@@ -447,10 +444,7 @@ def predict(param, asset_exists):
     decline = ee.Image(param["assetDir"] + param["declineName"])
     sample = ee.FeatureCollection(param["assetDir"] + param["proportionName"] + "_sample")
 
-    if "2" in param["configName"]:
-        refer_image = bnet.rename_img(decline, param["target"])
-    else:
-        refer_image = bnet.rename_img_opt3(decline, param["target"])
+    refer_image = bnet.select_decline_predictor_bands(decline, param["target"], param["fit"], param["decline_path"])
 
     ref_bands = refer_image.bandNames()
     sample = sample.randomColumn()
@@ -460,7 +454,7 @@ def predict(param, asset_exists):
     random_forest = ee.Classifier.smileRandomForest(500).train(
         features=test,
         classProperty="label",
-        inputProperties=ref_bands.remove("clusters").remove("seeds"),
+        inputProperties=ref_bands,
     )
 
     rf_model = refer_image.classify(random_forest).selfMask().clip(states).rename(f"bugnet_{param['target']}")

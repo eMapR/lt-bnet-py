@@ -822,9 +822,12 @@ def build_sr_collection(start_year, end_year, start_day, end_day, aoi):
 
 def get_lt_last_seg_info(lt, idx):
     """
-    Dead code, not called anywhere in this repo. Would extract the
-    final LandTrendr segment's stats (year-of-detection plus
-    mag/dur/preval/rate/dsnr) from a LandTrendr fit's segment array.
+    Dead code, not called anywhere in this repo. Extracts the final
+    LandTrendr segment's stats (year-of-detection plus mag/dur/preval/
+    rate/dsnr) from a LandTrendr fit's segment array - was called by the
+    original (pre-2024, since removed) CreateLTSDimage() pipeline stage
+    to append segment stats onto the LTSD image before SNIC segmentation.
+    See select_decline_predictor_bands()'s docstring.
     """
     segInfo = lt.get_segment_data('all', index_flip=True)
     endSeg = segInfo.arraySlice(1, -1, None, 1)
@@ -1168,65 +1171,81 @@ def tasselCapMask(bnet):
 
     return tcb_mask
 
-def rename_img(img, target_year):
+def select_decline_predictor_bands(img, target_year, fit, decline_path):
     """
-    Positionally rename img's bands to a fixed 42-name scheme (leading
-    'clusters', 40 index/relative-year 'yr_<0-9>_<index>_mean' names,
-    trailing 'seeds') - img.select(img.bandNames(), [...]) matches by
-    order, not by name, so this silently mis-renames (or raises a
-    length-mismatch EEException) if img doesn't have exactly 42 bands
-    in this order. target_year is accepted but unused - the output
-    names are relative year-offsets, not the actual target year.
+    Select and rename the RF-classifier predictor bands from a real
+    declineName image (LTSD_decline_score's or SNIC_decline_image's
+    output - both preserve their source's full band set plus a trailing
+    decline_score band). decline_path ('snic' or 'ltsd', i.e.
+    param['decline_path']) matters because the two paths' source bands
+    are named differently: LTSD_decline_score's source (fitted_img_p) is
+    "{INDEX}_ftv_{year}", but SNIC_decline_image's source has already
+    been through GEE's SNIC op, which appends "_mean" to every band
+    name - "{INDEX}_ftv_{year}_mean". Confirmed directly against a real
+    SNIC-path decline image (2026-08-16): its bands really do carry the
+    "_mean" suffix, this isn't a hypothetical.
 
-    Only reachable via modeling_utils.proportion_calc/predict when
-    configName contains "2", which itself is only reached when
-    param['ADS_path']['on'] is true - no real run in git history sets
-    that, so this function is effectively unexercised in practice (see
-    docs/config-layout.md).
+    Replaces rename_img/rename_img_opt3 (removed 2026-08-16), which
+    positionally renamed a fixed 40/42-band image that hasn't existed
+    since this repo's original CreateLTSDimage()/standardized_lt_image()/
+    get_lt_last_seg_info() pipeline stage was dropped in favor of
+    LTSDname = fitted_img_p directly (see docs/config-layout.md and
+    SNIC_decline_image's docstring) - that migration was never carried
+    through to proportion_calc/predict, so this had been silently
+    unreachable (only exercised when param['ADS_path']['on'] is true,
+    which no real run sets) since whenever that migration happened.
+
+    Reimplements the *intent* of the original design instead of
+    resurrecting the dropped pipeline stage: for each index in fit and
+    each of 5 tapered years (target_year minus 9, 5, 2, 1, 0 - the same
+    sparse year selection SNIC_decline_image uses), selects the source
+    band by name and also computes a per-pixel, mean-centered
+    "standardized" version across those 5 years (the original
+    standardized_lt_image's own feature engineering) - 5 * len(fit) raw
+    bands renamed "yr_<year>_<index>", plus 5 * len(fit) standardized
+    bands renamed "yr_<year>_<index>_ltsd".
+
+    Does not select or require 'clusters'/'seeds' - those are SNIC
+    segmentation artifacts (present only on SNIC_decline_image's output,
+    absent from LTSD_decline_score's), and were never used as classifier
+    predictors even under the old scheme (predict() explicitly drops
+    them from inputProperties).
     """
-    yearTarget = str(target_year)
-    yearOne = str(target_year - 1)
-    yearTwo = str(target_year - 2)
-    yearfive = str(target_year - 5)
-    yearNine = str(target_year - 9)
-    
-    return img.select(img.bandNames(), [
+    years = [str(target_year - i) for i in [9, 5, 2, 1, 0]]
+    suffix = "_mean" if decline_path == "snic" else ""
 
-        'clusters','yr_9_nbr_mean','yr_8_nbr_mean','yr_7_nbr_mean','yr_6_nbr_mean', 'yr_5_nbr_mean','yr_4_nbr_mean', 'yr_3_nbr_mean','yr_2_nbr_mean', 'yr_1_nbr_mean', 'yr_0_nbr_mean',
-        'yr_9_tcb_mean','yr_8_tcb_mean','yr_7_tcb_mean','yr_6_tcb_mean', 'yr_5_tcb','yr_4_tcb_mean', 'yr_3_tcb_mean','yr_2_tcb_mean', 'yr_1_tcb_mean', 'yr_0_tcb_mean',
-        'yr_9_tcg_mean','yr_8_tcg_mean','yr_7_tcg_mean','yr_6_tcg_mean', 'yr_5_tcg','yr_4_tcg_mean', 'yr_3_tcg_mean','yr_2_tcg_mean', 'yr_1_tcg_mean', 'yr_0_tcg_mean',
-        'yr_9_tcw_mean','yr_8_tcw_mean','yr_7_tcw_mean','yr_6_tcw_mean', 'yr_5_tcw','yr_4_tcw_mean', 'yr_3_tcw_mean','yr_2_tcw_mean', 'yr_1_tcw_mean', 'yr_0_tcw_mean','seeds'
+    tapered_bands = []
+    standardized_bands = []
+    for index in fit:
+        idx_lower = index.lower()
+        raw = img.select(
+            [f"{index}_ftv_{year}{suffix}" for year in years],
+            [f"yr_{year}_{idx_lower}" for year in years],
+        )
+        tapered_bands.append(raw)
+        mean = raw.reduce(ee.Reducer.mean())
+        standardized = raw.subtract(mean).rename(
+            [f"yr_{year}_{idx_lower}_ltsd" for year in years]
+        )
+        standardized_bands.append(standardized)
 
-    ])
-
-def rename_img_opt3(img, target_year):
-    """
-    Same positional-rename approach as rename_img, but for a 40-band
-    scheme (no leading 'clusters' or trailing 'seeds') - used when
-    configName does NOT contain "2". Same "unexercised in practice"
-    caveat as rename_img applies (only reached when ADS_path['on'] is
-    true).
-    """
-    yearTarget = str(target_year)
-    yearOne = str(target_year - 1)
-    yearTwo = str(target_year - 2)
-    yearfive = str(target_year - 5)
-    yearNine = str(target_year - 9)
-    return img.select(img.bandNames(), [
-        'yr_9_nbr','yr_8_nbr','yr_7_nbr','yr_6_nbr', 'yr_5_nbr','yr_4_nbr', 'yr_3_nbr','yr_2_nbr', 'yr_1_nbr', 'yr_0_nbr',
-        'yr_9_tcb','yr_8_tcb','yr_7_tcb','yr_6_tcb', 'yr_5_tcb','yr_4_tcb', 'yr_3_tcb','yr_2_tcb', 'yr_1_tcb', 'yr_0_tcb',
-        'yr_9_tcg','yr_8_tcg','yr_7_tcg','yr_6_tcg', 'yr_5_tcg','yr_4_tcg', 'yr_3_tcg','yr_2_tcg', 'yr_1_tcg', 'yr_0_tcg',
-        'yr_9_tcw','yr_8_tcw','yr_7_tcw','yr_6_tcw', 'yr_5_tcw','yr_4_tcw', 'yr_3_tcw','yr_2_tcw', 'yr_1_tcw', 'yr_0_tcw'
-        #"yod", "mag", "dur", "preval", "rate", "dsnr"
-    ])
+    out = standardized_bands[0]
+    for band in standardized_bands[1:] + tapered_bands:
+        out = out.addBands(band)
+    return out
 
 def rename_ltsd_img(img, target_year):
     """
-    Dead code, not called anywhere in this repo. A third positional
-    band-renaming scheme (46 bands: LTSD-suffixed values, plain
-    fitted values, and change-detection stats) distinct from both
-    rename_img and rename_img_opt3 - suggests an even earlier or
-    alternate naming convention that was never wired up.
+    Dead code, not called anywhere in this repo. Matches the exact
+    46-band shape the original (pre-2024) CreateLTSDimage() pipeline
+    stage produced: standardized_lt_image()'s 40 bands (5 tapered years
+    x 4 indices, both raw and mean-centered/"_ltsd") + 6 LandTrendr
+    segment stats from get_lt_last_seg_info() (yod/mag/dur/preval/rate/
+    dsnr) - both of those functions, and the CreateLTSDimage() stage
+    that combined them, are themselves dead/removed. See
+    select_decline_predictor_bands()'s docstring and
+    docs/config-layout.md for how this repo's architecture moved past
+    this scheme.
     """
     yearTarget = str(target_year)
     yearOne = str(target_year - 1)

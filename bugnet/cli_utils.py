@@ -58,6 +58,15 @@ def validate_parameters(param):
             if key not in param:
                 missing.append(key)
 
+    # modeling_utils.kmeans_proportions_ads_sample() reads param['ads']
+    # directly - only reached when ADS_path['on'] is true. No real config
+    # sets 'ads' at all (every real run keeps ADS_path['on'] false), so
+    # this is speculative rather than evidence-based like the check
+    # above, but cheap insurance now that this path is meant to work
+    # (see bnet.select_decline_predictor_bands, added 2026-08-16).
+    if param.get("ADS_path", {}).get("on") and "ads" not in param:
+        missing.append("ads")
+
     if missing:
         raise ValueError(
             f"Parameter file is missing required key(s): {', '.join(missing)}"

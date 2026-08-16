@@ -3,6 +3,7 @@ import pytest
 import cli_utils
 
 BASE_PARAM = {k: object() for k in cli_utils.REQUIRED_PARAM_KEYS}
+BASE_PARAM["ADS_path"] = {"on": False}
 
 
 def _param(**overrides):
@@ -88,3 +89,24 @@ class TestValidateParameters:
         del param["configName"]
         with pytest.raises(ValueError, match="configName"):
             cli_utils.validate_parameters(param)
+
+    def test_ads_path_off_does_not_require_ads(self):
+        cli_utils.validate_parameters(
+            _param(configName="option3", decline_path="ltsd", ADS_path={"on": False})
+        )
+
+    def test_ads_path_on_without_ads_raises(self):
+        with pytest.raises(ValueError, match="ads"):
+            cli_utils.validate_parameters(
+                _param(configName="option3", decline_path="ltsd", ADS_path={"on": True})
+            )
+
+    def test_ads_path_on_with_ads_passes(self):
+        cli_utils.validate_parameters(
+            _param(
+                configName="option3",
+                decline_path="ltsd",
+                ADS_path={"on": True},
+                ads=object(),
+            )
+        )
