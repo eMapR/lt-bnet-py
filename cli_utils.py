@@ -42,19 +42,18 @@ def validate_parameters(param):
     Raise a clear ValueError listing every missing/conditionally-missing
     key, instead of letting a real run fail deep inside some stage
     function with a bare KeyError. Call after normalize_parameters() so
-    configName has its final, resolved value.
+    configName/decline_path have their final, resolved values.
     """
     missing = [k for k in REQUIRED_PARAM_KEYS if k not in param]
 
     # LTSDname/snicName are only read by modeling_utils.snic() /
-    # bnet.SNIC_decline_image(), which only run when configName selects
-    # the SNIC path (pipeline_modes.run_mode_1/2: `if "3" in configName`
-    # picks declining_ltsd instead, which doesn't need either). Found
-    # missing from every real 2025 SNIC-path config
+    # bnet.SNIC_decline_image(), which only run on the SNIC decline path
+    # (pipeline_modes.run_mode_1/2 branch on param["decline_path"]).
+    # Found missing from every real 2025 SNIC-path config
     # (run_configs/2025/r6/v1/*-config.py and their mag/mmu variants) -
     # this is exactly the gap that let KeyError: 'LTSDname' happen deep
     # inside a live GEE run instead of at load time.
-    if "3" not in str(param.get("configName", "")):
+    if param.get("decline_path") == "snic":
         for key in ("LTSDname", "snicName"):
             if key not in param:
                 missing.append(key)
@@ -91,6 +90,18 @@ def normalize_parameters(param):
         param["configName"] = f"option{logic_version}"
     else:
         param["configName"] = param.get("configName", f"option{logic_version}")
+
+    # Which decline algorithm to run (declining_ltsd vs. declining_snic in
+    # pipeline_modes.py) used to be inferred purely from "3" in configName
+    # - self-describing configs can now set this explicitly instead
+    # (e.g. configName='snic' wouldn't contain "3", so it MUST set
+    # decline_path itself; don't rely on the fallback for new-style
+    # configName values). Only derived from the legacy option1/option3
+    # convention when a config doesn't set it, so every existing config
+    # file keeps behaving exactly as it does today.
+    param["decline_path"] = param.get("decline_path") or (
+        "ltsd" if "3" in param["configName"] else "snic"
+    )
 
     project = param["project_name"]
     target = param["target"]

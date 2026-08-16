@@ -28,36 +28,41 @@ run_configs/<year>/<region>/<version>/<ecoregion>-bugnet-<year>-<version>/
 python main.py <path-to-one-of-these>
 ```
 
-## The "version" overload — why "v1" means two different things
+## The "version" overload — why "v1" used to mean two different things
 
-`--version` (and `param['version']`) is used for two unrelated purposes
-at once:
-
-1. **Which decline algorithm to run.** `cli_utils.normalize_parameters()`
-   derives `logic_version` from `version`'s leading digit, then sets
-   `configName = f"option{logic_version}"`. `pipeline_modes.py` reads
-   `configName` via `"3" in configName` to pick `declining_ltsd`
-   (LTSD path) vs `declining_snic` (SNIC path) - see
-   `docs/parameter_reference_template.py`'s `configName` entry for what
-   each path needs.
-2. **Which run-variant this is** — the folder-name suffix
-   (`run_configs/.../v1/`, `.../v3/`), used to keep sweeps/experiments
-   separate on disk.
-
-These are orthogonal (which algorithm vs. which run-iteration) but one
-CLI flag controls both, so a version label like `v1` unavoidably *looks*
+`--version` (and `param['version']`) used to be overloaded for two
+unrelated purposes at once: *which decline algorithm to run* and *which
+run-variant this is*. That's why a version label like `v1` used to look
 like a schema-generation label the way `legacy_parameters/2024/v1/` is -
-even though `run_configs/2025/r6/v1/`'s "v1" really means "SNIC path,"
+even though `run_configs/2025/r6/v1/`'s "v1" really meant "SNIC path,"
 nothing about schema era. This is exactly what let three 2025 SNIC-path
-configs go missing `LTSDname`/`snicName` (fixed 2026-08-15,
-`cli_utils.validate_parameters()` now catches it, and `batch_bugnet.sh`
-now auto-injects both keys when generating a non-LTSD config) - the
-naming made it easy to assume "v1" meant "just an older/simpler
-variant," not "a materially different pipeline path with its own
-required keys."
+configs go missing `LTSDname`/`snicName` in the first place - the naming
+made it easy to assume "v1" meant "just an older/simpler variant," not
+"a materially different pipeline path with its own required keys."
 
-Untangling this properly - an explicit `--decline-path {snic,ltsd}` flag
-independent of the run-variant label, and renaming `configName` values
-from `option1`/`option3` to something self-describing - is a larger,
-deferred change (it touches `pipeline_modes.py`'s path-selection logic
-and what future GEE assets get named). Not done as part of this pass.
+**Fixed 2026-08-15** with an explicit `param['decline_path']` key
+(`'snic'` or `'ltsd'`), decoupled from `version`:
+
+- `cli_utils.normalize_parameters()` sets `decline_path` from whatever a
+  config sets explicitly, falling back to the legacy `"3" in configName`
+  convention only when a config doesn't set it - so every existing
+  config file (`option1`/`option3`, no `decline_path` key) keeps
+  behaving exactly as before. `pipeline_modes.py` reads
+  `param["decline_path"]` directly instead of pattern-matching
+  `configName`.
+- `cli_utils.validate_parameters()` requires `LTSDname`/`snicName` based
+  on `decline_path == "snic"`, not a `configName` substring check.
+- `batch_bugnet.sh` gained `--decline-path {snic,ltsd}`: pass it to pick
+  the algorithm explicitly (this also switches generated `configName`
+  values to the self-describing `'snic'`/`'ltsd'` convention, changing
+  what *new* GEE assets get named - existing assets are untouched).
+  Omit it to keep the legacy `--version`-derived behavior byte-for-byte.
+
+**Not done**: there's still no actual `snic`-path template under
+`templates/` for `batch_bugnet.sh --decline-path snic` to generate from
+- `templates/v3/` is entirely LTSD-path. The three real 2025 SNIC-path
+configs (coast-range/williams-sound/columbia-mts) were hand-authored
+directly into `run_configs/`, bypassing the template flow, which is how
+they went unnoticed. Creating real templates for those regions using the
+new convention would change their asset names going forward, so that's
+deliberately left as a separate decision rather than done here.

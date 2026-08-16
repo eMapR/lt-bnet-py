@@ -19,6 +19,16 @@ YEARS_SPEC="2025"
 VERSION="v3"
 SHARED_VERSION=""
 
+# Decline algorithm: "" (default) keeps the legacy behavior - configName
+# is derived purely from VERSION's logic_version digit (f"option{N}"),
+# and pipeline_modes.py infers ltsd/snic from "3" in configName at
+# runtime. Set to "snic" or "ltsd" to pick the path explicitly,
+# independent of VERSION (VERSION then only labels the run-variant, e.g.
+# for a MAG/MMU sweep) - this also switches generated configs to the
+# self-describing configName convention (configName=decline_path) instead
+# of option1/option3. See docs/config-layout.md.
+DECLINE_PATH=""
+
 # Canonical templates live here:
 TEMPLATES_DIR="/data/vol/clarype/bugnet/lt-bnet-py/bugnet/templates/v3"
 
@@ -95,6 +105,13 @@ while [[ $# -gt 0 ]]; do
     --years) YEARS_SPEC="$2"; shift 2 ;;                       # e.g. --years 2015-2025 or 2015,2016
     --version) VERSION="$2"; shift 2 ;;
     --shared-version) SHARED_VERSION="$2"; shift 2 ;;
+    --decline-path)
+      DECLINE_PATH="$2"
+      [[ "$DECLINE_PATH" == "snic" || "$DECLINE_PATH" == "ltsd" ]] || {
+        echo "Bad --decline-path '$DECLINE_PATH' (must be snic or ltsd)" >&2
+        exit 1
+      }
+      shift 2 ;;
     --templates-dir) TEMPLATES_DIR="$2"; shift 2 ;;
     --param-root) PARAM_ROOT="$2"; shift 2 ;;
     --runner) PY_RUNNER="$2"; shift 2 ;;
@@ -205,10 +222,10 @@ materialize_base_cfg() {
     return 0
   fi
 
-  python3 - "$TEMPLATE_CANON" "$BASE_CFG" "$year" "$ltend" "$version_suffix" "$logic_version" "$shared_suffix" <<'PYBASE'
+  python3 - "$TEMPLATE_CANON" "$BASE_CFG" "$year" "$ltend" "$version_suffix" "$logic_version" "$shared_suffix" "$DECLINE_PATH" <<'PYBASE'
 import re, sys, os
 
-src, dst, year_s, ltend_s, version_s, logic_version_s, shared_version_s = sys.argv[1:8]
+src, dst, year_s, ltend_s, version_s, logic_version_s, shared_version_s, decline_path = sys.argv[1:9]
 year = int(year_s)
 ltend = int(ltend_s)
 version = version_s
@@ -234,23 +251,39 @@ txt = re.sub(
     txt,
     count=1,
 )
+if decline_path:
+    # --decline-path was passed explicitly: configName switches to the
+    # self-describing convention (matches decline_path itself) instead of
+    # option{N}, and decline_path is injected directly so cli_utils.py
+    # doesn't need to infer it from configName at all.
+    configName = decline_path
+else:
+    # Legacy behavior, unchanged: configName derived purely from VERSION's
+    # logic_version digit. cli_utils.normalize_parameters() infers
+    # decline_path from "3" in configName for files generated this way.
+    configName = f"option{logic_version}"
+
 txt = re.sub(
     r"""param\[\s*['"]configName['"]\s*\]\s*=\s*['"][^'"]+['"]""",
-    f"param['configName'] = 'option{logic_version}'",
+    f"param['configName'] = '{configName}'",
     txt,
     count=1,
 )
 
-# The SNIC decline path (configName without "3") reads
-# param['LTSDdir']+param['LTSDname'] and exports param['snicName'] -
-# modeling_utils.snic()/declining_snic() in the main repo. Every real
-# hand-written SNIC-path config sets LTSDname = fitted_img_p, but a
-# template written for the "3" (LTSD) path has no reason to have either
-# key - if --version ever selects a non-"3" logic_version against such a
-# template, inject them here so the generated config can't silently ship
-# without them (this is exactly how coast-range/williams-sound/
-# columbia-mts's 2025-v1 configs ended up missing both).
-if "3" not in logic_version and "param['LTSDname']" not in txt and 'param["LTSDname"]' not in txt:
+if decline_path:
+    if "param['decline_path']" not in txt and 'param["decline_path"]' not in txt:
+        txt = txt.rstrip() + f"\nparam['decline_path'] = '{decline_path}'\n"
+
+# The SNIC decline path reads param['LTSDdir']+param['LTSDname'] and
+# exports param['snicName'] - modeling_utils.snic()/declining_snic() in
+# the main repo. Every real hand-written SNIC-path config sets
+# LTSDname = fitted_img_p, but a template written for the LTSD path has
+# no reason to have either key - if this run selects the SNIC path
+# against such a template, inject them here so the generated config
+# can't silently ship without them (this is exactly how coast-range/
+# williams-sound/columbia-mts's 2025-v1 configs ended up missing both).
+selects_snic = (decline_path == "snic") if decline_path else ("3" not in logic_version)
+if selects_snic and "param['LTSDname']" not in txt and 'param["LTSDname"]' not in txt:
     txt = txt.rstrip() + (
         "\nparam['LTSDname'] = param['fitted_img_p']\n"
         "param['snicName'] = f\"SNIC_{param['configName']}_{param['target']}\"\n"
@@ -472,6 +505,7 @@ log "REGIONS=${REGIONS[*]}"
 log "YEARS=${YEARS[*]} (max=${MAX_YEAR_GLOBAL})"
 log "VERSION=${VERSION}"
 log "SHARED_VERSION=${SHARED_VERSION:-auto}"
+log "DECLINE_PATH=${DECLINE_PATH:-auto (derived from VERSION logic_version, legacy behavior)}"
 log "TEMPLATES_DIR=${TEMPLATES_DIR}"
 log "PARAM_ROOT=${PARAM_ROOT}"
 log "Runner=${PY_RUNNER}"

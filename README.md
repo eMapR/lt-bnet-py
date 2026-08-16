@@ -100,6 +100,10 @@ before fanning out the MAG/MMU variants in parallel, bounded by `--jobs`.
 
 See the flags block at the top of the script for all overrides
 (`--version`, `--shared-version`, `--templates-dir`, `--param-root`, etc.).
+`--decline-path {snic,ltsd}` picks the decline algorithm explicitly,
+independent of `--version` (which then only labels the run-variant) -
+omit it to keep the legacy behavior of deriving the decline path from
+`--version`'s logic-version digit. See `docs/config-layout.md`.
 
 ## Post-processing
 

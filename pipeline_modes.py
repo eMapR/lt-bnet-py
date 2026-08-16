@@ -106,7 +106,7 @@ def run_mode_1(param, deps):
     task_mask = create_forest_mask(param)
     wait_for_task(task_mask)
 
-    if "3" in param["configName"]:
+    if param["decline_path"] == "ltsd":
         task_decline = declining_ltsd(param)
         wait_for_task(task_decline)
     else:
@@ -231,7 +231,7 @@ def run_mode_2(param, deps):
     task_mask = create_forest_mask(param)
     wait_for_task(task_mask)
 
-    if "3" in param["configName"]:
+    if param["decline_path"] == "ltsd":
         task_decline = declining_ltsd(param)
         wait_for_task(task_decline)
     else:
