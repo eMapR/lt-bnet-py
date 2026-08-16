@@ -36,7 +36,15 @@ def rename_bands_by_year(image, index, start_year, end_year):
 ## 
 ###########################################################################################################################
 def get_fitted_stack(lt,prefix,parameters):
+	"""
+	Build a multi-index LandTrendr fitted-value stack for training or
+	predictor imagery. Assumes exactly 4 indices in parameters['fit'].
 
+	prefix == "fitted_training" selects a fixed 10-band window
+	(indices 3-12) per index; any other prefix selects the last 15
+	fitted years per index instead. Bands are named "{index}_ftv_{year}"
+	via rename_bands_by_year.
+	"""
 	start_year = parameters['composite_params']['start_date'].year
 	end_year = parameters['composite_params']['end_date'].year
 	selection = 15
@@ -92,6 +100,7 @@ def export_image(stack, params, assetDir, asset,scale=30, max_pixels=1e13):
 ## 
 ###########################################################################################################################
 def vectorize_disturbance(change_image,params):
+	"""Vectorize a change image's 'yod' band into disturbance polygons."""
 	disturbance_polygons = change_image.select('yod').selfMask().reduceToVectors(
 		reducer=ee.Reducer.countEvery(),
 		geometry=params['aoi'],
@@ -332,6 +341,7 @@ def attribute_with_cmonster_data(polygon_list,raster_path):
 ## 
 ###########################################################################################################################
 def export_feature_collection(fc,asset_id,asset_path):
+	"""Start (and return) an ee.batch export of fc to asset_path + asset_id."""
 	# Create the export task
 	fc_task = ee.batch.Export.table.toAsset(
 		collection=fc,
@@ -342,6 +352,11 @@ def export_feature_collection(fc,asset_id,asset_path):
 	return fc_task
 
 def export_feature_collection_hold(fc,asset_id,asset_path):
+	"""
+	Dead code, not called anywhere in this repo. Identical to
+	export_feature_collection but never calls task.start() (commented
+	out) - looks like an abandoned dry-run/build-only variant.
+	"""
 	# Create the export task
 	fc_task = ee.batch.Export.table.toAsset(
 		collection=fc,
@@ -394,7 +409,8 @@ def drop_null_features(fc, property_name):
 ## 
 ###########################################################################################################################
 def _mutate_predictor_variables_list(__predictor_variables):
-	__predictor_variables = __predictor_variables.filter(ee.Filter.neq('item', 'system:index')) 
+	"""Drop the 'system:index' property name from a predictor-variable list."""
+	__predictor_variables = __predictor_variables.filter(ee.Filter.neq('item', 'system:index'))
 	return __predictor_variables
 
 ###########################################################################################################################
@@ -483,6 +499,7 @@ def print_classified_features(self, classified_fc, limit=5):
 ###########################################################################################################################
 #### Function to convert GeoJSON features to EE Features
 def geojson_to_ee_feature(geojson,s_crs,t_crs):
+	"""Reproject each GeoJSON feature from s_crs to t_crs and collect into an ee.FeatureCollection."""
 	features = []
 	for feature in geojson:
 		feature = reproject_geojson(feature, s_crs, t_crs)
@@ -529,6 +546,12 @@ def reproject_geojson(ft_geojson, src_epsg, target_epsg):
 ## 
 ###########################################################################################################################
 def process_feature(index, f_list, src_epsg, target_epsg):
+	"""
+	Worker for feature_collection_to_geojson's multiprocessing pool:
+	pull the feature at `index` out of `f_list` (client-side, via
+	getInfo()), reproject it to target_epsg, and return it as a plain
+	GeoJSON feature dict.
+	"""
 	# Convert the feature from GEE to a Python dict
 	feature = ee.Feature(f_list.get(index)).getInfo()  # Get feature and convert to Python dict
 
@@ -546,6 +569,12 @@ def process_feature(index, f_list, src_epsg, target_epsg):
 ## 
 ###########################################################################################################################
 def feature_collection_to_geojson(fc, src_epsg, target_epsg):
+	"""
+	Pull an entire ee.FeatureCollection client-side and reproject every
+	feature from src_epsg to target_epsg in parallel (a 30-process
+	pool, one process_feature() call per feature index). Returns a
+	plain list of GeoJSON feature dicts, not a FeatureCollection dict.
+	"""
 	# Convert GEE FeatureCollection to a Python List object
 	f_list = fc.toList(fc.size())
 	# Create an empty GeoJSON structure
@@ -578,6 +607,12 @@ def feature_collection_to_geojson(fc, src_epsg, target_epsg):
 ###########################################################################################################################
 # Function to monitor the status of multiple tasks and update in place
 def monitor_tasks(tasks):
+	"""
+	Dead code, not called anywhere in this repo. Would block, printing
+	a live-updating one-line status for a list of ee.batch.Task objects
+	(skipping any bare 0 placeholders) until every task reaches a
+	terminal state, then print a final per-task summary.
+	"""
 	tasks = [i for i in tasks if i != 0]
 	while any([task.status()['state'] in ['READY', 'RUNNING'] for task in tasks]):
 		status_updates = []
@@ -608,6 +643,7 @@ def monitor_tasks(tasks):
 ## 
 ###########################################################################################################################
 def rasterize_polygons(feature_collection, property_name, scale, region):
+	"""Burn property_name into a raster (unmasked areas = 0), clipped to region."""
 	# Create an empty image to burn the values into
 	#empty_image = ee.Image()#.byte()
 	# Rasterize the polygons by reducing them to an image based on the property
@@ -625,6 +661,11 @@ def rasterize_polygons(feature_collection, property_name, scale, region):
 ## 
 ###########################################################################################################################
 def filter_by_mode_value(feature_collection, low, lowmed, medhigh, high):
+	"""
+	Keep only features whose 'classification' falls in (low, lowmed) or
+	(medhigh, high), merged into one collection - drops the middle band
+	(lowmed..medhigh) entirely.
+	"""
 	# Filter the collection by the 'classification' property
 	filtered_collection_low = feature_collection.filter(
 		ee.Filter.And(
@@ -651,6 +692,7 @@ def filter_by_mode_value(feature_collection, low, lowmed, medhigh, high):
 ## 
 ###########################################################################################################################
 def buffer_features(feature_collection, buffer_distance):
+	"""Buffer every feature's geometry in feature_collection by buffer_distance meters."""
 	# Define a function to buffer a single feature
 	def buffer_feature(feature):
 		# Buffer the geometry by the specified distance
@@ -670,6 +712,10 @@ def buffer_features(feature_collection, buffer_distance):
 ## 
 ###########################################################################################################################
 def list_and_delete_assets(asset_path):
+	"""
+	Interactive CLI helper: list every asset directly under asset_path
+	and prompt (y/n) to delete them all at once, or one at a time.
+	"""
 	# List the assets in the specified folder or collection
 	asset_list = ee.data.listAssets({'parent': asset_path})['assets']
 
@@ -704,6 +750,11 @@ def list_and_delete_assets(asset_path):
 
 # Function to make start and end dates for composite time stamps --------------------------------------
 def annual_window(start, end):
+    """
+    Dead code, not called anywhere in this repo, and broken as written:
+    references start_date/end_date names that aren't parameters or
+    locals of this function - would raise NameError if ever called.
+    """
     year_list = ee.List.sequence(start, end, 1)
     first_date = year_list.map(lambda e: ee.String(ee.Number(e).int()).cat(start_date))
     second_date = year_list.map(lambda e: ee.String(ee.Number(e).int()).cat(end_date))
@@ -712,21 +763,25 @@ def annual_window(start, end):
 
 # Filter a collection function
 def filter_collection(year, start_day, end_day, aoi):
+    """Filter the NASA HLS Landsat collection (HLSL30) by AOI, date window, and <30% cloud cover."""
     return ee.ImageCollection("NASA/HLS/HLSL30/v002") \
         .filterBounds(aoi) \
         .filterDate(f'{year}-{start_day}', f'{year}-{end_day}') \
         .filter(ee.Filter.lt('CLOUD_COVERAGE', 30))
 
 def get_sr_collection(year, start_day, end_day, aoi):
+    """Thin wrapper around filter_collection."""
     sr_collection = filter_collection(year, start_day, end_day, aoi)
     return sr_collection
 
 # Function to combine collections
 def get_combined_sr_collection(year, start_day, end_day, aoi):
+    """Thin wrapper around get_sr_collection (a no-op passthrough today - name implies it once merged multiple sensor collections)."""
     hls = get_sr_collection(year, start_day, end_day, aoi)
     return hls
 
 def b2_cloud_mask(image_collection):
+    """Mask pixels where the B2 band exceeds 0.02, as a cheap cloud proxy."""
     def apply_mask(image):
         cloudMask = image.select('B2').lt(0.02)
         return image.mask(cloudMask)
@@ -736,6 +791,11 @@ def b2_cloud_mask(image_collection):
 
 # Make a medoid composite with equal weight among indices
 def mean_mosaic(in_collection, dummy_collection):
+    """
+    Build a cloud-masked mean composite of in_collection, falling back
+    to dummy_collection if in_collection is empty (keeps a consistent
+    band structure downstream even for a year with no imagery).
+    """
     image_count = in_collection.toList(1).length()
     final_collection = ee.ImageCollection(ee.Algorithms.If(image_count.gt(0), in_collection, dummy_collection))
     final_collection = b2_cloud_mask(final_collection)
@@ -743,12 +803,18 @@ def mean_mosaic(in_collection, dummy_collection):
 
 # Function to apply medoid compositing function to a collection
 def build_mosaic(year, start_day, end_day, aoi, dummy_collection):
+    """Build one year's HLS mean-composite mosaic, scaled by 1000 and cast to uint16."""
     collection = get_combined_sr_collection(year, start_day, end_day, aoi)
     img = mean_mosaic(collection, dummy_collection).set('system:time_start', ee.Date.fromYMD(year, 8, 1).millis())
     return ee.Image(img).multiply(1000).toUint16()
 
 # Function to build annual mosaic collection
 def build_sr_collection(start_year, end_year, start_day, end_day, aoi):
+    """
+    Dead code, not called anywhere in this repo. Would build a
+    multi-year ImageCollection of annual HLS mosaics (one build_mosaic
+    call per year), each tagged with a 'composite_year' property.
+    """
     dummy_collection = ee.ImageCollection([ee.Image([0, 0, 0, 0, 0, 0]).mask(ee.Image(0))])
     imgs = []
     for i in range(start_year, end_year + 1):
@@ -757,6 +823,11 @@ def build_sr_collection(start_year, end_year, start_day, end_day, aoi):
     return ee.ImageCollection(imgs)
 
 def get_lt_last_seg_info(lt, idx):
+    """
+    Dead code, not called anywhere in this repo. Would extract the
+    final LandTrendr segment's stats (year-of-detection plus
+    mag/dur/preval/rate/dsnr) from a LandTrendr fit's segment array.
+    """
     segInfo = lt.get_segment_data('all', index_flip=True)
     endSeg = segInfo.arraySlice(1, -1, None, 1)
     
@@ -769,6 +840,12 @@ def get_lt_last_seg_info(lt, idx):
     return getLastSeg(endSeg)
 
 def lcms_forest_mask(start, end, param):
+    """
+    Build a boolean "was ever forest" mask: for each year from start
+    through the hardcoded LCMS end year (2024), test whether that
+    year's LCMS Land_Use band equals 3 (forest) for param['study_region'],
+    then OR all years together.
+    """
     dataset = ee.ImageCollection('USFS/GTAC/LCMS/v2024-10')
     ts = ee.List.sequence(start, 2024) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<HARDCODE TO END YEAR OF LCMS DATASET
     def query_year(yr):
@@ -784,6 +861,7 @@ def lcms_forest_mask(start, end, param):
 
 
 def generate_year_list(start_year, end_year, index):
+    """Build the list of "{index}_ftv_{year}" band names for start_year..end_year inclusive."""
     year_list = []
     for year in range(start_year, end_year + 1):
         year_list.append(f"{index}_ftv_{year}")
@@ -793,6 +871,11 @@ def generate_year_list(start_year, end_year, index):
 
 
 def filter_ads(agent, severity, defol, ads_col, all):
+    """
+    Dead code, not called anywhere in this repo. Would filter an ADS
+    FeatureCollection by some combination of agent/severity/defoliation
+    (DAMCODE/AGENTCODE), depending on which of severity/defol are set.
+    """
     if defol is None and severity is None:
         print("Mortality and defoliation not selected")
         return ads_col
@@ -818,6 +901,11 @@ def filter_ads(agent, severity, defol, ads_col, all):
         print("Not sure what happened")
 
 def agg_ads(startyear, focus_year, ads_col):
+    """
+    Dead code, not called anywhere in this repo. Would sum per-year
+    ADS DAMCODE pixel counts (startyear..focus_year) into one
+    self-masked aggregated image.
+    """
     start_year = startyear
     end_year = focus_year
 
@@ -853,6 +941,12 @@ def dNBR(lt, start, end, indx, ftvLt, roi):
 
 
 def snic_image(img):
+    """
+    Run GEE's SNIC segmentation on img (fixed size=5, compactness=1).
+    Output bands are named "<input_band>_mean" per input band, plus a
+    "clusters" band - see SNIC_decline_image for how those names get
+    consumed downstream.
+    """
     return ee.Algorithms.Image.Segmentation.SNIC(image=img, size=5, compactness=1)
 
 
@@ -917,13 +1011,19 @@ def SNIC_decline_image(param, min_years_declining=2):
 
 def decline_image(param):
     """
-    Parameters:
-        im (ee.Image): Input image.
-        std_end_year (int): Latest year in the image series.
-        indices (list): List of index names like ['nbr', 'tcg', 'tcw'].
-        thresholds (dict): Dict of thresholds per index, e.g., {'nbr': (75, 100)}.
-        logic_template (str): Logic string using placeholders, e.g., '{nbr} || ({tcg} && {tcw})'.
-        num_years (int): How many years back to include (default = 5).
+    Dead code, not called anywhere in this repo. This docstring
+    previously listed im/std_end_year/indices/thresholds/logic_template/
+    num_years as parameters, none of which match the actual signature
+    (just `param`) - left over from an earlier version of this function.
+
+    Would build a per-index decline expression from
+    param['decline_template'] and param['decline_thresholds'] (keyed by
+    UPPERCASE index names matching param['fit'], e.g. "TCB" - contrast
+    with the live LTSD_decline_score/SNIC_decline_image, which use fixed
+    lowercase keys 'tcb'/'tcg'/'tcw' instead), but the final return
+    statement ignores that built expression entirely and uses a
+    different, hardcoded TCG/TCW-only expression instead (see the
+    commented-out line above it for a third, even earlier variant).
     """
     im = ee.Image(param.get('sharedAssetDir', param['assetDir']) + param['fitted_img_p'])
     # Build band dictionary
@@ -950,6 +1050,27 @@ def decline_image(param):
     return im.mask(im.expression("((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
 
 def LTSD_decline_score(param, base_thresholds={'tcb': 70, 'tcg': 50, 'tcw': 50}, taper_step=10, min_years_declining=2, return_score=False):
+    """
+    The live decline scorer for the LTSD path (configName/decline_path
+    == "ltsd", the only decline algorithm every real historical run has
+    exercised end-to-end - see docs/config-layout.md). base_thresholds/
+    taper_step keyword defaults are unused in practice: both get
+    immediately overwritten from param['decline_thresholds']/
+    param['decline_step'].
+
+    For each of 4 consecutive year-pairs (oldest to newest, ending at
+    param['target']), tests whether TCG and TCW both declined by more
+    than a threshold that tapers linearly toward param['target'] (older
+    pairs need a bigger drop to count - "taper_step" per pair back).
+    TCB is computed but not used in the pass/fail test (see the
+    commented-out diff_tcb.And(...) line). decline_score is the count of
+    passing year-pairs (0-4).
+
+    If return_score is True, returns just the decline_score band.
+    Otherwise returns fitted_img_p (all bands) masked to pixels with
+    decline_score >= min_years_declining, plus decline_score appended
+    as a band.
+    """
     im = ee.Image(param.get('sharedAssetDir', param['assetDir']) + param['fitted_img_p'])
     std_end_year = param['target']
     base_thresholds = param['decline_thresholds']
@@ -999,6 +1120,12 @@ def LTSD_decline_score(param, base_thresholds={'tcb': 70, 'tcg': 50, 'tcw': 50},
 
 
 def get_training_points(recovery, disturbances, roi, referImage, ads_in_roi):
+    """
+    Dead code, not called anywhere in this repo. ads_in_roi is unused.
+    Would sample referImage at disturbances (labeled 1) and recovery
+    (labeled 0) point/polygon locations and merge them into one labeled
+    training FeatureCollection.
+    """
     extract_sample_down = referImage.sampleRegions(collection=disturbances, scale=30, geometries=True, tileScale=10)
     extract_sample_up = referImage.sampleRegions(collection=recovery, scale=30, geometries=True, tileScale=10)
     
@@ -1014,13 +1141,26 @@ def get_training_points(recovery, disturbances, roi, referImage, ads_in_roi):
 
 
 def get_ref_image(lt, ltstartYear, yer, fit, roi):
+    """
+    Dead code, not called anywhere in this repo. fit/roi are unused.
+    Would flatten LandTrendr's raw TCB fitted-value array band
+    (lt.data.select(['ftv_tcb_fit'])) into one band per year - a
+    different, lower-level API than the ltgee-wrapped
+    lt.get_fitted_data() used elsewhere in this file.
+    """
     tcb_years = generate_year_list(ltstartYear, yer,'tcb')
     fitted_tcb = lt.data.select(['ftv_tcb_fit']).arrayFlatten([tcb_years])
     return fitted_tcb
 
 
 def tasselCapMask(bnet):
-
+    """
+    Build a bright/non-forest mask (0 = masked out) by thresholding the
+    target year's TCB fitted band against bnet['brightness_value'] -
+    note that value is read and used as a STRING (concatenated
+    directly into the expression), so a non-string there raises a
+    TypeError at call time, not at param-load time.
+    """
     # Run the LandTrendr algorithm
     targetImage = ee.Image(bnet['LTSDdir']+bnet['fitted_img_p'])
     val = [item.upper() for item in bnet['fit'] if item.lower() == "tcb"]
@@ -1031,6 +1171,21 @@ def tasselCapMask(bnet):
     return tcb_mask
 
 def rename_img(img, target_year):
+    """
+    Positionally rename img's bands to a fixed 42-name scheme (leading
+    'clusters', 40 index/relative-year 'yr_<0-9>_<index>_mean' names,
+    trailing 'seeds') - img.select(img.bandNames(), [...]) matches by
+    order, not by name, so this silently mis-renames (or raises a
+    length-mismatch EEException) if img doesn't have exactly 42 bands
+    in this order. target_year is accepted but unused - the output
+    names are relative year-offsets, not the actual target year.
+
+    Only reachable via modeling_utils.proportion_calc/predict when
+    configName contains "2", which itself is only reached when
+    param['ADS_path']['on'] is true - no real run in git history sets
+    that, so this function is effectively unexercised in practice (see
+    docs/config-layout.md).
+    """
     yearTarget = str(target_year)
     yearOne = str(target_year - 1)
     yearTwo = str(target_year - 2)
@@ -1047,6 +1202,13 @@ def rename_img(img, target_year):
     ])
 
 def rename_img_opt3(img, target_year):
+    """
+    Same positional-rename approach as rename_img, but for a 40-band
+    scheme (no leading 'clusters' or trailing 'seeds') - used when
+    configName does NOT contain "2". Same "unexercised in practice"
+    caveat as rename_img applies (only reached when ADS_path['on'] is
+    true).
+    """
     yearTarget = str(target_year)
     yearOne = str(target_year - 1)
     yearTwo = str(target_year - 2)
@@ -1061,6 +1223,13 @@ def rename_img_opt3(img, target_year):
     ])
 
 def rename_ltsd_img(img, target_year):
+    """
+    Dead code, not called anywhere in this repo. A third positional
+    band-renaming scheme (46 bands: LTSD-suffixed values, plain
+    fitted values, and change-detection stats) distinct from both
+    rename_img and rename_img_opt3 - suggests an even earlier or
+    alternate naming convention that was never wired up.
+    """
     yearTarget = str(target_year)
     yearOne = str(target_year - 1)
     yearTwo = str(target_year - 2)
@@ -1080,6 +1249,11 @@ def rename_ltsd_img(img, target_year):
     ])
 
 def calc_prop(ads_data, kmeans_data):
+    """
+    Dead code, not called anywhere in this repo. Would compute, per key
+    in kmeans_data, the percentage ads_data[k] / kmeans_data[k] * 100
+    (-1 if ads_data has no entry for that key).
+    """
     def calculate_proportion(k):
         top = ads_data.getNumber(k) if ads_data.contains(k) else ee.Number(-1)
         bottom = kmeans_data.getNumber(k)
@@ -1088,6 +1262,13 @@ def calc_prop(ads_data, kmeans_data):
     return kmeans_data.map(calculate_proportion)
 
 def ltcalc(year, feat):
+    """
+    Dead code, not called anywhere in this repo. Would filter feat to
+    polygons with the given year-of-detection, then keep only those
+    that are long/thin (perimeter-to-area ratio > 20) or very large
+    (area > 9,500,000 sq units) - looks like a shape-based filter for
+    likely-artifact polygons.
+    """
     target = feat.filter(ee.Filter.eq('yod', year))
     target = target.map(lambda fe: fe.set('area', fe.area(1)))
     target = target.map(lambda fe: fe.set('perimeter', fe.perimeter(1)))
