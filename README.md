@@ -16,22 +16,27 @@ final polygons — all as GEE assets.
 
 ## Repo layout
 
+All Python source lives under `bugnet/` (added 2026-08-15 - previously
+flat at repo root; `batch_bugnet.sh`'s HPC defaults already assumed this
+layout, so this brings the checkout in line with where it actually runs).
+`tests/`, `docs/`, `batch_bugnet.sh`, and the env spec stay at repo root.
+
 | Path | Purpose |
 |---|---|
-| `main.py` | CLI entry point. Loads a parameter file, initializes EE, presents the mode menu, and wires the stage functions (from `disturbance_utils.py`/`modeling_utils.py`/`postprocess_utils.py`) into `build_mode_dependencies()` for `pipeline_modes.py` to call. |
-| `disturbance_utils.py` | Fitted-imagery and change-imagery creation (training + predictor), disturbance-polygon vectorization (with grid/bucket fallback splitting for large AOIs), attribution, and the classify → filter → buffer → rasterize chain. |
-| `pipeline_modes.py` | Orchestrates the stage functions into `run_mode_1` (full training + predictor run) and `run_mode_2` (predictor-only run against an existing trained classifier), plus `apply_public_read_acl`. |
-| `bnet.py` | Core GEE logic: fitted-stack construction, change vectorization, attribution against reference/cMonster data, classifier training/inference, decline scoring (LTSD/SNIC), masks, geometry helpers, asset cleanup. |
-| `modeling_utils.py` | Forest mask, SNIC/decline image, KMeans sampling/clustering, proportion calc, and final `predict()` (Random Forest classify) stage functions. |
-| `postprocess_utils.py` | Polygonizing the predicted raster, zonal stats, area/percent-affected fields, buffering bnet polygons (with bucketed reclassification fallback), reclassification prompts. |
-| `export_utils.py` | Interactive/​default export of finished assets to Google Drive or Cloud Storage; SHP-safe field-name sanitizing. |
-| `cli_utils.py` | Parameter-file loading (`load_parameters`), `normalize_parameters` (derives `assetDir`/`sharedAssetDir`/versioning from a param file), the mode-selection prompt (`gui`), and `walk_assets`. |
-| `batch_bugnet.sh` | Batch-generates per-year/per-variant parameter files from a template and runs `main.py` across an ecoregion × region × year × magnitude × MMU sweep, with bounded parallelism. |
-| `file-manager.py` | Standalone post-export script: organizes downloaded/exported files into a folder structure, merges chunked GeoTIFFs with `gdal_merge.py`, and writes metadata sidecars. |
-| `trashGEE.py` | Standalone CLI to recursively delete a GEE asset subtree (dry-run by default). |
-| `templates/v3/`, `templates/v1/` | Canonical per-ecoregion parameter templates used by `batch_bugnet.sh` to materialize run configs. `v3/` is the LTSD decline path; `v1/` (coast-range, williams-sound, columbia-mts) is the SNIC path - see `docs/config-layout.md`. |
-| `run_configs/` | Generated, run-specific parameter files (by year/region/version) - what `batch_bugnet.sh` writes and `main.py` actually runs. Was named `params_new/` before 2026-08-15. |
-| `legacy_parameters/` | Retired, hand-authored parameter files from before `batch_bugnet.sh` existed - some predate the current schema and won't load. Was named `parameters/` before 2026-08-15. See `docs/config-layout.md`. |
+| `bugnet/main.py` | CLI entry point. Loads a parameter file, initializes EE, presents the mode menu, and wires the stage functions (from `disturbance_utils.py`/`modeling_utils.py`/`postprocess_utils.py`) into `build_mode_dependencies()` for `pipeline_modes.py` to call. |
+| `bugnet/disturbance_utils.py` | Fitted-imagery and change-imagery creation (training + predictor), disturbance-polygon vectorization (with grid/bucket fallback splitting for large AOIs), attribution, and the classify → filter → buffer → rasterize chain. |
+| `bugnet/pipeline_modes.py` | Orchestrates the stage functions into `run_mode_1` (full training + predictor run) and `run_mode_2` (predictor-only run against an existing trained classifier), plus `apply_public_read_acl`. |
+| `bugnet/bnet.py` | Core GEE logic: fitted-stack construction, change vectorization, attribution against reference/cMonster data, classifier training/inference, decline scoring (LTSD/SNIC), masks, geometry helpers, asset cleanup. |
+| `bugnet/modeling_utils.py` | Forest mask, SNIC/decline image, KMeans sampling/clustering, proportion calc, and final `predict()` (Random Forest classify) stage functions. |
+| `bugnet/postprocess_utils.py` | Polygonizing the predicted raster, zonal stats, area/percent-affected fields, buffering bnet polygons (with bucketed reclassification fallback), reclassification prompts. |
+| `bugnet/export_utils.py` | Interactive/​default export of finished assets to Google Drive or Cloud Storage; SHP-safe field-name sanitizing. |
+| `bugnet/cli_utils.py` | Parameter-file loading (`load_parameters`), `normalize_parameters` (derives `assetDir`/`sharedAssetDir`/versioning from a param file), the mode-selection prompt (`gui`), and `walk_assets`. |
+| `batch_bugnet.sh` | Batch-generates per-year/per-variant parameter files from a template and runs `bugnet/main.py` across an ecoregion × region × year × magnitude × MMU sweep, with bounded parallelism. |
+| `bugnet/file-manager.py` | Standalone post-export script: organizes downloaded/exported files into a folder structure, merges chunked GeoTIFFs with `gdal_merge.py`, and writes metadata sidecars. |
+| `bugnet/trashGEE.py` | Standalone CLI to recursively delete a GEE asset subtree (dry-run by default). |
+| `bugnet/templates/v3/`, `bugnet/templates/v1/` | Canonical per-ecoregion parameter templates used by `batch_bugnet.sh` to materialize run configs. `v3/` is the LTSD decline path; `v1/` (coast-range, williams-sound, columbia-mts) is the SNIC path - see `docs/config-layout.md`. |
+| `bugnet/run_configs/` | Generated, run-specific parameter files (by year/region/version) - what `batch_bugnet.sh` writes and `bugnet/main.py` actually runs. Was named `params_new/` before 2026-08-15. |
+| `bugnet/legacy_parameters/` | Retired, hand-authored parameter files from before `batch_bugnet.sh` existed - some predate the current schema and won't load. Was named `parameters/` before 2026-08-15. See `docs/config-layout.md`. |
 | `logs/` | Historical run logs (text dumps of stdout). |
 | `lt-bnet-py.yml` | Conda environment spec (Python 3.12, Earth Engine API, geopandas, rasterio, scikit-learn, etc.). |
 
@@ -51,16 +56,16 @@ stage reads it, and how it interacts with `configName` (which picks
 between the SNIC-based and LTSD-based decline paths). This file is
 documentation, not a runnable config - see `docs/config-layout.md` for
 where the templates/configs you actually run from live
-(`templates/`/`run_configs/`, gitignored) and how they relate.
+(`bugnet/templates/`/`bugnet/run_configs/`, gitignored) and how they relate.
 
 ## Running a single job
 
 ```bash
-python main.py <path-to-parameter-file.py>
+python bugnet/main.py <path-to-parameter-file.py>
 ```
 
 The parameter file must define a module-level `param` dict (see
-`templates/v3/*-template.py` for the schema). `main.py` normalizes it via
+`bugnet/templates/v3/*-template.py` for the schema). `main.py` normalizes it via
 `cli_utils.normalize_parameters`, which derives:
 
 - `assetDir` — run-specific output folder: `projects/<project>/assets/<target>-v<version>/`
@@ -107,11 +112,11 @@ omit it to keep the legacy behavior of deriving the decline path from
 
 ## Post-processing
 
-- `file-manager.py --src <exported_dir> --dest <organized_dir>` sorts a raw
-  export dump into a per-run folder tree, merges chunked GeoTIFFs, and
+- `bugnet/file-manager.py --src <exported_dir> --dest <organized_dir>` sorts
+  a raw export dump into a per-run folder tree, merges chunked GeoTIFFs, and
   writes `METADATA.txt` sidecars.
-- `trashGEE.py --root <asset_path> [--delete] [--delete-containers]` removes
-  a GEE asset subtree; dry-run unless `--delete` is passed.
+- `bugnet/trashGEE.py --root <asset_path> [--delete] [--delete-containers]`
+  removes a GEE asset subtree; dry-run unless `--delete` is passed.
 
 ## Testing
 

@@ -3,9 +3,10 @@ Annotated reference for BugNet parameter files.
 
 This is NOT loaded by main.py - it's documentation. A real parameter file
 is a .py script that defines a module-level `param` dict (see any file
-under templates/ or run_configs/) and gets passed as
-`python main.py <path-to-that-file>`. See docs/config-layout.md for how
-templates/, run_configs/, and legacy_parameters/ relate to each other.
+under bugnet/templates/ or bugnet/run_configs/) and gets passed as
+`python bugnet/main.py <path-to-that-file>`. See docs/config-layout.md
+for how templates/, run_configs/, and legacy_parameters/ (all under
+bugnet/) relate to each other.
 
 Every key below was found by reading how it's actually consumed across
 main.py, cli_utils.py, pipeline_modes.py, disturbance_utils.py,

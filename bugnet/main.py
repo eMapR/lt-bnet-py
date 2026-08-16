@@ -187,7 +187,7 @@ def build_mode_dependencies():
 def main():
 
 	if len(sys.argv) != 2:
-		print("Usage: python main.py <parameter script path>")
+		print("Usage: python bugnet/main.py <parameter script path>")
 		sys.exit(1)
 
 	param_file = sys.argv[1]

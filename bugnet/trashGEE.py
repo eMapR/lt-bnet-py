@@ -13,16 +13,16 @@ SAFE DEFAULTS:
 
 Examples:
   # Dry run
-  python trashGEE.py --root projects/blue-mts-bugnet/assets/2024-v3/A_predictor_change_img_2024
+  python bugnet/trashGEE.py --root projects/blue-mts-bugnet/assets/2024-v3/A_predictor_change_img_2024
 
   # Actually delete contents (keeps containers by default)
-  python trashGEE.py --root projects/blue-mts-bugnet/assets/2024-v3/A_predictor_change_img_2024 --delete
+  python bugnet/trashGEE.py --root projects/blue-mts-bugnet/assets/2024-v3/A_predictor_change_img_2024 --delete
 
   # Delete contents + delete empty folders/collections (including root unless --keep-root)
-  python trashGEE.py --root projects/blue-mts-bugnet/assets/2024-v3/A_predictor_change_img_2024 --delete --delete-containers
+  python bugnet/trashGEE.py --root projects/blue-mts-bugnet/assets/2024-v3/A_predictor_change_img_2024 --delete --delete-containers
 
   # Explicit project (recommended on servers/HPC)
-  python trashGEE.py --root projects/blue-mts-bugnet/assets/2024-v3/A_predictor_change_img_2024 --project blue-mts-bugnet --delete
+  python bugnet/trashGEE.py --root projects/blue-mts-bugnet/assets/2024-v3/A_predictor_change_img_2024 --project blue-mts-bugnet --delete
 """
 
 from __future__ import annotations

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-_spec = importlib.util.spec_from_file_location("file_manager", _REPO_ROOT / "file-manager.py")
+_spec = importlib.util.spec_from_file_location("file_manager", _REPO_ROOT / "bugnet" / "file-manager.py")
 fm = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(fm)
 

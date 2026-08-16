@@ -1,13 +1,15 @@
 # Config layout
 
-Three gitignored directories hold parameter files. They're not peers —
-each has a different role:
+Three gitignored directories under `bugnet/` hold parameter files (all
+Python source and its config trees moved under `bugnet/` on 2026-08-15 -
+see the repo-layout table in the root README). They're not peers — each
+has a different role:
 
 | Directory | Role | Hand-edited? |
 |---|---|---|
-| `templates/` | Source of truth. One file per ecoregion (`templates/v3/blue-mts-template.py`, etc.), with placeholder `target`/`ltendYear`/`version`/`configName` values. | Yes — edit these when something structural changes. |
-| `run_configs/` | Generated output. `batch_bugnet.sh` reads a template and materializes real, run-ready parameter files here (one per year/region/version, plus one per mag/mmu variant). This is what you actually pass to `main.py`. | No — regenerate via `batch_bugnet.sh`, don't hand-edit (edits get silently overwritten on the next generation pass since `OVERWRITE_BASE`/`OVERWRITE_VARIANTS` default to on). |
-| `legacy_parameters/` | Retired. Hand-authored parameter files from before `batch_bugnet.sh` existed - one-off, no generation step. The oldest tier in here (`2024/v1/`) predates the current `main.py`/`cli_utils.py` schema entirely and will fail `cli_utils.validate_parameters()` if you try to run it - it's not a bug, it's genuinely incompatible. | Frozen history - don't add new files here. |
+| `bugnet/templates/` | Source of truth. One file per ecoregion (`bugnet/templates/v3/blue-mts-template.py`, etc.), with placeholder `target`/`ltendYear`/`version`/`configName` values. | Yes — edit these when something structural changes. |
+| `bugnet/run_configs/` | Generated output. `batch_bugnet.sh` reads a template and materializes real, run-ready parameter files here (one per year/region/version, plus one per mag/mmu variant). This is what you actually pass to `bugnet/main.py`. | No — regenerate via `batch_bugnet.sh`, don't hand-edit (edits get silently overwritten on the next generation pass since `OVERWRITE_BASE`/`OVERWRITE_VARIANTS` default to on). |
+| `bugnet/legacy_parameters/` | Retired. Hand-authored parameter files from before `batch_bugnet.sh` existed - one-off, no generation step. The oldest tier in here (`2024/v1/`) predates the current `main.py`/`cli_utils.py` schema entirely and will fail `cli_utils.validate_parameters()` if you try to run it - it's not a bug, it's genuinely incompatible. | Frozen history - don't add new files here. |
 
 Named `parameters/` and `params_new/` before 2026-08-15; renamed because
 neither name signaled which one was current, and `parameters/2024/v1/`'s
@@ -16,16 +18,16 @@ neither name signaled which one was current, and `parameters/2024/v1/`'s
 ## Flow
 
 ```
-templates/v3/<ecoregion>-template.py
+bugnet/templates/v3/<ecoregion>-template.py
         │  batch_bugnet.sh materializes: target, ltendYear, version,
         │  configName, decline_thresholds, bnet_polygon_mmu
         ▼
-run_configs/<year>/<region>/<version>/<ecoregion>-bugnet-<year>-<version>/
+bugnet/run_configs/<year>/<region>/<version>/<ecoregion>-bugnet-<year>-<version>/
         ├── <...>-config.py            (base, per year)
         └── <...>-mag<MAG>-mmu<MMU>.py (variant, per sweep point)
         │
         ▼
-python main.py <path-to-one-of-these>
+python bugnet/main.py <path-to-one-of-these>
 ```
 
 ## The "version" overload — why "v1" used to mean two different things
@@ -58,25 +60,25 @@ made it easy to assume "v1" meant "just an older/simpler variant," not
   what *new* GEE assets get named - existing assets are untouched).
   Omit it to keep the legacy `--version`-derived behavior byte-for-byte.
 
-**`templates/v1/` added 2026-08-15** for the three real SNIC-path
+**`bugnet/templates/v1/` added 2026-08-15** for the three real SNIC-path
 regions (coast-range, williams-sound, columbia-mts) - built from their
-now-fixed `run_configs/2025/r6/v1/*` files, keeping `configName='option1'`
-(the legacy convention, not the new self-describing one) deliberately:
-these three already have real GEE asset history under that naming, and
-switching to `configName='snic'` would produce different future asset
-names than what's already there. Verified by materializing each new
-template through `batch_bugnet.sh`'s embedded transform in legacy mode
-(`--version v1`, no `--decline-path`) and diffing against the real
-existing config for that region - only cosmetic differences (a comment,
-where `LTSDname`/`snicName` land in the file). `batch_bugnet.sh --ecos
-coast-range,williams-sound,columbia-mts --version v1 --templates-dir
-templates/v1 ...` now has a real template to generate from, closing the
-original gap (these three were hand-authored directly into
-`run_configs/`, bypassing the template flow, which is how they went
-unnoticed in the first place).
+now-fixed `bugnet/run_configs/2025/r6/v1/*` files, keeping
+`configName='option1'` (the legacy convention, not the new
+self-describing one) deliberately: these three already have real GEE
+asset history under that naming, and switching to `configName='snic'`
+would produce different future asset names than what's already there.
+Verified by materializing each new template through `batch_bugnet.sh`'s
+embedded transform in legacy mode (`--version v1`, no `--decline-path`)
+and diffing against the real existing config for that region - only
+cosmetic differences (a comment, where `LTSDname`/`snicName` land in the
+file). `batch_bugnet.sh --ecos coast-range,williams-sound,columbia-mts
+--version v1 --templates-dir bugnet/templates/v1 ...` now has a real
+template to generate from, closing the original gap (these three were
+hand-authored directly into `run_configs/`, bypassing the template flow,
+which is how they went unnoticed in the first place).
 
 New regions on the SNIC path going forward should use `--decline-path
 snic` (self-describing `configName`) instead of copying this `v1`
-convention - `templates/v1/` exists only to match the three regions'
-existing asset-naming history, not as the recommended pattern for new
-work.
+convention - `bugnet/templates/v1/` exists only to match the three
+regions' existing asset-naming history, not as the recommended pattern
+for new work.
