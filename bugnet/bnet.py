@@ -820,6 +820,63 @@ def build_sr_collection(start_year, end_year, start_day, end_day, aoi):
         imgs.append(tmp.set('composite_year', i).set('system:time_start', ee.Date.fromYMD(i, 8, 1).millis()))
     return ee.ImageCollection(imgs)
 
+def build_lt_params(param):
+    """
+    Build (lt_collection_params, lt_params) for LandTrendr from
+    param['platform'] - 'LS' (Landsat, default) or 'S2-10' (Sentinel-2,
+    10m). Both ltgee.LandsatComposite and ltgee.Sentinel2Composite accept
+    the same start_date/end_date/area_of_interest keys already assembled
+    in param['composite_params'], so either can be built from it directly.
+    Does not mutate param. run_params differs by platform - Sentinel-2's
+    tighter revisit cadence tolerates a stricter fit (recoveryThreshold/
+    bestModelProportion 0.95 vs 0.25/0.75, minObservationsNeeded 5 vs 6)
+    per the existing hand-tuned Sentinel-2 templates this was extracted
+    from (bugnet/templates/v3/s2-north-cascades-template.py).
+    """
+    platform = param.get('platform', 'LS')
+
+    if platform == 'S2-10':
+        sr_collection = Sentinel2Composite(**param['composite_params'])
+        run_params = {
+            'maxSegments': 6,
+            'spikeThreshold': 0.9,
+            'vertexCountOvershoot': 3,
+            'preventOneYearRecovery': True,
+            'recoveryThreshold': 0.95,
+            'pvalThreshold': 0.05,
+            'bestModelProportion': 0.95,
+            'minObservationsNeeded': 5,
+        }
+    elif platform == 'LS':
+        sr_collection = LandsatComposite(**param['composite_params'])
+        run_params = {
+            'maxSegments': 6,
+            'spikeThreshold': 0.9,
+            'vertexCountOvershoot': 3,
+            'preventOneYearRecovery': True,
+            'recoveryThreshold': 0.25,
+            'pvalThreshold': 0.05,
+            'bestModelProportion': 0.75,
+            'minObservationsNeeded': 6,
+        }
+    else:
+        raise NotImplementedError(
+            f"build_lt_params: unsupported param['platform'] = {platform!r}. "
+            "Only 'LS' (Landsat, default) and 'S2-10' (Sentinel-2) are implemented."
+        )
+
+    lt_collection_params = {
+        "sr_collection": sr_collection,
+        "index": param['index'],
+        "ftv_list": param['fit'],
+    }
+    lt_params = {
+        "lt_collection": lt_collection_params,
+        "run_params": run_params,
+    }
+    return lt_collection_params, lt_params
+
+
 def get_lt_last_seg_info(lt, idx):
     """
     Dead code, not called anywhere in this repo. Extracts the final
