@@ -686,8 +686,58 @@ def filter_by_mode_value(feature_collection, low, lowmed, medhigh, high):
 	return filtered_collection_out
 
 
+def remove_wfigs_fire_polygons(feature_collection, year_property='yod'):
+    """
+    Direct ground-truth veto: drops any feature from feature_collection
+    that spatially intersects a real WFIGS fire perimeter whose ignition
+    year matches the feature's own year_property (yod - year of
+    disturbance, already present on B1/B2 predictor polygons since
+    CreatePredictorDisturbancePolygons).
+
+    Exists to replace guesswork with ground truth for the one disturbance
+    cause WFIGS can actually confirm directly, instead of leaving fire
+    removal entirely to classify_features' decade-stale trained
+    classifier plus its hardcoded count>4000/mag>400 overrides, and
+    filter_by_mode_value's classification-code range filter (see that
+    function's docstring) - none of which look at real fire data.
+
+    WFIGS field names are Esri-truncated/deduplicated (not literal
+    English names) - "attr_Fir_7" was identified empirically as the
+    ignition/discovery-date equivalent; see create_forest_mask's
+    docstring in modeling_utils.py for how that was confirmed. Every
+    feature in feature_collection must already carry year_property
+    (raises via GEE if any don't).
+    """
+    wfigs = ee.FeatureCollection("projects/emaprlab-general/assets/WFIGS")
+
+    def add_fire_year(f):
+        return f.set('fire_year', ee.Date(ee.Number(f.get('attr_Fir_7'))).get('year'))
+
+    wfigs_yeared = wfigs.map(add_fire_year)
+
+    join_filter = ee.Filter.And(
+        ee.Filter.intersects(leftField='.geo', rightField='.geo'),
+        ee.Filter.equals(leftField=year_property, rightField='fire_year'),
+    )
+    # outer=True is required: ee.Join.saveAll defaults to an INNER join,
+    # which would drop every feature with zero fire matches (i.e. nearly
+    # everything) instead of keeping them with an empty matches list.
+    joined = ee.FeatureCollection(
+        ee.Join.saveAll(matchesKey='fire_matches', outer=True)
+        .apply(feature_collection, wfigs_yeared, join_filter)
+    )
+
+    original_props = feature_collection.first().propertyNames()
+
+    def add_match_count(f):
+        return f.set('fire_match_count', ee.List(f.get('fire_matches')).size())
+
+    no_fire_match = joined.map(add_match_count).filter(ee.Filter.eq('fire_match_count', 0))
+    return no_fire_match.select(original_props)
+
+
 ###########################################################################################################################
-## 
+##
 ###########################################################################################################################
 def buffer_features(feature_collection, buffer_distance):
 	"""Buffer every feature's geometry in feature_collection by buffer_distance meters."""

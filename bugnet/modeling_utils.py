@@ -12,23 +12,28 @@ def create_forest_mask(param, asset_exists):
     if exists:
         return
 
-    mtbs = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
+    # WFIGS (Wildland Fire Interagency Geospatial Services), replacing MTBS.
+    # Not a plain asset-property date field by name - "attr_Fir_7" was
+    # identified empirically (Esri shapefile export truncates/dedupes field
+    # names, e.g. multiple originals collide into attr_Fir_1..attr_Fir_9),
+    # confirmed as the ignition/discovery-date equivalent by checking it's
+    # consistently the earliest real date per fire, always preceding
+    # containment/control/out dates across a real sample (other candidate
+    # date fields hold the 1899-12-30 Esri null-date placeholder). No
+    # single numeric "Map_ID"-equivalent property is needed here - paint()
+    # rasterizes fire presence directly regardless of schema.
+    wfigs = ee.FeatureCollection("projects/emaprlab-general/assets/WFIGS")
     lcms_mask = bnet.lcms_forest_mask(2024, param["target"], param).clip(param["aoi"])
     tass_map = bnet.tasselCapMask(param)
     high_mag_change_img = param["ltchange"].gt(0).unmask().Not()
 
-    fires = mtbs.filter(
+    fires = wfigs.filter(
         ee.Filter.And(
-            ee.Filter.gte("Ig_Date", param["maskStartTime"]),
-            ee.Filter.lte("Ig_Date", param["maskEndTime"]),
+            ee.Filter.gte("attr_Fir_7", param["maskStartTime"]),
+            ee.Filter.lte("attr_Fir_7", param["maskEndTime"]),
         )
     )
-    fire_img = (
-        fires.reduceToImage(properties=["Map_ID"], reducer=ee.Reducer.mean())
-        .gt(0)
-        .unmask()
-        .Not()
-    )
+    fire_img = ee.Image().byte().paint(fires, 1).unmask().Not()
 
     mask = (
         lcms_mask.clip(param["aoi"])
@@ -57,19 +62,20 @@ def create_forest_mask_vis(param, asset_exists):
     if exists:
         return
 
-    mtbs = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
+    wfigs = ee.FeatureCollection("projects/emaprlab-general/assets/WFIGS")
     lcms = bnet.lcms_forest_mask(2024, param["target"], param).unmask(0).toInt()
     tass = bnet.tasselCapMask(param).unmask(0).toInt()
     high = param["ltchange"].gt(0).unmask(0).toInt()
     fire = (
-        mtbs.filter(
-            ee.Filter.And(
-                ee.Filter.gte("Ig_Date", param["maskStartTime"]),
-                ee.Filter.lte("Ig_Date", param["maskEndTime"]),
-            )
+        ee.Image().byte().paint(
+            wfigs.filter(
+                ee.Filter.And(
+                    ee.Filter.gte("attr_Fir_7", param["maskStartTime"]),
+                    ee.Filter.lte("attr_Fir_7", param["maskEndTime"]),
+                )
+            ),
+            1,
         )
-        .reduceToImage(["Map_ID"], ee.Reducer.mean())
-        .gt(0)
         .unmask(0)
         .toInt()
     )

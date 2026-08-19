@@ -403,6 +403,14 @@ def classify_polygons(param, asset_exists):
     labeled_fc = ee.FeatureCollection(param['assetDir_t'] + param['attributed_polygons_training'])
     unlabeled_fc = ee.FeatureCollection(asset_dir + param['attributed_polygons_predictor'])
 
+    # Opt-in (default off, preserves existing behavior when omitted):
+    # veto candidate polygons that spatiotemporally overlap a real WFIGS
+    # fire perimeter, removing them before classification instead of
+    # relying on classify_features'/filter_by_mode_value's indirect
+    # size/magnitude/classification-code heuristics to catch fire.
+    if param.get('wfigs_fire_veto', False):
+        unlabeled_fc = bnet.remove_wfigs_fire_polygons(unlabeled_fc)
+
     predictor_variables = unlabeled_fc.first().propertyNames()
     labeled_fc = bnet.drop_null_features(labeled_fc, predictor_variables).filter(ee.Filter.neq('mode_value', 160))
     unlabeled_fc = bnet.drop_null_features(unlabeled_fc, predictor_variables)
