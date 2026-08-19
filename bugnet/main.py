@@ -1,4 +1,5 @@
 import ee
+import json
 import sys
 import time
 import bnet as bnet
@@ -91,6 +92,76 @@ def ensure_output_asset_folders(param):
     ):
         if asset_dir:
             ensure_asset_folder(asset_dir)
+
+
+def shared_asset_fingerprint(param):
+    """
+    A small dict identifying what a shared-upstream-stage folder was
+    built for: target year, fit indices, platform, and the AOI's bounds
+    (not the AOI asset path - param['aoi'] is sometimes built inline via
+    a filter/computation rather than a plain asset reference, so bounds
+    is the one thing derivable from any FeatureCollection). One
+    getInfo() round-trip, done once at startup.
+    """
+    aoi_bounds = param["aoi"].geometry().bounds(1).coordinates().getInfo()
+    return {
+        "target": int(param["target"]),
+        "fit": ",".join(sorted(param["fit"])),
+        "platform": param.get("platform", "LS"),
+        "aoi_bounds": json.dumps(aoi_bounds),
+    }
+
+
+def validate_or_stamp_shared_assets(param, asset_exists):
+    """
+    Guard against param['shared_version'] pointing sharedAssetDir at a
+    folder that was actually built for a different AOI/year/fit/platform.
+    GEE gives no protection against this on its own - asset paths are
+    just strings, and FOLDER assets don't even support properties (only
+    IMAGE/TABLE do) - so this repo's own manifest asset,
+    "<sharedAssetDir>_shared_manifest", is the only thing enforcing it.
+
+    The first config to actually populate a given shared_version writes
+    the manifest here. Every later config pointed at that same
+    shared_version is checked against it and refused with a loud
+    RuntimeError on any mismatch, rather than silently building on top
+    of upstream assets computed for the wrong study area/year/indices.
+
+    No-op when sharedAssetDir isn't actually distinct from assetDir
+    (nothing being shared, nothing to guard).
+    """
+    shared_dir = param.get("sharedAssetDir", param["assetDir"])
+    if shared_dir == param["assetDir"]:
+        return
+
+    manifest_id = f"{shared_dir.rstrip('/')}/_shared_manifest"
+    fingerprint = shared_asset_fingerprint(param)
+
+    if not asset_exists(manifest_id):
+        # Export.table.toAsset refuses features with null geometry - this
+        # feature only carries properties, so the geometry itself is a
+        # meaningless placeholder point.
+        manifest_fc = ee.FeatureCollection([ee.Feature(ee.Geometry.Point([0, 0]), fingerprint)])
+        task = ee.batch.Export.table.toAsset(
+            collection=manifest_fc,
+            description="shared_manifest",
+            assetId=manifest_id,
+        )
+        task.start()
+        wait_for_task(task)
+        print(f"Stamped shared-asset manifest at {manifest_id}: {fingerprint}")
+        return
+
+    existing = ee.FeatureCollection(manifest_id).first().toDictionary().getInfo()
+    mismatches = {k: (existing.get(k), v) for k, v in fingerprint.items() if existing.get(k) != v}
+    if mismatches:
+        raise RuntimeError(
+            f"shared_version={param.get('shared_version')!r} points sharedAssetDir at "
+            f"{shared_dir}, but its manifest doesn't match this config's "
+            f"target/fit/platform/AOI: {mismatches}. Refusing to build on top of "
+            "upstream assets from a different run - use a different shared_version."
+        )
+    print(f"Shared-asset manifest at {manifest_id} matches this config.")
 
 ##############################################################################
 # delete assets
@@ -200,6 +271,7 @@ def main():
 
 	ee.Initialize(project=param["project_name"])
 	ensure_output_asset_folders(param)
+	validate_or_stamp_shared_assets(param, asset_exists)
 
 	mode = gui()
 
