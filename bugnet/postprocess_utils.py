@@ -284,10 +284,22 @@ def merge_buffer_buckets_and_finish(param, asset_ids, asset_exists):
     img = ee.Image(asset_dir + param["predicted"])
     fc_bnet = extract_zonal_stats(img, polygons_fc, "mode", "bnet_label", param)
 
+    # decline_probability on the exported Decline_* asset is x10000 (see
+    # declining_ltsd/declining_snic in modeling_utils.py - toInt16() export
+    # would otherwise truncate the true 0-1 value to 0), so divide back
+    # down before averaging. Confidence = mean probability across the
+    # polygon's own pixels, all of which already passed the
+    # probability_threshold mask upstream (see LTSD_decline_score/
+    # SNIC_decline_image), so expect values clustered near that threshold
+    # (e.g. [0.9, 1.0] at the default) rather than spanning the full range.
+    decline_probability = ee.Image(asset_dir + param["declineName"]) \
+        .select("decline_probability").divide(10000)
+    fc_bnet = extract_zonal_stats(decline_probability, fc_bnet, "mean", "confidence", param)
+
     def rebuild_feature(feature):
         feature = ee.Feature(feature)
         new_props = ee.Dictionary(calc_attri_fields(param))
-        return ee.Feature(feature.geometry()).set(new_props)
+        return ee.Feature(feature.geometry()).set(new_props).set("confidence", feature.get("confidence"))
 
     fc_attri = fc_bnet.map(rebuild_feature)
     result = add_area_and_pct_affected_by_pixel_count(

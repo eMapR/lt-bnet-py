@@ -122,6 +122,12 @@ def declining_snic(param, asset_exists):
         return
 
     decline = bnet.SNIC_decline_image(param).updateMask(param["Mask"])
+    # decline_probability is a continuous 0-1 value - toInt16() below would
+    # truncate every pixel to 0, so scale it up first (the exported asset's
+    # decline_probability band is x10000; divide back down after reading it).
+    decline = decline.addBands(
+        decline.select("decline_probability").multiply(10000), overwrite=True
+    )
     task_decline = ee.batch.Export.image.toAsset(
         image=decline.toInt16(),
         description=param["declineName"],
@@ -141,6 +147,12 @@ def declining_ltsd(param, asset_exists):
         return
 
     decline = bnet.LTSD_decline_score(param).updateMask(param["Mask"])
+    # decline_probability is a continuous 0-1 value - toInt16() below would
+    # truncate every pixel to 0, so scale it up first (the exported asset's
+    # decline_probability band is x10000; divide back down after reading it).
+    decline = decline.addBands(
+        decline.select("decline_probability").multiply(10000), overwrite=True
+    )
     task_decline = ee.batch.Export.image.toAsset(
         image=decline.toInt16(),
         description=param["declineName"],
@@ -297,7 +309,13 @@ def kmeans_image(param, asset_exists):
         return
 
     decline = ee.Image(param["assetDir"] + param["declineName"])
-    snic_bands = decline.bandNames().slice(1, -1)
+    # Feature bands = everything except the SNIC segmentation artifacts
+    # ('clusters'/'seeds', SNIC-path only) and the decline summary bands
+    # (LTSD path has neither leading nor trailing junk bands otherwise, so
+    # name-based exclusion is required here, not a positional slice).
+    snic_bands = decline.bandNames().removeAll(
+        ["clusters", "seeds", "decline_probability", "decline_score"]
+    )
     training = ee.Clusterer.wekaCascadeKMeans(
         param["num_of_clusters"],
         param["num_of_clusters"],
