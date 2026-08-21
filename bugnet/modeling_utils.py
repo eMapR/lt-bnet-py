@@ -12,28 +12,15 @@ def create_forest_mask(param, asset_exists):
     if exists:
         return
 
-    # WFIGS (Wildland Fire Interagency Geospatial Services), replacing MTBS.
-    # Not a plain asset-property date field by name - "attr_Fir_7" was
-    # identified empirically (Esri shapefile export truncates/dedupes field
-    # names, e.g. multiple originals collide into attr_Fir_1..attr_Fir_9),
-    # confirmed as the ignition/discovery-date equivalent by checking it's
-    # consistently the earliest real date per fire, always preceding
-    # containment/control/out dates across a real sample (other candidate
-    # date fields hold the 1899-12-30 Esri null-date placeholder). No
-    # single numeric "Map_ID"-equivalent property is needed here - paint()
-    # rasterizes fire presence directly regardless of schema.
-    wfigs = ee.FeatureCollection("projects/emaprlab-general/assets/WFIGS")
+    # Fire source selectable via param['fire_mask_source'] ('wfigs'
+    # default/current, or 'mtbs' to reproduce the pre-2026-08-19 original
+    # workflow exactly) - see bnet.get_fire_polygons/rasterize_fire_polygons.
     lcms_mask = bnet.lcms_forest_mask(2024, param["target"], param).clip(param["aoi"])
     tass_map = bnet.tasselCapMask(param)
     high_mag_change_img = param["ltchange"].gt(0).unmask().Not()
 
-    fires = wfigs.filter(
-        ee.Filter.And(
-            ee.Filter.gte("attr_Fir_7", param["maskStartTime"]),
-            ee.Filter.lte("attr_Fir_7", param["maskEndTime"]),
-        )
-    )
-    fire_img = ee.Image().byte().paint(fires, 1).unmask().Not()
+    fires = bnet.get_fire_polygons(param)
+    fire_img = bnet.rasterize_fire_polygons(param, fires).unmask().Not()
 
     mask = (
         lcms_mask.clip(param["aoi"])
@@ -62,23 +49,11 @@ def create_forest_mask_vis(param, asset_exists):
     if exists:
         return
 
-    wfigs = ee.FeatureCollection("projects/emaprlab-general/assets/WFIGS")
     lcms = bnet.lcms_forest_mask(2024, param["target"], param).unmask(0).toInt()
     tass = bnet.tasselCapMask(param).unmask(0).toInt()
     high = param["ltchange"].gt(0).unmask(0).toInt()
-    fire = (
-        ee.Image().byte().paint(
-            wfigs.filter(
-                ee.Filter.And(
-                    ee.Filter.gte("attr_Fir_7", param["maskStartTime"]),
-                    ee.Filter.lte("attr_Fir_7", param["maskEndTime"]),
-                )
-            ),
-            1,
-        )
-        .unmask(0)
-        .toInt()
-    )
+    fires = bnet.get_fire_polygons(param)
+    fire = bnet.rasterize_fire_polygons(param, fires).unmask(0).toInt()
 
     mask_code = (
         lcms.bitwiseOr(high.leftShift(1))
@@ -128,12 +103,16 @@ def declining_snic(param, asset_exists):
         return
 
     decline = bnet.SNIC_decline_image(param).updateMask(param["Mask"])
-    # decline_probability is a continuous 0-1 value - toInt16() below would
-    # truncate every pixel to 0, so scale it up first (the exported asset's
+    # Only the 'bayesian' decline_method produces a decline_probability
+    # band - the 'persistence'/'persistence_or_single_year' methods don't,
+    # so selecting it unconditionally would fail for those. It's a
+    # continuous 0-1 value and toInt16() below would truncate every pixel
+    # to 0, so scale it up first when it exists (the exported asset's
     # decline_probability band is x10000; divide back down after reading it).
-    decline = decline.addBands(
-        decline.select("decline_probability").multiply(10000), overwrite=True
-    )
+    if param.get("decline_method", "bayesian") == "bayesian":
+        decline = decline.addBands(
+            decline.select("decline_probability").multiply(10000), overwrite=True
+        )
     task_decline = ee.batch.Export.image.toAsset(
         image=decline.toInt16(),
         description=param["declineName"],
@@ -153,12 +132,16 @@ def declining_ltsd(param, asset_exists):
         return
 
     decline = bnet.LTSD_decline_score(param).updateMask(param["Mask"])
-    # decline_probability is a continuous 0-1 value - toInt16() below would
-    # truncate every pixel to 0, so scale it up first (the exported asset's
+    # Only the 'bayesian' decline_method produces a decline_probability
+    # band - the 'persistence'/'persistence_or_single_year' methods don't,
+    # so selecting it unconditionally would fail for those. It's a
+    # continuous 0-1 value and toInt16() below would truncate every pixel
+    # to 0, so scale it up first when it exists (the exported asset's
     # decline_probability band is x10000; divide back down after reading it).
-    decline = decline.addBands(
-        decline.select("decline_probability").multiply(10000), overwrite=True
-    )
+    if param.get("decline_method", "bayesian") == "bayesian":
+        decline = decline.addBands(
+            decline.select("decline_probability").multiply(10000), overwrite=True
+        )
     task_decline = ee.batch.Export.image.toAsset(
         image=decline.toInt16(),
         description=param["declineName"],

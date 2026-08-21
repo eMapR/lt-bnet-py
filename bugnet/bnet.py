@@ -736,6 +736,55 @@ def remove_wfigs_fire_polygons(feature_collection, year_property='yod'):
     return no_fire_match.select(original_props)
 
 
+def get_fire_polygons(param):
+    """
+    Real fire perimeters within param['maskStartTime']/maskEndTime, from
+    the source selected by param.get('fire_mask_source', 'wfigs'):
+    - 'wfigs' (default, current): projects/emaprlab-general/assets/WFIGS,
+      ignition-date field 'attr_Fir_7' - empirically identified, not a
+      literal name match (WFIGS field names are Esri-truncated/
+      deduplicated) - see create_forest_mask's docstring in
+      modeling_utils.py for how that was confirmed.
+    - 'mtbs' (the original pre-2026-08-19 source):
+      USFS/GTAC/MTBS/burned_area_boundaries/v1, ignition-date field
+      'Ig_Date'.
+    Kept selectable via config, at explicit user request, so the
+    pre-WFIGS forest-mask workflow can still be reproduced/compared
+    against exactly, not just the current default.
+    """
+    source = param.get('fire_mask_source', 'wfigs')
+    if source == 'wfigs':
+        fc = ee.FeatureCollection("projects/emaprlab-general/assets/WFIGS")
+        date_field = 'attr_Fir_7'
+    elif source == 'mtbs':
+        fc = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
+        date_field = 'Ig_Date'
+    else:
+        raise NotImplementedError(
+            f"get_fire_polygons: unsupported param['fire_mask_source'] = {source!r}. "
+            "Use 'wfigs' (default) or 'mtbs'."
+        )
+    return fc.filter(ee.Filter.And(
+        ee.Filter.gte(date_field, param["maskStartTime"]),
+        ee.Filter.lte(date_field, param["maskEndTime"]),
+    ))
+
+
+def rasterize_fire_polygons(param, fires):
+    """
+    Rasterize fires (from get_fire_polygons) to an unmasked-where-absent
+    boolean fire-presence image, source-appropriate per
+    param.get('fire_mask_source', 'wfigs'): 'mtbs' uses
+    reduceToImage(properties=["Map_ID"], reducer=mean).gt(0) - kept
+    byte-for-byte identical to the pre-2026-08-19 original so that
+    workflow reproduces exactly - while 'wfigs' (default) uses paint(),
+    which needs no schema-specific numeric property at all.
+    """
+    if param.get('fire_mask_source', 'wfigs') == 'mtbs':
+        return fires.reduceToImage(properties=["Map_ID"], reducer=ee.Reducer.mean()).gt(0)
+    return ee.Image().byte().paint(fires, 1)
+
+
 ###########################################################################################################################
 ##
 ###########################################################################################################################
@@ -1094,13 +1143,14 @@ def decline_probability_to_class_band(decline_probability, n_classes=5):
                                .toInt().rename('decline_score')
 
 
-def SNIC_decline_image(param, noise_std=None, prior_disturbance=0.05, probability_threshold=0.9, return_score=False):
+def SNIC_decline_image(param, noise_std=None, prior_disturbance=0.05, probability_threshold=0.9,
+                        min_years_declining=2, single_year_multiplier=1.5, return_score=False):
     """
     Score decline on the SNIC-segmented predictor fitted stack
     (param['snicName']), mirroring LTSD_decline_score's year-over-year
-    Bayesian posterior logic but reading bands the way SNIC actually
-    names them instead of the fictional 'yr_<offset>_nbr_mean' convention
-    the old (pre-refactor) version of this function assumed.
+    logic but reading bands the way SNIC actually names them instead of
+    the fictional 'yr_<offset>_nbr_mean' convention the old (pre-refactor)
+    version of this function assumed.
 
     bnet.snic_image() runs ee.Algorithms.Image.Segmentation.SNIC on
     param['LTSDdir'] + param['LTSDname'], which every real parameter file
@@ -1113,43 +1163,48 @@ def SNIC_decline_image(param, noise_std=None, prior_disturbance=0.05, probabilit
     segmented image's bands are "TCG_ftv_2020_mean" etc., plus a
     "clusters" band.
 
-    Like LTSD_decline_score's own hardcoded expression, this only tests
-    TCG/TCW (not TCB) - and unlike the pre-refactor version, it doesn't
-    reference NBR, rate, or dur: rate/dur are LandTrendr change-detection
-    stats that are never merged into fitted_img_p, so no band on this
-    image could ever satisfy them.
+    Only tests TCG/TCW (not TCB) - doesn't reference NBR, rate, or dur:
+    those are LandTrendr change-detection stats that are never merged
+    into fitted_img_p, so no band on this image could ever satisfy them.
 
-    For each of 4 consecutive year-pairs, each index's diff is converted
-    to a posterior probability of disturbance via bayes_decline_probability
-    (param['decline_thresholds']/param['decline_step'] still taper the
-    assumed disturbance-mean shift older-pairs-need-more, same as before -
-    just feeding a probability model now instead of a hard cutoff).
-    TCG/TCW probabilities for a pair are combined by multiplying
-    (independence assumption, mirrors the old .And()). The 4 pairs are
-    then combined via noisy-OR: decline_probability = 1 -
-    prod(1 - p_pair) - the probability that AT LEAST ONE pair shows real
-    disturbance. This one continuous combination naturally subsumes both
-    the old persistence count (many weak pairs compound toward 1) and the
-    old separate single-year-multiplier test (one very strong pair alone
-    drives it toward 1) - no separate min_years_declining/
-    single_year_multiplier machinery is needed any more.
+    param['decline_method'] selects which of three real historical
+    scoring approaches to use (default 'bayesian', the live one as of
+    2026-08-19) - kept selectable via config, at explicit user request,
+    for generating comparison datasets against the currently-live method:
 
-    noise_std defaults to base_thresholds halved per index if not given -
-    an assumption standing in for real empirically-estimated interannual
-    noise, worth replacing with real per-region estimates if available.
-    prior_disturbance is the assumed base rate of real disturbance.
-    probability_threshold is only used to build the backward-compatible
-    boolean mask on the returned image (declining pixels only, for
-    downstream KMeans/clustering) - decline_probability itself is never
-    hard-thresholded internally. A quantized 'decline_score' band
-    (decline_probability_to_class_band, 0-4) is also appended purely so
-    modeling_utils.build_kmeans_sample's stratifiedSample(classBand=
-    "decline_score", ...) call still has a discrete band to stratify on -
-    a raw float band would give it near-unique strata per pixel.
+    - 'bayesian': each pair's TCG/TCW diff becomes a posterior
+      probability via bayes_decline_probability (param['decline_thresholds']/
+      param['decline_step'] still taper the assumed disturbance-mean
+      shift older-pairs-need-more, now feeding a probability model
+      instead of a hard cutoff). TCG/TCW combine by multiplying
+      (independence, mirrors the old .And()); the 4 pairs combine via
+      noisy-OR: decline_probability = 1 - prod(1 - p_pair). Returns a
+      continuous decline_probability band (0-1, never hard-thresholded
+      internally) plus a quantized decline_score companion band (0-4,
+      decline_probability_to_class_band) purely so
+      modeling_utils.build_kmeans_sample's stratifiedSample(classBand=
+      "decline_score", ...) still has a discrete band to stratify on.
+      Masked at probability_threshold (default 0.9) for the non-
+      return_score output.
+    - 'persistence_or_single_year' (same-day predecessor of 'bayesian',
+      still hard-cutoff-based): hard tapered .gt() cutoff per pair, pixel
+      kept if decline_score (count of passing pairs) >= min_years_declining,
+      OR any single pair's diff exceeds an untapered, stricter
+      base_thresholds*single_year_multiplier test. Returns integer
+      decline_score (0-4) and boolean single_year_decline bands.
+    - 'persistence' (the original pre-2026-08-19 logic): same hard
+      tapered cutoff per pair, pixel kept only if decline_score >=
+      min_years_declining - no single-year handling at all, so a single
+      very strong disturbance year that doesn't persist into the next
+      pair could be missed entirely (this is the real gap the
+      'persistence_or_single_year'/'bayesian' methods were built to
+      close).
 
-    If return_score is True, returns just the continuous
-    decline_probability band (no masking, no decline_score band).
+    If return_score is True: 'bayesian' returns just decline_probability
+    (no masking); the two hard-threshold methods return just
+    decline_score (no masking).
     """
+    method = param.get('decline_method', 'bayesian')
     im = ee.Image(param["assetDir"] + param["snicName"])
     std_end_year = param['target']
     base_thresholds = param['decline_thresholds']
@@ -1165,31 +1220,73 @@ def SNIC_decline_image(param, noise_std=None, prior_disturbance=0.05, probabilit
         f'tcw_{i}': im.select(f'TCW_ftv_{years[i]}_mean') for i in range(1, 6)
     }
 
-    pair_probs = []
-    for i in range(1, 5):  # year-pairs: 1-2, 2-3, 3-4, 4-5
-        taper = taper_step * (4 - i)  # newest gets 0, oldest gets highest taper
+    if method == 'bayesian':
+        pair_probs = []
+        for i in range(1, 5):  # year-pairs: 1-2, 2-3, 3-4, 4-5
+            taper = taper_step * (4 - i)  # newest gets 0, oldest gets highest taper
+            t_tcg = base_thresholds['tcg'] - taper
+            t_tcw = base_thresholds['tcw'] - taper
 
-        t_tcg = base_thresholds['tcg'] - taper
-        t_tcw = base_thresholds['tcw'] - taper
+            diff_tcg = bands[f'tcg_{i}'].subtract(bands[f'tcg_{i + 1}'])
+            diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i + 1}'])
 
-        diff_tcg = bands[f'tcg_{i}'].subtract(bands[f'tcg_{i + 1}'])
-        diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i + 1}'])
+            p_tcg = bayes_decline_probability(diff_tcg, t_tcg, noise_std['tcg'], prior_disturbance)
+            p_tcw = bayes_decline_probability(diff_tcw, t_tcw, noise_std['tcw'], prior_disturbance)
+            pair_probs.append(p_tcg.multiply(p_tcw))
 
-        p_tcg = bayes_decline_probability(diff_tcg, t_tcg, noise_std['tcg'], prior_disturbance)
-        p_tcw = bayes_decline_probability(diff_tcw, t_tcw, noise_std['tcw'], prior_disturbance)
-        pair_probs.append(p_tcg.multiply(p_tcw))
+        not_declining = ee.Image(1).subtract(pair_probs[0])
+        for p in pair_probs[1:]:
+            not_declining = not_declining.multiply(ee.Image(1).subtract(p))
+        decline_probability = ee.Image(1).subtract(not_declining).rename('decline_probability')
 
-    not_declining = ee.Image(1).subtract(pair_probs[0])
-    for p in pair_probs[1:]:
-        not_declining = not_declining.multiply(ee.Image(1).subtract(p))
-    decline_probability = ee.Image(1).subtract(not_declining).rename('decline_probability')
-
-    if return_score:
-        return decline_probability
-    else:
+        if return_score:
+            return decline_probability
         return im.updateMask(decline_probability.gte(probability_threshold)) \
                  .addBands(decline_probability) \
                  .addBands(decline_probability_to_class_band(decline_probability))
+
+    elif method in ('persistence', 'persistence_or_single_year'):
+        diffs = []
+        single_year_flags = []
+        for i in range(1, 5):  # year-pairs: 1-2, 2-3, 3-4, 4-5
+            taper = taper_step * (4 - i)  # newest gets 0, oldest gets highest taper
+            t_tcg = base_thresholds['tcg'] - taper
+            t_tcw = base_thresholds['tcw'] - taper
+
+            diff_tcg = bands[f'tcg_{i}'].subtract(bands[f'tcg_{i + 1}'])
+            diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i + 1}'])
+
+            diffs.append(diff_tcg.gt(t_tcg).And(diff_tcw.gt(t_tcw)))
+            if method == 'persistence_or_single_year':
+                single_year_flags.append(
+                    diff_tcg.gt(base_thresholds['tcg'] * single_year_multiplier)
+                    .And(diff_tcw.gt(base_thresholds['tcw'] * single_year_multiplier))
+                )
+
+        decline_score = diffs[0]
+        for d in diffs[1:]:
+            decline_score = decline_score.add(d)
+
+        if method == 'persistence_or_single_year':
+            single_year_decline = single_year_flags[0]
+            for f in single_year_flags[1:]:
+                single_year_decline = single_year_decline.Or(f)
+            is_declining = decline_score.gte(min_years_declining).Or(single_year_decline)
+        else:
+            is_declining = decline_score.gte(min_years_declining)
+
+        if return_score:
+            return decline_score.rename('decline_score')
+        result = im.updateMask(is_declining).addBands(decline_score.rename('decline_score'))
+        if method == 'persistence_or_single_year':
+            result = result.addBands(single_year_decline.rename('single_year_decline'))
+        return result
+
+    else:
+        raise NotImplementedError(
+            f"SNIC_decline_image: unsupported param['decline_method'] = {method!r}. "
+            "Use 'bayesian' (default), 'persistence_or_single_year', or 'persistence'."
+        )
 
 
 def decline_image(param):
@@ -1232,51 +1329,34 @@ def decline_image(param):
     #return im.mask(im.expression("((TCW_4 - TCW_5 < 200 ) && (TCW_4 - TCW_5 > 100 )) && ((TCG_4 - TCG_5 < 200 )&&(TCG_4 - TCG_5 > 100 )) || ((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
     return im.mask(im.expression("((TCG_3 - TCG_4 > 100) && (TCG_4 - TCG_5 > 100 )) || ((TCW_3 - TCW_4 > 100) && (TCW_4 - TCW_5 > 100))", band_dict))
 
-def LTSD_decline_score(param, base_thresholds={'tcb': 70, 'tcg': 50, 'tcw': 50}, taper_step=10, noise_std=None, prior_disturbance=0.05, probability_threshold=0.9, return_score=False):
+def LTSD_decline_score(param, base_thresholds={'tcb': 70, 'tcg': 50, 'tcw': 50}, taper_step=10,
+                        noise_std=None, prior_disturbance=0.05, probability_threshold=0.9,
+                        min_years_declining=2, single_year_multiplier=1.5, return_score=False):
     """
     The live decline scorer for the LTSD path (configName/decline_path
     == "ltsd", the only decline algorithm every real historical run has
     exercised end-to-end - see docs/config-layout.md). base_thresholds/
     taper_step keyword defaults are unused in practice: both get
     immediately overwritten from param['decline_thresholds']/
-    param['decline_step'].
+    param['decline_step']. TCB is not used in any method here (this file
+    has never used it in the pass/fail test - see the historical
+    commented-out diff_tcb.And(...) reference in git history).
 
-    For each of 4 consecutive year-pairs (oldest to newest, ending at
-    param['target']), each index's diff (older minus newer, so positive
-    = decline) is converted to a posterior probability of disturbance via
-    bayes_decline_probability, using a threshold that still tapers
-    linearly toward param['target'] (older pairs need a bigger assumed
-    shift to reach the same probability - "taper_step" per pair back,
-    same mechanism as the old hard cutoff, just feeding a probability
-    model instead of a boolean test now). TCB is not used (this file has
-    never used it in the pass/fail test - see the historical
-    commented-out diff_tcb.And(...) reference this replaced).
+    param['decline_method'] selects which of three real historical
+    scoring approaches to use (default 'bayesian', the live one as of
+    2026-08-19) - kept selectable via config, at explicit user request,
+    for generating comparison datasets against the currently-live method.
+    See SNIC_decline_image's docstring for the full description of all
+    three ('bayesian' / 'persistence_or_single_year' / 'persistence') -
+    identical logic here, just reading fitted_img_p's un-suffixed band
+    names instead of SNIC's "_mean"-suffixed ones.
 
-    TCG/TCW probabilities for a pair are combined by multiplying
-    (independence assumption, mirrors the old .And()). The 4 pairs are
-    then combined via noisy-OR: decline_probability = 1 -
-    prod(1 - p_pair) - the probability that AT LEAST ONE pair shows real
-    disturbance. This one continuous combination naturally subsumes both
-    the old persistence count (many weak pairs compound toward 1) and the
-    old separate single-year-multiplier test (one very strong pair alone
-    drives it toward 1) - no separate min_years_declining/
-    single_year_multiplier machinery is needed any more.
-
-    noise_std defaults to base_thresholds halved per index if not given -
-    an assumption standing in for real empirically-estimated interannual
-    noise, worth replacing with real per-region estimates if available.
-    prior_disturbance is the assumed base rate of real disturbance.
-    probability_threshold is only used to build the backward-compatible
-    boolean mask on the returned image (declining pixels only, for
-    downstream KMeans/clustering) - decline_probability itself is never
-    hard-thresholded internally.
-
-    If return_score is True, returns just the continuous
-    decline_probability band (no masking). Otherwise returns
-    fitted_img_p (all bands) masked to pixels with decline_probability
-    >= probability_threshold, plus decline_probability appended as a
-    band.
+    If return_score is True: 'bayesian' returns just decline_probability
+    (no masking); the two hard-threshold methods return just
+    decline_score (no masking). Otherwise returns fitted_img_p (all
+    bands) masked and with the method's score band(s) appended.
     """
+    method = param.get('decline_method', 'bayesian')
     im = ee.Image(param.get('sharedAssetDir', param['assetDir']) + param['fitted_img_p'])
     std_end_year = param['target']
     base_thresholds = param['decline_thresholds']
@@ -1292,33 +1372,75 @@ def LTSD_decline_score(param, base_thresholds={'tcb': 70, 'tcg': 50, 'tcw': 50},
         f'tcw_{i}': im.select(f'TCW_ftv_{years[i]}') for i in range(1, 6)
     }
 
-    # Calculate a posterior disturbance probability per year-pair with tapered thresholds
-    pair_probs = []
-    for i in range(1, 5):  # year-pairs: 1-2, 2-3, 3-4, 4-5
-        taper = taper_step * (4 - i)  # newest gets 0, oldest gets highest taper
+    if method == 'bayesian':
+        # Calculate a posterior disturbance probability per year-pair with tapered thresholds
+        pair_probs = []
+        for i in range(1, 5):  # year-pairs: 1-2, 2-3, 3-4, 4-5
+            taper = taper_step * (4 - i)  # newest gets 0, oldest gets highest taper
+            t_tcg = base_thresholds['tcg'] - taper
+            t_tcw = base_thresholds['tcw'] - taper
 
-        t_tcg = base_thresholds['tcg'] - taper
-        t_tcw = base_thresholds['tcw'] - taper
+            diff_tcg = bands[f'tcg_{i}'].subtract(bands[f'tcg_{i+1}'])
+            diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i+1}'])
 
-        diff_tcg = bands[f'tcg_{i}'].subtract(bands[f'tcg_{i+1}'])
-        diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i+1}'])
+            p_tcg = bayes_decline_probability(diff_tcg, t_tcg, noise_std['tcg'], prior_disturbance)
+            p_tcw = bayes_decline_probability(diff_tcw, t_tcw, noise_std['tcw'], prior_disturbance)
+            pair_probs.append(p_tcg.multiply(p_tcw))
 
-        p_tcg = bayes_decline_probability(diff_tcg, t_tcg, noise_std['tcg'], prior_disturbance)
-        p_tcw = bayes_decline_probability(diff_tcw, t_tcw, noise_std['tcw'], prior_disturbance)
-        pair_probs.append(p_tcg.multiply(p_tcw))
+        # Combine pairs via noisy-OR: P(at least one pair shows real disturbance)
+        not_declining = ee.Image(1).subtract(pair_probs[0])
+        for p in pair_probs[1:]:
+            not_declining = not_declining.multiply(ee.Image(1).subtract(p))
+        decline_probability = ee.Image(1).subtract(not_declining).rename('decline_probability')
 
-    # Combine pairs via noisy-OR: P(at least one pair shows real disturbance)
-    not_declining = ee.Image(1).subtract(pair_probs[0])
-    for p in pair_probs[1:]:
-        not_declining = not_declining.multiply(ee.Image(1).subtract(p))
-    decline_probability = ee.Image(1).subtract(not_declining).rename('decline_probability')
-
-    if return_score:
-        return decline_probability
-    else:
+        if return_score:
+            return decline_probability
         return im.updateMask(decline_probability.gte(probability_threshold)) \
                  .addBands(decline_probability) \
                  .addBands(decline_probability_to_class_band(decline_probability))
+
+    elif method in ('persistence', 'persistence_or_single_year'):
+        diffs = []
+        single_year_flags = []
+        for i in range(1, 5):  # year-pairs: 1-2, 2-3, 3-4, 4-5
+            taper = taper_step * (4 - i)  # newest gets 0, oldest gets highest taper
+            t_tcg = base_thresholds['tcg'] - taper
+            t_tcw = base_thresholds['tcw'] - taper
+
+            diff_tcg = bands[f'tcg_{i}'].subtract(bands[f'tcg_{i+1}'])
+            diff_tcw = bands[f'tcw_{i}'].subtract(bands[f'tcw_{i+1}'])
+
+            diffs.append(diff_tcg.gt(t_tcg).And(diff_tcw.gt(t_tcw)))
+            if method == 'persistence_or_single_year':
+                single_year_flags.append(
+                    diff_tcg.gt(base_thresholds['tcg'] * single_year_multiplier)
+                    .And(diff_tcw.gt(base_thresholds['tcw'] * single_year_multiplier))
+                )
+
+        decline_score = diffs[0]
+        for d in diffs[1:]:
+            decline_score = decline_score.add(d)
+
+        if method == 'persistence_or_single_year':
+            single_year_decline = single_year_flags[0]
+            for f in single_year_flags[1:]:
+                single_year_decline = single_year_decline.Or(f)
+            is_declining = decline_score.gte(min_years_declining).Or(single_year_decline)
+        else:
+            is_declining = decline_score.gte(min_years_declining)
+
+        if return_score:
+            return decline_score.rename('decline_score')
+        result = im.updateMask(is_declining).addBands(decline_score.rename('decline_score'))
+        if method == 'persistence_or_single_year':
+            result = result.addBands(single_year_decline.rename('single_year_decline'))
+        return result
+
+    else:
+        raise NotImplementedError(
+            f"LTSD_decline_score: unsupported param['decline_method'] = {method!r}. "
+            "Use 'bayesian' (default), 'persistence_or_single_year', or 'persistence'."
+        )
 
 
 def get_training_points(recovery, disturbances, roi, referImage, ads_in_roi):
