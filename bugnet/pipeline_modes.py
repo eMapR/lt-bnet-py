@@ -152,6 +152,7 @@ def run_mode_2(param, deps):
     create_predictor_disturbance_polygons = deps["CreatePredictorDisturbancePolygons"]
     merge_selected_feature_collections = deps["merge_selected_feature_collections"]
     attribute_predictor_polygons = deps["attributePredictorPolygons"]
+    attribute_training_points = deps["attributeTrainingPoints"]
     classify_polygons = deps["classify_polygons"]
     filter_classes = deps["filter_classes"]
     buffer_classed_polygons = deps["buffer_classed_polygons"]
@@ -214,6 +215,10 @@ def run_mode_2(param, deps):
 
     task8 = attribute_predictor_polygons(param)
     wait_for_task(task8)
+
+    if param.get('classification_training', 'legacy_2012') == 'point_labels':
+        task8b = attribute_training_points(param)
+        wait_for_task(task8b)
 
     task9 = classify_polygons(param)
     wait_for_task(task9)

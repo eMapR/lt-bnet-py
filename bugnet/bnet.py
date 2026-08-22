@@ -406,19 +406,65 @@ def drop_null_features(fc, property_name):
 ###########################################################################################################################
 ## 
 ###########################################################################################################################
-def _mutate_predictor_variables_list(__predictor_variables):
-	"""Drop the 'system:index' property name from a predictor-variable list."""
+def _mutate_predictor_variables_list(__predictor_variables, __label_property=None):
+	"""
+	Drop 'system:index' and, if given, the classifier's own label property
+	from a predictor-variable list. The label property is normally already
+	absent from the unlabeled side's schema, but labeled_fc's own property
+	list (where the label really does vary) is a common source for
+	predictor_variables upstream - leaving it in would let the classifier
+	train a trivial split on the label itself, then apply that same split
+	structure at inference against whatever constant placeholder value the
+	unlabeled side happens to use for that property, actively degrading
+	real predictions rather than just being inert.
+	"""
 	__predictor_variables = __predictor_variables.filter(ee.Filter.neq('item', 'system:index'))
+	if __label_property is not None:
+		__predictor_variables = __predictor_variables.filter(ee.Filter.neq('item', __label_property))
 	return __predictor_variables
 
 ###########################################################################################################################
-## 
+##
+###########################################################################################################################
+def balance_training_classes(labeled_fc, label_property):
+	"""
+	Oversample minority classes (by exact duplication) so every class in
+	labeled_fc contributes roughly as many training examples as the
+	largest class. Earth Engine's Classifier API has no native per-
+	example/per-class weighting, so duplication is the practical way to
+	bias Random Forest's split search toward separating a class it would
+	otherwise treat as rare.
+
+	Verified live via 5-fold cross-validation (columbia-mts-bugnet 2026,
+	classification_training='point_labels'): raises insectDisease recall
+	53%->67% at a real precision cost (57%->45%), a deliberate recall-
+	favoring tradeoff accepted at explicit user request, since the
+	alternative (attributed_training_polygons_2012) has zero real
+	insectDisease examples to begin with.
+	"""
+	hist = labeled_fc.aggregate_histogram(label_property).getInfo()
+	if not hist:
+		return labeled_fc
+
+	target = max(hist.values())
+	balanced = None
+	for cls_str, n in hist.items():
+		cls_fc = labeled_fc.filter(ee.Filter.eq(label_property, int(cls_str)))
+		multiplier = max(1, round(target / n))
+		replicated = cls_fc
+		for _ in range(multiplier - 1):
+			replicated = replicated.merge(cls_fc)
+		balanced = replicated if balanced is None else balanced.merge(replicated)
+	return balanced
+
+###########################################################################################################################
+##
 ###########################################################################################################################
 def train_classifier(_labeled_fc,_label_property,_predictor_variables,_num_trees):
 	"""
 	Train a Random Forest classifier using the labeled data.
 	"""
-	_predictor_variables = _mutate_predictor_variables_list(_predictor_variables)
+	_predictor_variables = _mutate_predictor_variables_list(_predictor_variables, _label_property)
 
 	classifier = ee.Classifier.smileRandomForest(_num_trees).train(
 		features=_labeled_fc,
@@ -783,6 +829,156 @@ def rasterize_fire_polygons(param, fires):
     if param.get('fire_mask_source', 'wfigs') == 'mtbs':
         return fires.reduceToImage(properties=["Map_ID"], reducer=ee.Reducer.mean()).gt(0)
     return ee.Image().byte().paint(fires, 1)
+
+
+def sample_predictor_bands_at_geometry(param, geometry, yod, fitted_img_asset, change_img_asset):
+    """
+    Sample the same predictor bands attribute_with_reference_data computes
+    for real candidate polygons (mag/dur/preval/rate/dsnr, plus 4 years of
+    each non-index fit band renamed *_ftv_1..4, oldest-to-newest ending at
+    yod) - but at an arbitrary geometry/yod pair instead of a real B1/B2
+    candidate polygon. Mirrors that function's 'predictor' branch image
+    construction exactly (lowercased band names), just generalized to any
+    geometry.
+
+    fitted_img_asset/change_img_asset: full GEE asset paths for the real
+    predictor fitted/change images matching yod's year - deliberately
+    NOT derived from param['fitted_img_p']/param['predictor_change_img'],
+    since those name the CURRENT run's own target year, which can differ
+    from yod (e.g. attributing training points against an older, already-
+    real production year while building a brand new run for a different
+    year - confirmed a real case live: columbia-mts-bugnet's training
+    points are keyed to 2019, which lives in the separate, pre-existing
+    2019-v3/ folder, independent of whatever new folder the current run
+    builds).
+
+    Exists to attribute training points that have no matching candidate
+    polygon to inherit predictor values from: 'stable' (non-disturbance)
+    points, which are never real B1/B2 candidates in the first place, and
+    'disturbance' points the automated mag-threshold candidate generation
+    missed entirely - a real, valuable training signal (the "gap
+    condition" a real disturbance can fail to become a candidate at all).
+    """
+    in_img = ee.Image(fitted_img_asset).addBands(ee.Image(change_img_asset))
+    in_img = in_img.rename(in_img.bandNames().map(lambda s: ee.String(s).toLowerCase()))
+
+    yod = ee.Number(yod)
+    years = ee.List.sequence(yod.subtract(3), yod)
+    yrs_int = ee.List.sequence(1, 4)
+    other_indices = ee.List([item.lower() + '_ftv' for item in param['fit'] if item != param['index']])
+
+    def make_band_names(year):
+        year = ee.Number(year).format('%d')
+        return other_indices.map(lambda index: ee.String(index).cat('_').cat(year))
+
+    selected_bands = years.map(make_band_names).flatten()
+    selected_bands_int = yrs_int.map(make_band_names).flatten()
+    special_bands = ee.List(['mag', 'dur', 'preval', 'rate', 'dsnr'])
+    selected_bands = selected_bands.cat(special_bands)
+    selected_bands_int = selected_bands_int.cat(special_bands)
+
+    raster_filtered = in_img.select(selected_bands, selected_bands_int)
+    raster_values = raster_filtered.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=geometry,
+        scale=30,
+        maxPixels=1e13,
+    )
+
+    # mag/dur/preval/rate/dsnr (and by extension the whole selection here)
+    # are masked wherever LandTrendr found no change at all - reduceRegion
+    # then omits that key entirely rather than returning e.g. 0, which
+    # would otherwise silently corrupt the schema for exactly the
+    # examples (stable points, missed-disturbance points) this function
+    # exists to attribute. Default every expected key to 0 ("no
+    # measurable change detected"), overwritten by any real value found.
+    defaults = ee.Dictionary.fromLists(
+        selected_bands_int, ee.List.repeat(0, selected_bands_int.size())
+    )
+    return defaults.combine(raster_values, overwrite=True)
+
+
+def build_attributed_training_points(param, points, target_year, b2_asset, fitted_img_asset,
+                                      change_img_asset, label_property='labelId'):
+    """
+    Build a labeled training FeatureCollection from real analyst-
+    interpreted points (label_property values for 'disturbance'-state
+    points: 20=clearcut, 21=partialHarvest, 30=development, 40=fire,
+    50=insectDisease, which the 2012 set has zero real examples of) for
+    one region, at one target_year. Built at explicit user request to
+    refresh classify_polygons' stale 2012 training set with real,
+    current, comprehensive labels.
+
+    Only 'state'=='disturbance' points are used. The point dataset also
+    has 'state'=='stable' points labeled by land-cover type (developed/
+    cropland/grassShrub/treecover/water/wetland/barren) rather than
+    disturbance type - training one classifier across both label spaces
+    was tried and measured empirically to be a mistake: it collapses top-
+    class confidence (max ~68% even self-classifying the training points)
+    and misclassifies real B2 candidates - which already passed
+    LandTrendr's change-magnitude threshold and so are never actually
+    "stable" - as one of the stable land-cover classes ~14% of the time,
+    including nearly all of the already-scarce insectDisease examples
+    getting outvoted. B2 candidates are disturbance candidates by
+    construction, so distinguishing them from stable land cover isn't
+    this classifier's job.
+
+    b2_asset/fitted_img_asset/change_img_asset: full GEE asset paths to
+    target_year's real B2/fitted/change assets. Deliberately explicit
+    rather than derived from param['assetDir'] - target_year is the
+    training points' own year, which is very often a different, already-
+    real historical production year from whatever new run this is called
+    during (confirmed a real case live: columbia-mts-bugnet's training
+    points are keyed to 2019, in the pre-existing 2019-v3/ folder,
+    independent of whatever new folder the calling run itself builds).
+
+    Points that spatially intersect a real b2_asset candidate polygon
+    inherit that polygon's already-computed predictor properties directly
+    (mag/dur/preval/etc.) - simplest, and guarantees values identical to
+    what the real pipeline itself would compute. Points the automated
+    candidate generation missed get predictor bands sampled fresh via
+    sample_predictor_bands_at_geometry, at the point location, with
+    yod=target_year. area_km2/perimeter_km are set to 0 for these
+    point-sampled examples (a point has no real extent - a fabricated
+    buffer size would be an arbitrary, and arguably more misleading,
+    choice).
+
+    Returns a FeatureCollection with the same schema classify_polygons
+    expects on labeled_fc (mode_value + the predictor properties).
+    """
+    b2 = ee.FeatureCollection(b2_asset)
+
+    disturbance_pts = points.filter(ee.Filter.eq('state', 'disturbance'))
+
+    join_filter = ee.Filter.intersects(leftField='.geo', rightField='.geo', maxError=30)
+    joined = ee.FeatureCollection(
+        ee.Join.saveFirst(matchKey='match', outer=True).apply(disturbance_pts, b2, join_filter)
+    )
+    matched = joined.filter(ee.Filter.notNull(['match']))
+    unmatched_disturbance = joined.filter(ee.Filter.notNull(['match']).Not())
+
+    def from_match(f):
+        f = ee.Feature(f)
+        match = ee.Feature(f.get('match'))
+        return match.set('mode_value', f.get(label_property))
+
+    def from_fresh_sample(f):
+        f = ee.Feature(f)
+        values = sample_predictor_bands_at_geometry(
+            param, f.geometry(), target_year, fitted_img_asset, change_img_asset
+        )
+        return f.set(values).set({
+            'area_km2': 0,
+            'perimeter_km': 0,
+            'count': 1,
+            'yod': target_year,
+            'mode_value': f.get(label_property),
+        })
+
+    matched_out = matched.map(from_match)
+    unmatched_out = unmatched_disturbance.map(from_fresh_sample)
+
+    return matched_out.merge(unmatched_out)
 
 
 ###########################################################################################################################

@@ -391,6 +391,45 @@ def attributePredictorPolygons(param, asset_exists):
     return task
 
 
+def attributeTrainingPoints(param, asset_exists):
+    """
+    Build and export the point-based attributed training table - the
+    opt-in alternative to attributed_polygons_training (see
+    bnet.build_attributed_training_points's docstring). Requires:
+    - param['training_points_source']: full asset path to the real
+      analyst-interpreted points.
+    - param['training_points_year']: the year those points were
+      interpreted against.
+    - param['training_points_b2_asset']/['training_points_fitted_img_asset']/
+      ['training_points_change_img_asset']: full asset paths to that
+      year's real B2/fitted/change predictor data. Deliberately separate
+      from param['assetDir']/['fitted_img_p']/['predictor_change_img'] -
+      training_points_year is very often a different, already-real
+      historical production year from whatever new run this executes
+      during (a real case: columbia-mts-bugnet's training points are
+      keyed to 2019, living in the pre-existing 2019-v3/ folder,
+      independent of the new folder the current run itself builds).
+    - param['attributed_points_training']: output asset name, exported
+      under param['assetDir_t'] to match attributed_polygons_training's
+      own per-region storage convention.
+    """
+    exists = asset_exists(param["assetDir_t"] + param['attributed_points_training'])
+    if exists:
+        return
+
+    points = ee.FeatureCollection(param['training_points_source'])
+    gee_attributed_fc = bnet.build_attributed_training_points(
+        param,
+        points,
+        param['training_points_year'],
+        param['training_points_b2_asset'],
+        param['training_points_fitted_img_asset'],
+        param['training_points_change_img_asset'],
+    )
+    task = bnet.export_feature_collection(gee_attributed_fc, param['attributed_points_training'], param['assetDir_t'])
+    return task
+
+
 # ----------------------------------------------------------------------------
 # Classify polygons
 # ----------------------------------------------------------------------------
@@ -400,7 +439,24 @@ def classify_polygons(param, asset_exists):
     if exists:
         return
 
-    labeled_fc = ee.FeatureCollection(param['assetDir_t'] + param['attributed_polygons_training'])
+    # Opt-in (default 'legacy_2012', preserves existing behavior when
+    # omitted): 'point_labels' trains on real analyst-interpreted point
+    # data (see attributeTrainingPoints/bnet.build_attributed_training_
+    # points) instead of the stale, single 2012 polygon set - kept
+    # selectable via config, at explicit user request, for direct
+    # comparison against the existing training set rather than replacing
+    # it outright.
+    training_source = param.get('classification_training', 'legacy_2012')
+    if training_source == 'point_labels':
+        labeled_fc = ee.FeatureCollection(param['assetDir_t'] + param['attributed_points_training'])
+    elif training_source == 'legacy_2012':
+        labeled_fc = ee.FeatureCollection(param['assetDir_t'] + param['attributed_polygons_training'])
+    else:
+        raise NotImplementedError(
+            f"classify_polygons: unsupported param['classification_training'] = {training_source!r}. "
+            "Use 'legacy_2012' (default) or 'point_labels'."
+        )
+
     unlabeled_fc = ee.FeatureCollection(asset_dir + param['attributed_polygons_predictor'])
 
     # Opt-in (default off, preserves existing behavior when omitted):
@@ -414,6 +470,12 @@ def classify_polygons(param, asset_exists):
     predictor_variables = unlabeled_fc.first().propertyNames()
     labeled_fc = bnet.drop_null_features(labeled_fc, predictor_variables).filter(ee.Filter.neq('mode_value', 160))
     unlabeled_fc = bnet.drop_null_features(unlabeled_fc, predictor_variables)
+
+    # point_labels only (legacy_2012 stays exactly as before) - see
+    # bnet.balance_training_classes's docstring for the real cross-
+    # validated recall/precision tradeoff this represents.
+    if training_source == 'point_labels':
+        labeled_fc = bnet.balance_training_classes(labeled_fc, 'mode_value')
 
     trained_classifier = bnet.train_classifier(labeled_fc, "mode_value", predictor_variables, param['num_trees'])
     classified_fc = bnet.classify_features(unlabeled_fc, trained_classifier, param['class_heavy'])
@@ -431,7 +493,20 @@ def filter_classes(param, asset_exists):
     if exists:
         return
 
-    fc1 = bnet.filter_by_mode_value(ee.FeatureCollection(asset_dir + param['classified_fc']), 19, 41, 60, 90)
+    classified_fc = ee.FeatureCollection(asset_dir + param['classified_fc'])
+
+    # The (19, 41, 60, 90) numeric-range filter below is written for
+    # attributed_training_polygons_2012's own 'classification' code
+    # layout. point_labels uses a different, smaller code space (see
+    # bnet.build_attributed_training_points: 20=clearcut, 21=partial
+    # Harvest, 30=development, 40=fire, 50=insectDisease) - applying the
+    # legacy range to it silently drops insectDisease (50), so use an
+    # explicit allow-list instead when that's the active training source.
+    if param.get('classification_training', 'legacy_2012') == 'point_labels':
+        fc1 = classified_fc.filter(ee.Filter.inList('classification', [20, 21, 30, 40, 50]))
+    else:
+        fc1 = bnet.filter_by_mode_value(classified_fc, 19, 41, 60, 90)
+
     task = bnet.export_feature_collection(fc1, param['filtered_classes'], asset_dir)
     return task
 
