@@ -984,6 +984,57 @@ def build_attributed_training_points(param, points, target_year, b2_asset, fitte
 ###########################################################################################################################
 ##
 ###########################################################################################################################
+def add_terrain_road_predictors(fc):
+    """
+    Append 'elevation'/'slope'/'dist_to_road' predictor properties to
+    every feature in fc, zonal-mean reduced over each feature's own real
+    geometry (correct whether that's a real B2 candidate polygon, or a
+    point - training rows sampled fresh via sample_predictor_bands_at_
+    geometry, or matched rows that inherited a real B2 polygon's
+    geometry - reduceRegion over a Point at scale=30 just samples the one
+    overlapping pixel, same as every other predictor band already
+    computed this way).
+
+    point_labels-only: NOT wired into attribute_with_reference_data,
+    which is shared with legacy_2012 and must keep producing byte-
+    identical B2 output for that path (see build_attributed_training_
+    points' docstring). Adding new predictor columns there would
+    silently drop every legacy_2012 training row instead of adding a
+    feature, since drop_null_features has nothing to match on a property
+    attributed_training_polygons_2012 was never given.
+
+    Sources: USGS/SRTMGL1_003 (elevation + ee.Terrain.slope), and
+    distance in meters to the nearest TIGER/2016/Roads feature (capped
+    at searchRadius; defaulted to searchRadius itself - "at least this
+    far" - wherever a polygon falls outside it, rather than silently
+    dropping the property or defaulting to 0/"on a road").
+    """
+    search_radius = 50000
+
+    elevation = ee.Image('USGS/SRTMGL1_003').rename('elevation')
+    slope = ee.Terrain.slope(elevation).rename('slope')
+    roads = ee.FeatureCollection('TIGER/2016/Roads')
+    dist_to_road = roads.distance(searchRadius=search_radius, maxError=30).rename('dist_to_road')
+    terrain_road_img = elevation.addBands(slope).addBands(dist_to_road)
+
+    defaults = ee.Dictionary({'elevation': 0, 'slope': 0, 'dist_to_road': search_radius})
+
+    def add_props(f):
+        f = ee.Feature(f)
+        values = terrain_road_img.reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=f.geometry(),
+            scale=30,
+            maxPixels=1e13,
+        )
+        return f.set(defaults.combine(values, overwrite=True))
+
+    return fc.map(add_props)
+
+
+###########################################################################################################################
+##
+###########################################################################################################################
 def buffer_features(feature_collection, buffer_distance):
 	"""Buffer every feature's geometry in feature_collection by buffer_distance meters."""
 	# Define a function to buffer a single feature

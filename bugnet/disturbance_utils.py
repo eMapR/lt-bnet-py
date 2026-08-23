@@ -467,6 +467,13 @@ def classify_polygons(param, asset_exists):
     if param.get('wfigs_fire_veto', False):
         unlabeled_fc = bnet.remove_wfigs_fire_polygons(unlabeled_fc)
 
+    # point_labels only (legacy_2012 stays exactly as before) - see
+    # bnet.add_terrain_road_predictors's docstring for why this can't
+    # live in the shared attribute_with_reference_data step instead.
+    if training_source == 'point_labels':
+        labeled_fc = bnet.add_terrain_road_predictors(labeled_fc)
+        unlabeled_fc = bnet.add_terrain_road_predictors(unlabeled_fc)
+
     predictor_variables = unlabeled_fc.first().propertyNames()
     labeled_fc = bnet.drop_null_features(labeled_fc, predictor_variables).filter(ee.Filter.neq('mode_value', 160))
     unlabeled_fc = bnet.drop_null_features(unlabeled_fc, predictor_variables)
