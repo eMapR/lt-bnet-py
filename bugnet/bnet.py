@@ -1044,11 +1044,15 @@ def classify_features_with_confidence(_unlabeled_fc, _classifier, _class_values,
 	also gets a real 'confidence' property (top predicted-class
 	probability, 0-100) alongside 'classification' (the argmax class,
 	read off the same probability array - MULTIPROBABILITY returns
-	probabilities in ascending class-value order, confirmed empirically).
-	classify_features stays untouched for legacy_2012; this exists
-	because wfigs_confidence_tiebreak/probability_weighted_spatial_
-	smoothing need real per-feature confidence to decide what's worth
-	overriding, which a bare hard-label classify() never exposes.
+	probabilities in ascending class-value order, confirmed empirically),
+	plus 'runner_up_classification'/'runner_up_confidence' (the second-
+	place class/probability) - flag_review_polygons surfaces these so an
+	analyst reviewing a low-confidence call can see what the classifier's
+	next-best guess was, not just how unsure it was. classify_features
+	stays untouched for legacy_2012; this exists because wfigs_
+	confidence_tiebreak/probability_weighted_spatial_smoothing/
+	flag_review_polygons need real per-feature confidence, which a bare
+	hard-label classify() never exposes.
 
 	Mirrors classify_features' cast_fire count>4000 (and mag>400 in
 	heavy mode) overrides exactly, but also bumps confidence to 100 on
@@ -1063,10 +1067,17 @@ def classify_features_with_confidence(_unlabeled_fc, _classifier, _class_values,
 	def add_classification_and_confidence(f):
 		f = ee.Feature(f)
 		probs = ee.Array(f.get('probs')).toList()
-		max_prob = ee.Number(probs.sort().reverse().get(0))
-		best_index = probs.indexOf(max_prob)
-		best_class = ee.List(sorted_class_values).get(best_index)
-		return f.set({'classification': best_class, 'confidence': max_prob.multiply(100)})
+		sorted_desc = probs.sort().reverse()
+		max_prob = ee.Number(sorted_desc.get(0))
+		second_prob = ee.Number(sorted_desc.get(1))
+		best_class = ee.List(sorted_class_values).get(probs.indexOf(max_prob))
+		second_class = ee.List(sorted_class_values).get(probs.indexOf(second_prob))
+		return f.set({
+			'classification': best_class,
+			'confidence': max_prob.multiply(100),
+			'runner_up_classification': second_class,
+			'runner_up_confidence': second_prob.multiply(100),
+		})
 
 	classified = classified.map(add_classification_and_confidence)
 
@@ -1216,6 +1227,46 @@ def probability_weighted_spatial_smoothing(classified_fc, confidence_threshold=5
 		return f.set(classification_property, new_classification)
 
 	return joined.map(smooth).select(original_props)
+
+
+###########################################################################################################################
+##
+###########################################################################################################################
+def flag_review_polygons(classified_fc, class_thresholds, classification_property='classification',
+                          confidence_property='confidence'):
+	"""
+	Add a 'review_flag' property (1/0, plain integers rather than a
+	native boolean - ee.Filter.eq('x', True) was found live not to
+	reliably match a computed boolean property, so callers filtering on
+	this should use ee.Filter.eq('review_flag', 1)) marking every
+	feature whose confidence_property falls below its own predicted
+	class's threshold in class_thresholds (a dict keyed by the string
+	form of each class value, e.g. {'20': 66.0, '21': 54.9, ...}).
+
+	Thresholds should be class-specific, not one global cutoff - the
+	classes have genuinely different confidence ceilings (development
+	sits near 85% even when correct; insectDisease rarely clears 55%
+	even when correct), confirmed via live 5-fold CV on real training
+	points: for every class, mean confidence of held-out CORRECT
+	predictions was measurably higher than mean confidence of held-out
+	INCORRECT predictions for that same class, so the midpoint between
+	those two means is a real, data-derived per-class cutoff rather than
+	a guess. development and insectDisease separate weakly (a narrow
+	gap between correct/incorrect means), so expect the flag to be less
+	precise for those two classes specifically.
+
+	Meant to produce a QA export analysts can review alongside the main
+	product, not to gate or shrink it - the main classify_polygons
+	output should still include every candidate, flagged or not.
+	"""
+	def add_flag(f):
+		f = ee.Feature(f)
+		cls_key = ee.Number(f.get(classification_property)).format()
+		threshold = ee.Number(ee.Dictionary(class_thresholds).get(cls_key))
+		is_low_confidence = ee.Number(f.get(confidence_property)).lt(threshold)
+		return f.set('review_flag', ee.Algorithms.If(is_low_confidence, 1, 0))
+
+	return classified_fc.map(add_flag)
 
 
 ###########################################################################################################################

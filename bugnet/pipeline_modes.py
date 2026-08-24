@@ -154,6 +154,7 @@ def run_mode_2(param, deps):
     attribute_predictor_polygons = deps["attributePredictorPolygons"]
     attribute_training_points = deps["attributeTrainingPoints"]
     classify_polygons = deps["classify_polygons"]
+    export_review_flagged_polygons = deps["exportReviewFlaggedPolygons"]
     filter_classes = deps["filter_classes"]
     buffer_classed_polygons = deps["buffer_classed_polygons"]
     rasterize_classed_polygons = deps["rasterize_classed_polygons"]
@@ -222,6 +223,10 @@ def run_mode_2(param, deps):
 
     task9 = classify_polygons(param)
     wait_for_task(task9)
+
+    if param.get('classification_training', 'legacy_2012') == 'point_labels' and param.get('review_flag_thresholds'):
+        task9b = export_review_flagged_polygons(param)
+        wait_for_task(task9b)
 
     task10 = filter_classes(param)
     wait_for_task(task10)

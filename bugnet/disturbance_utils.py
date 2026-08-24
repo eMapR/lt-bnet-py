@@ -490,9 +490,14 @@ def classify_polygons(param, asset_exists):
     # when omitted): use per-feature classifier confidence to resolve
     # low-confidence calls instead of trusting the bare hard label -
     # see bnet.wfigs_confidence_tiebreak/probability_weighted_spatial_
-    # smoothing's docstrings.
+    # smoothing/flag_review_polygons' docstrings. review_flag_thresholds
+    # alone (without either override technique) is enough to turn this
+    # on too, since exportReviewFlaggedPolygons needs the same real
+    # 'confidence' property classify_features() never produces.
     use_confidence = training_source == 'point_labels' and (
-        param.get('wfigs_confidence_tiebreak', False) or param.get('probability_spatial_smoothing', False)
+        param.get('wfigs_confidence_tiebreak', False)
+        or param.get('probability_spatial_smoothing', False)
+        or bool(param.get('review_flag_thresholds'))
     )
     if use_confidence:
         class_values = labeled_fc.aggregate_array('mode_value').distinct().getInfo()
@@ -507,6 +512,36 @@ def classify_polygons(param, asset_exists):
         classified_fc = bnet.classify_features(unlabeled_fc, trained_classifier, param['class_heavy'])
 
     task = bnet.export_feature_collection(classified_fc, param['classified_fc'], asset_dir)
+    return task
+
+
+# ----------------------------------------------------------------------------
+# Export a QA layer of low-confidence classifications for analyst review
+# ----------------------------------------------------------------------------
+def exportReviewFlaggedPolygons(param, asset_exists):
+    """
+    Opt-in (default off, point_labels only): export the subset of
+    param['classified_fc'] (C1) whose confidence falls below its own
+    predicted class's threshold in param['review_flag_thresholds'] - a
+    dict of {class_value_as_string: threshold}, e.g. {'20': 66.0, '21':
+    54.9, '30': 82.6, '40': 71.0, '50': 49.9} (real values derived live
+    via 5-fold CV, see bnet.flag_review_polygons' docstring for how).
+
+    Supplementary QA export only - does not gate, filter, or otherwise
+    change the main classify_polygons/filter_classes/... product path,
+    which still carries every candidate regardless of confidence.
+    """
+    asset_dir = param.get("sharedAssetDir", param["assetDir"])
+    review_asset_name = param.get('review_flagged_polygons', f"review_flagged_polygons_{param['target']}")
+    exists = asset_exists(asset_dir + review_asset_name)
+    if exists:
+        return
+
+    classified_fc = ee.FeatureCollection(asset_dir + param['classified_fc'])
+    flagged = bnet.flag_review_polygons(classified_fc, param['review_flag_thresholds'])
+    flagged = flagged.filter(ee.Filter.eq('review_flag', 1))
+
+    task = bnet.export_feature_collection(flagged, review_asset_name, asset_dir)
     return task
 
 
