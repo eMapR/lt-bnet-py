@@ -1035,6 +1035,192 @@ def add_terrain_road_predictors(fc):
 ###########################################################################################################################
 ##
 ###########################################################################################################################
+def classify_features_with_confidence(_unlabeled_fc, _classifier, _class_values, heavy=0):
+	"""
+	point_labels variant of classify_features: classifies with
+	MULTIPROBABILITY output mode (chained onto the already-trained
+	classifier - verified live that setOutputMode works post-train,
+	no retraining needed) instead of a bare hard label, so every feature
+	also gets a real 'confidence' property (top predicted-class
+	probability, 0-100) alongside 'classification' (the argmax class,
+	read off the same probability array - MULTIPROBABILITY returns
+	probabilities in ascending class-value order, confirmed empirically).
+	classify_features stays untouched for legacy_2012; this exists
+	because wfigs_confidence_tiebreak/probability_weighted_spatial_
+	smoothing need real per-feature confidence to decide what's worth
+	overriding, which a bare hard-label classify() never exposes.
+
+	Mirrors classify_features' cast_fire count>4000 (and mag>400 in
+	heavy mode) overrides exactly, but also bumps confidence to 100 on
+	any such override - a hardcoded rule is by definition a confident
+	decision, and a stale low confidence value would leave the override
+	eligible to be re-flipped by downstream smoothing.
+	"""
+	sorted_class_values = sorted(_class_values)
+
+	classified = _unlabeled_fc.classify(_classifier.setOutputMode('MULTIPROBABILITY'), 'probs')
+
+	def add_classification_and_confidence(f):
+		f = ee.Feature(f)
+		probs = ee.Array(f.get('probs')).toList()
+		max_prob = ee.Number(probs.sort().reverse().get(0))
+		best_index = probs.indexOf(max_prob)
+		best_class = ee.List(sorted_class_values).get(best_index)
+		return f.set({'classification': best_class, 'confidence': max_prob.multiply(100)})
+
+	classified = classified.map(add_classification_and_confidence)
+
+	if heavy == 1:
+		def cast_fire(f):
+			count = ee.Number(f.get('count'))
+			mag = ee.Number(f.get('mag'))
+			f = ee.Feature(ee.Algorithms.If(
+				mag.gt(400),
+				f.set({"classification": 40, "confidence": 100}),
+				f
+			))
+			f = ee.Feature(ee.Algorithms.If(
+				count.gt(4000),
+				f.set({"classification": 40, "confidence": 100}),
+				f
+			))
+			return f
+	else:
+		def cast_fire(f):
+			count = ee.Number(f.get('count'))
+			f = ee.Feature(ee.Algorithms.If(
+				count.gt(4000),
+				f.set({"classification": 40, "confidence": 100}),
+				f
+			))
+			return f
+
+	classified = classified.map(cast_fire)
+	return classified.select(classified.first().propertyNames().removeAll(['probs']))
+
+
+###########################################################################################################################
+##
+###########################################################################################################################
+def wfigs_confidence_tiebreak(param, classified_fc, confidence_threshold=50, fire_class_value=40,
+                               classification_property='classification', confidence_property='confidence',
+                               year_property='yod'):
+	"""
+	Confidence-gated ground-truth override: for classified_fc features
+	below confidence_threshold that spatiotemporally overlap a real
+	WFIGS/MTBS fire perimeter (param['fire_mask_source']) for the
+	matching year (same match logic as remove_wfigs_fire_polygons),
+	override classification_property to fire_class_value and bump
+	confidence_property to 100. Confident predictions (>= threshold) are
+	left untouched even where they overlap a real fire perimeter, since
+	a strong non-fire signal (e.g. a genuine partial harvest inside an
+	old fire scar boundary) shouldn't be silently relabeled - this
+	exists to resolve exactly the low-confidence cases the classifier is
+	least sure about with real ground truth, not to override confident
+	ones.
+	"""
+	fires = get_fire_polygons(param)
+
+	# get_fire_polygons returns raw fire features with no year-comparable
+	# property of their own - WFIGS carries 'attr_Fir_7', MTBS carries
+	# 'Ig_Date', both raw millisecond timestamps (get_fire_polygons's own
+	# maskStartTime/maskEndTime filter already relies on that). Comparing
+	# classified_fc's year_property directly against a property fires
+	# doesn't have would silently match nothing rather than error -
+	# caught live: an early version of this function did exactly that.
+	date_field = 'attr_Fir_7' if param.get('fire_mask_source', 'wfigs') == 'wfigs' else 'Ig_Date'
+
+	def add_fire_year(f):
+		return f.set('fire_year', ee.Date(ee.Number(f.get(date_field))).get('year'))
+
+	fires_yeared = fires.map(add_fire_year)
+
+	join_filter = ee.Filter.And(
+		ee.Filter.intersects(leftField='.geo', rightField='.geo'),
+		ee.Filter.equals(leftField=year_property, rightField='fire_year'),
+	)
+	# outer=True is required: ee.Join.saveAll defaults to an INNER join,
+	# which would drop every feature with zero fire matches instead of
+	# keeping them with an empty matches list (see remove_wfigs_fire_
+	# polygons for the same pattern).
+	joined = ee.FeatureCollection(
+		ee.Join.saveAll(matchesKey='fire_matches', outer=True)
+		.apply(classified_fc, fires_yeared, join_filter)
+	)
+
+	original_props = classified_fc.first().propertyNames()
+
+	def maybe_override(f):
+		f = ee.Feature(f)
+		has_fire_match = ee.List(f.get('fire_matches')).size().gt(0)
+		is_low_confidence = ee.Number(f.get(confidence_property)).lt(confidence_threshold)
+		should_override = has_fire_match.And(is_low_confidence)
+		return ee.Feature(ee.Algorithms.If(
+			should_override,
+			f.set({classification_property: fire_class_value, confidence_property: 100}),
+			f
+		))
+
+	return joined.map(maybe_override).select(original_props)
+
+
+###########################################################################################################################
+##
+###########################################################################################################################
+def probability_weighted_spatial_smoothing(classified_fc, confidence_threshold=50, neighbor_distance=100,
+                                            class_values=(20, 21, 30, 40, 50),
+                                            classification_property='classification',
+                                            confidence_property='confidence'):
+	"""
+	For every feature below confidence_threshold, reassign
+	classification_property to whichever class_values entry has the
+	highest confidence-weighted vote among features within
+	neighbor_distance meters (a self-join, so a feature's own vote
+	always counts too) - real disturbances aren't usually single
+	isolated polygons, so a weak classifier call surrounded by confident
+	same-class neighbors is more likely right than the weak call alone.
+	Features at/above confidence_threshold are left untouched, and never
+	contribute less than their own real confidence to a neighbor's vote.
+	"""
+	self_join_filter = ee.Filter.withinDistance(leftField='.geo', rightField='.geo', distance=neighbor_distance)
+	joined = ee.FeatureCollection(
+		ee.Join.saveAll(matchesKey='neighbors', outer=True)
+		.apply(classified_fc, classified_fc, self_join_filter)
+	)
+
+	original_props = classified_fc.first().propertyNames()
+	sorted_class_values = ee.List(sorted(class_values))
+
+	def smooth(f):
+		f = ee.Feature(f)
+		own_confidence = ee.Number(f.get(confidence_property))
+		neighbors = ee.List(f.get('neighbors'))
+
+		def weighted_sum_for_class(cls):
+			cls = ee.Number(cls)
+
+			def contribution(n):
+				n = ee.Feature(n)
+				matches = ee.Number(n.get(classification_property)).eq(cls)
+				return ee.Number(ee.Algorithms.If(matches, n.get(confidence_property), 0))
+
+			return neighbors.map(contribution).reduce(ee.Reducer.sum())
+
+		class_scores = sorted_class_values.map(weighted_sum_for_class)
+		best_index = class_scores.indexOf(class_scores.reduce(ee.Reducer.max()))
+		best_class = sorted_class_values.get(best_index)
+
+		new_classification = ee.Algorithms.If(
+			own_confidence.lt(confidence_threshold), best_class, f.get(classification_property)
+		)
+		return f.set(classification_property, new_classification)
+
+	return joined.map(smooth).select(original_props)
+
+
+###########################################################################################################################
+##
+###########################################################################################################################
 def buffer_features(feature_collection, buffer_distance):
 	"""Buffer every feature's geometry in feature_collection by buffer_distance meters."""
 	# Define a function to buffer a single feature

@@ -485,7 +485,26 @@ def classify_polygons(param, asset_exists):
         labeled_fc = bnet.balance_training_classes(labeled_fc, 'mode_value')
 
     trained_classifier = bnet.train_classifier(labeled_fc, "mode_value", predictor_variables, param['num_trees'])
-    classified_fc = bnet.classify_features(unlabeled_fc, trained_classifier, param['class_heavy'])
+
+    # Opt-in (default off, point_labels only, preserves existing behavior
+    # when omitted): use per-feature classifier confidence to resolve
+    # low-confidence calls instead of trusting the bare hard label -
+    # see bnet.wfigs_confidence_tiebreak/probability_weighted_spatial_
+    # smoothing's docstrings.
+    use_confidence = training_source == 'point_labels' and (
+        param.get('wfigs_confidence_tiebreak', False) or param.get('probability_spatial_smoothing', False)
+    )
+    if use_confidence:
+        class_values = labeled_fc.aggregate_array('mode_value').distinct().getInfo()
+        classified_fc = bnet.classify_features_with_confidence(
+            unlabeled_fc, trained_classifier, class_values, param['class_heavy']
+        )
+        if param.get('wfigs_confidence_tiebreak', False):
+            classified_fc = bnet.wfigs_confidence_tiebreak(param, classified_fc)
+        if param.get('probability_spatial_smoothing', False):
+            classified_fc = bnet.probability_weighted_spatial_smoothing(classified_fc, class_values=class_values)
+    else:
+        classified_fc = bnet.classify_features(unlabeled_fc, trained_classifier, param['class_heavy'])
 
     task = bnet.export_feature_collection(classified_fc, param['classified_fc'], asset_dir)
     return task
