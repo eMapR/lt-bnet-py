@@ -732,6 +732,56 @@ def filter_by_mode_value(feature_collection, low, lowmed, medhigh, high):
 	return filtered_collection_out
 
 
+# Point-labels default exclusion set: development/clearcut/partial-harvest/
+# fire (see build_attributed_training_points for the code meanings) - the
+# competing high-magnitude agents the exclusion mask was always meant to
+# carve out, deliberately NOT including insectDisease (50). See
+# resolve_exclusion_classes' docstring for why this differs from the old
+# point_labels allow-list in disturbance_utils.filter_classes.
+DEFAULT_POINT_LABELS_EXCLUSION_CLASSES = [20, 21, 30, 40]
+
+
+def resolve_exclusion_classes(param):
+	"""
+	Decide which real 'classification' codes on classified_fc should be
+	carved out of the residual change space (filter_classes ->
+	buffer_classed_polygons -> rasterize_classed_polygons -> param['ltchange']
+	-> create_forest_mask's exclusion mask) as already-explained competing
+	disturbance agents - distinct from which codes are valid classifier
+	outputs at all (that's classified_fc/classify_polygons itself, plus
+	exportReviewFlaggedPolygons - neither reads this, both keep every
+	class regardless).
+
+	Pure Python, no GEE calls - testable without live credentials.
+
+	Returns (mode, classes):
+	- param['exclusion_classes'] set (either training source) -> ('explicit',
+	  list(param['exclusion_classes'])). An explicit override always wins.
+	- param['classification_training'] == 'point_labels', unset -> a new,
+	  fixed default: ('point_labels_default', DEFAULT_POINT_LABELS_EXCLUSION_CLASSES).
+	  This is the actual fix for the point-label masking bug: the previous
+	  behavior effectively excluded insectDisease (50) from the residual
+	  search space along with the real competing agents, because
+	  filter_classes' old allow-list ([20,21,30,40,50]) was written to stop
+	  insectDisease from being *dropped by filter_classes itself*, not
+	  realizing filter_classes' only real consumer downstream is exclusion-
+	  mask construction. 50 is deliberately absent from the new default.
+	- otherwise (legacy_2012, unset) -> ('legacy_range', None). Callers
+	  should fall back to filter_by_mode_value(classified_fc, 19, 41, 60, 90)
+	  unchanged rather than collapsing it to an explicit list here - that
+	  function's own (60, 90) band has only been confirmed empty against
+	  one real dataset (north-cascades-bugnet/2025-v3) this session;
+	  hardcoding a list would risk silently changing legacy behavior for
+	  any region where it's actually populated.
+	"""
+	explicit = param.get('exclusion_classes')
+	if explicit:
+		return 'explicit', list(explicit)
+	if param.get('classification_training', 'legacy_2012') == 'point_labels':
+		return 'point_labels_default', list(DEFAULT_POINT_LABELS_EXCLUSION_CLASSES)
+	return 'legacy_range', None
+
+
 def remove_wfigs_fire_polygons(feature_collection, year_property='yod'):
     """
     Direct ground-truth veto: drops any feature from feature_collection

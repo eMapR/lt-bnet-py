@@ -556,17 +556,18 @@ def filter_classes(param, asset_exists):
 
     classified_fc = ee.FeatureCollection(asset_dir + param['classified_fc'])
 
-    # The (19, 41, 60, 90) numeric-range filter below is written for
-    # attributed_training_polygons_2012's own 'classification' code
-    # layout. point_labels uses a different, smaller code space (see
-    # bnet.build_attributed_training_points: 20=clearcut, 21=partial
-    # Harvest, 30=development, 40=fire, 50=insectDisease) - applying the
-    # legacy range to it silently drops insectDisease (50), so use an
-    # explicit allow-list instead when that's the active training source.
-    if param.get('classification_training', 'legacy_2012') == 'point_labels':
-        fc1 = classified_fc.filter(ee.Filter.inList('classification', [20, 21, 30, 40, 50]))
-    else:
+    # See bnet.resolve_exclusion_classes' docstring for the full rationale.
+    # This decides which classes get carved out of the residual change
+    # space (the exclusion mask), which is NOT the same question as which
+    # classes are valid classifier output (classified_fc keeps all of them
+    # regardless, as does exportReviewFlaggedPolygons).
+    mode, exclusion_classes = bnet.resolve_exclusion_classes(param)
+    if mode == 'legacy_range':
+        print("filter_classes: legacy numeric-range exclusion, classification in (19,41) or (60,90)")
         fc1 = bnet.filter_by_mode_value(classified_fc, 19, 41, 60, 90)
+    else:
+        print(f"filter_classes: {mode} exclusion_classes={exclusion_classes}")
+        fc1 = classified_fc.filter(ee.Filter.inList('classification', exclusion_classes))
 
     task = bnet.export_feature_collection(fc1, param['filtered_classes'], asset_dir)
     return task
