@@ -46,12 +46,20 @@ class TestResolveExclusionClasses:
         assert mode == "explicit"
         assert classes == [20, 21, 30, 40, 50]
 
-    def test_explicit_empty_list_falls_back_to_default(self):
-        # An empty list is falsy - treated the same as "unset" rather than
-        # "explicitly exclude nothing", since a real config would never want
-        # a no-op exclusion mask silently disabling the mask entirely.
+    def test_explicit_empty_list_means_exclude_nothing(self):
+        # [] is present-and-not-None, so it's a real explicit override
+        # meaning "exclude nothing" - distinct from the key being absent
+        # or explicitly None, which both fall back to the compatibility
+        # default instead.
         mode, classes = bnet.resolve_exclusion_classes(
             {"classification_training": "point_labels", "exclusion_classes": []}
+        )
+        assert mode == "explicit"
+        assert classes == []
+
+    def test_explicit_none_falls_back_to_default(self):
+        mode, classes = bnet.resolve_exclusion_classes(
+            {"classification_training": "point_labels", "exclusion_classes": None}
         )
         assert mode == "point_labels_default"
         assert classes == [20, 21, 30, 40]

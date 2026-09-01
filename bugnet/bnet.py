@@ -755,8 +755,13 @@ def resolve_exclusion_classes(param):
 	Pure Python, no GEE calls - testable without live credentials.
 
 	Returns (mode, classes):
-	- param['exclusion_classes'] set (either training source) -> ('explicit',
-	  list(param['exclusion_classes'])). An explicit override always wins.
+	- param['exclusion_classes'] present and not None (either training
+	  source) -> ('explicit', list(param['exclusion_classes'])). An
+	  explicit override always wins, INCLUDING an explicit empty list -
+	  exclusion_classes=[] means "exclude nothing" (ee.Filter.inList
+	  against an empty list matches no feature), not "unset". Only a
+	  genuinely absent key or an explicit None falls through to the
+	  compatibility defaults below.
 	- param['classification_training'] == 'point_labels', unset -> a new,
 	  fixed default: ('point_labels_default', DEFAULT_POINT_LABELS_EXCLUSION_CLASSES).
 	  This is the actual fix for the point-label masking bug: the previous
@@ -775,7 +780,7 @@ def resolve_exclusion_classes(param):
 	  any region where it's actually populated.
 	"""
 	explicit = param.get('exclusion_classes')
-	if explicit:
+	if explicit is not None:
 		return 'explicit', list(explicit)
 	if param.get('classification_training', 'legacy_2012') == 'point_labels':
 		return 'point_labels_default', list(DEFAULT_POINT_LABELS_EXCLUSION_CLASSES)
