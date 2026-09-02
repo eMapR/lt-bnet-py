@@ -54,6 +54,15 @@ def dict_to_feature_collection(param, asset_exists):
     if exists:
         return None
 
+    # This is the "final" snapshot of the run - every current call site
+    # invokes this at the very end of run_mode_1/run_mode_2, after
+    # classify_polygons (and therefore resolved_predictor_variables, see
+    # bnet.build_run_manifest) has already had its chance to run. Distinct
+    # from the early "startup" manifest exported by main.export_run_manifest,
+    # which is written before any long-running stage and can't know this yet.
+    if "run_manifest" in param:
+        param["run_manifest"]["manifest_stage"] = "complete"
+
     flattened_data = flatten_dict(param)
     feature = ee.Feature(param["aoi"].first().geometry().centroid(1), flattened_data)
     feature_collection = ee.FeatureCollection([feature])

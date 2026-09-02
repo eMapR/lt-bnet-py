@@ -21,7 +21,7 @@ from disturbance_utils import (
 	merge_selected_feature_collections,
 	rasterize_classed_polygons,
 )
-from export_utils import dict_to_feature_collection, export_assets
+from export_utils import dict_to_feature_collection, export_assets, flatten_dict
 from modeling_utils import (
 	build_kmeans_sample,
 	create_forest_mask,
@@ -165,6 +165,47 @@ def validate_or_stamp_shared_assets(param, asset_exists):
         )
     print(f"Shared-asset manifest at {manifest_id} matches this config.")
 
+
+def export_run_manifest(param, asset_exists):
+    """
+    Stamp param['run_manifest'] (see bnet.build_run_manifest) to
+    "<assetDir>_run_manifest" immediately, before any long-running stage
+    runs - same one-feature-FeatureCollection pattern as
+    validate_or_stamp_shared_assets' _shared_manifest, deliberately under
+    assetDir (per-run) rather than sharedAssetDir (per-shared-upstream).
+
+    This is what actually fixes run-level provenance for a run that dies
+    mid-pipeline (e.g. the real columbia-mts-bugnet run stuck at 25/225
+    buffer-export shards for 4 days) - the existing parameter_file export
+    only happens at the very end of run_mode_1/run_mode_2, so a run that
+    never gets there previously left zero exported provenance.
+
+    Reuses export_utils.flatten_dict for the same reason
+    dict_to_feature_collection does: run_manifest is a flat dict of plain
+    str/bool/int values (see build_run_manifest's docstring), so no new
+    GEE-safety handling is needed beyond what flatten_dict already does.
+
+    Gated by asset_exists like every other export in this repo - a
+    relaunch after a partial failure won't fail on "cannot overwrite",
+    it just skips re-stamping (the manifest reflects the run's *startup*
+    configuration, which doesn't change across a resume).
+    """
+    manifest_id = f"{param['assetDir'].rstrip('/')}/_run_manifest"
+    if asset_exists(manifest_id):
+        print(f"Run manifest already exists at {manifest_id}, not re-stamping.")
+        return
+
+    props = flatten_dict(param["run_manifest"])
+    manifest_fc = ee.FeatureCollection([ee.Feature(ee.Geometry.Point([0, 0]), props)])
+    task = ee.batch.Export.table.toAsset(
+        collection=manifest_fc,
+        description="run_manifest",
+        assetId=manifest_id,
+    )
+    task.start()
+    wait_for_task(task)
+    print(f"Stamped run manifest at {manifest_id}")
+
 ##############################################################################
 # delete assets
 ##############################################################################
@@ -276,6 +317,10 @@ def main():
 	ee.Initialize(project=param["project_name"])
 	ensure_output_asset_folders(param)
 	validate_or_stamp_shared_assets(param, asset_exists)
+
+	param["run_manifest"] = bnet.build_run_manifest(param)
+	bnet.print_run_manifest(param["run_manifest"])
+	export_run_manifest(param, asset_exists)
 
 	mode = gui()
 

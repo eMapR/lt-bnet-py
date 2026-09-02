@@ -437,6 +437,32 @@ def classify_polygons(param, asset_exists):
     asset_dir = param.get("sharedAssetDir", param["assetDir"])
     exists = asset_exists(asset_dir + param['classified_fc'])
     if exists:
+        # Resumed run: this invocation never computes predictor_variables
+        # below, so param['run_manifest'] (if present) would otherwise be
+        # left claiming resolved_predictor_variables="pending" forever,
+        # wrongly implying it was never known rather than "not resolved
+        # *this* invocation". Try to recover the real list a prior
+        # invocation already exported; if that's not there either (e.g. a
+        # run that predates this feature), say so explicitly instead of
+        # guessing.
+        manifest = param.get('run_manifest')
+        if manifest is not None:
+            resolved_asset_id = manifest.get(
+                'resolved_predictors_asset',
+                f"{asset_dir}resolved_predictors_{param['target']}",
+            )
+            if asset_exists(resolved_asset_id):
+                try:
+                    raw = ee.FeatureCollection(resolved_asset_id).first().get('predictor_variables').getInfo()
+                    manifest['resolved_predictor_variables'] = raw
+                    manifest['resolved_predictor_variables_status'] = 'resolved_recovered'
+                except Exception as exc:
+                    print(f"classify_polygons: found {resolved_asset_id} but could not read it back: {exc}")
+                    manifest['resolved_predictor_variables'] = 'unresolved'
+                    manifest['resolved_predictor_variables_status'] = 'unresolved_error'
+            else:
+                manifest['resolved_predictor_variables'] = 'unresolved'
+                manifest['resolved_predictor_variables_status'] = 'skipped_classification_exists'
         return
 
     # Opt-in (default 'legacy_2012', preserves existing behavior when
@@ -477,6 +503,33 @@ def classify_polygons(param, asset_exists):
     predictor_variables = unlabeled_fc.first().propertyNames()
     labeled_fc = bnet.drop_null_features(labeled_fc, predictor_variables).filter(ee.Filter.neq('mode_value', 160))
     unlabeled_fc = bnet.drop_null_features(unlabeled_fc, predictor_variables)
+
+    # Best-effort metadata capture for bnet.build_run_manifest -
+    # deliberately NOT allowed to fail classification itself. This is an
+    # extra client-side getInfo() round-trip that nothing else in this
+    # function needs (predictor_variables stays a server-side ee.List for
+    # train_classifier regardless of whether this succeeds) - a transient
+    # network drop here (this environment has hit exactly that failure
+    # mode on long live runs before, see project_lt_bnet_py_branch_status
+    # memory) must not abort an otherwise-valid classification run.
+    manifest = param.get('run_manifest')
+    if manifest is not None:
+        try:
+            resolved_list = sorted(predictor_variables.getInfo())
+        except Exception as exc:
+            print(f"classify_polygons: could not resolve predictor_variables for the run manifest ({exc}); continuing classification anyway")
+            manifest['resolved_predictor_variables'] = 'unresolved'
+            manifest['resolved_predictor_variables_status'] = 'unresolved_error'
+        else:
+            resolved_str = ", ".join(resolved_list)
+            manifest['resolved_predictor_variables'] = resolved_str
+            manifest['resolved_predictor_variables_status'] = 'resolved'
+            resolved_fc = ee.FeatureCollection(
+                [ee.Feature(ee.Geometry.Point([0, 0]), {'predictor_variables': resolved_str})]
+            )
+            resolved_asset_name = f"resolved_predictors_{param['target']}"
+            if not asset_exists(asset_dir + resolved_asset_name):
+                bnet.export_feature_collection(resolved_fc, resolved_asset_name, asset_dir)
 
     # point_labels only (legacy_2012 stays exactly as before) - see
     # bnet.balance_training_classes's docstring for the real cross-

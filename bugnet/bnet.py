@@ -741,6 +741,175 @@ def filter_by_mode_value(feature_collection, low, lowmed, medhigh, high):
 DEFAULT_POINT_LABELS_EXCLUSION_CLASSES = [20, 21, 30, 40]
 
 
+def _v(profile, mag, wild_path_on, verified_from):
+	return {"profile": profile, "mag": mag, "wild_path_on": wild_path_on, "verified_from": verified_from}
+
+
+# Historical Version 1/2/3 lookup, keyed by (project_name, param['version'])
+# -- an axis the user explicitly distinguishes from param['version'] itself
+# (arbitrary run-disambiguation string) and from decline_method/decline_path
+# (methodological changes). See project_lt_bnet_py_versioning_naming memory
+# for the full narrative this was built from.
+#
+# Populated ONLY from combinations directly verified against real archived
+# configs in bugnet/legacy_parameters/2025/r6/{v1/old,v2/outdated,v3/old}/
+# (transcribed 2026-09-02 by grepping project_name/mag/wild_path out of one
+# representative file per project per version) - never inferred from a bare
+# "v1"/"v2"/"v3" folder-name digit, per explicit user instruction. A project/
+# version combination absent here is genuinely unverified, not "assumed V1".
+#
+# east-cascades-washington (real project_name eastern-cascades-wa-bugnet) is
+# a confirmed regional exception: mag 150 (not 250) at V1/V2, before joining
+# the standard mag 350 at V3 like every other region.
+HISTORICAL_PROFILES = {
+	("blue-mts-bugnet", "1"): _v("V1", 250, False, "legacy_parameters/2025/r6/v1/old/blue-mts-bugnet-2025-config-v1/"),
+	("blue-mts-bugnet", "2"): _v("V2", 250, True, "legacy_parameters/2025/r6/v2/outdated/blue-mts-bugnet-2025-config-v2/"),
+	("blue-mts-bugnet", "3"): _v("V3", 350, True, "legacy_parameters/2025/r6/v3/old/blue-mts-bugnet-2025-config-v3/"),
+
+	("cascades-bugnet", "1"): _v("V1", 250, False, "legacy_parameters/2025/r6/v1/old/cascades-bugnet-2025-config-v1/"),
+	("cascades-bugnet", "2"): _v("V2", 250, True, "legacy_parameters/2025/r6/v2/outdated/cascades-bugnet-2024-config-v2/"),
+	("cascades-bugnet", "3"): _v("V3", 350, True, "legacy_parameters/2025/r6/v3/old/cascades-bugnet-2024-config-v3/"),
+
+	("coast-range-bugnet", "2"): _v("V2", 250, True, "legacy_parameters/2025/r6/v2/coast-range-bugnet-2025-v2/"),
+	("coast-range-bugnet", "3"): _v("V3", 350, True, "legacy_parameters/2025/r6/v3/coast-range-bugnet-2025-v3/"),
+
+	("columbia-mts-bugnet", "1"): _v("V1", 250, False, "legacy_parameters/2025/r6/v1/old/columbia-mts-bugnet-2025-config-v1/"),
+	("columbia-mts-bugnet", "2"): _v("V2", 250, True, "legacy_parameters/2025/r6/v2/outdated/columbia-mts-bugnet-2024-config-v2/"),
+	("columbia-mts-bugnet", "3"): _v("V3", 350, True, "legacy_parameters/2025/r6/v3/old/columbia-mts-bugnet-2025-v3/"),
+
+	("eastern-cascades-bugnet", "1"): _v("V1", 250, False, "legacy_parameters/2025/r6/v1/old/east-cascades-oregon-bugnet-2025-config-v1/"),
+	("eastern-cascades-bugnet", "2"): _v("V2", 250, True, "legacy_parameters/2025/r6/v2/outdated/east-cascades-oregon-bugnet-2025-config-v2/"),
+	("eastern-cascades-bugnet", "3"): _v("V3", 350, True, "legacy_parameters/2025/r6/v3/old/east-cascades-oregon-bugnet-2025-config-v3/"),
+
+	("eastern-cascades-wa-bugnet", "1"): _v("V1", 150, False, "legacy_parameters/2025/r6/v1/old/east-cascades-washington-bugnet-2025-config-v1/"),
+	("eastern-cascades-wa-bugnet", "2"): _v("V2", 150, True, "legacy_parameters/2025/r6/v2/outdated/east-cascades-washington-bugnet-2025-config-v2/"),
+	("eastern-cascades-wa-bugnet", "3"): _v("V3", 350, True, "legacy_parameters/2025/r6/v3/old/east-cascades-washington-bugnet-2025-config-v3/"),
+
+	("klamath-mts-bugnet", "1"): _v("V1", 250, False, "legacy_parameters/2025/r6/v1/old/klamath-moutains-bugnet-2025-config-v1/"),
+	("klamath-mts-bugnet", "2"): _v("V2", 250, True, "legacy_parameters/2025/r6/v2/outdated/klamath-moutains-bugnet-2025-config-v2/"),
+	("klamath-mts-bugnet", "3"): _v("V3", 350, True, "legacy_parameters/2025/r6/v3/old/klamath-moutains-bugnet-2025-config-v3/"),
+
+	("north-cascades-bugnet", "1"): _v("V1", 250, False, "legacy_parameters/2025/r6/v1/old/north-cascades-bugnet-2025-config-v1/"),
+	("north-cascades-bugnet", "2"): _v("V2", 250, True, "legacy_parameters/2025/r6/v2/outdated/north-cascades-bugnet-2025-config-v2/"),
+	("north-cascades-bugnet", "3"): _v("V3", 350, True, "legacy_parameters/2025/r6/v3/old/north-cascades-bugnet-2025-config-v3/"),
+}
+
+
+def build_run_manifest(param):
+	"""
+	Assemble the small, curated set of facts needed to trace a real BugNet
+	output back to the exact methodology that produced it, without relying
+	on the overloaded v1/v2/v3 label (see project_lt_bnet_py_versioning_naming
+	memory for why that label alone is ambiguous). Pure Python - no `ee`
+	calls - safe to call as soon as normalize_parameters()/validate_parameters()
+	have run, before any pipeline stage executes.
+
+	Every value is a plain str/bool/int/list-of-str (never a bare None) so
+	this dict can be handed directly to export_utils.flatten_dict for either
+	the early standalone manifest export or the final parameter_file export,
+	with no special-casing. Fields that are only knowable once a later stage
+	actually runs (currently just resolved_predictor_variables, populated by
+	classify_polygons) are seeded with an explicit "pending" placeholder here
+	rather than a real value - callers should key off the *_status field,
+	never assume a non-"pending" placeholder means resolution happened.
+
+	manifest_stage starts "startup" - this is a snapshot of what's already
+	configured, not of what actually happened during the run. Set to
+	"complete" by export_utils.dict_to_feature_collection right before the
+	final parameter_file export, which is the point a real run has (in
+	every current call site) already finished classify_polygons.
+	"""
+	profile_key = (param["project_name"], param["version"])
+	profile = HISTORICAL_PROFILES.get(profile_key)
+
+	mode, classes = resolve_exclusion_classes(param)
+
+	return {
+		"manifest_stage": "startup",
+
+		# 1. Historical profile
+		"historical_profile": profile["profile"] if profile else "none",
+		"historical_profile_status": "verified" if profile else "unverified",
+		"mag": param["change_params"]["mag"]["value"],
+		"wild_path_on": bool(param["wild_path"]["on"]),
+
+		# 2. Classification training source
+		"classification_training": param.get("classification_training", "legacy_2012"),
+		"wfigs_confidence_tiebreak": bool(param.get("wfigs_confidence_tiebreak", False)),
+		"probability_spatial_smoothing": bool(param.get("probability_spatial_smoothing", False)),
+		"review_flag_thresholds_set": bool(param.get("review_flag_thresholds")),
+
+		# 3. Decline method/path
+		"decline_path": param["decline_path"],
+		"decline_method": param.get("decline_method", "bayesian"),
+		"configName": param["configName"],
+
+		# 4. Predictor set - configured now, resolved later (see classify_polygons)
+		"configured_predictors_fit": sorted(param["fit"]),
+		"configured_predictors_extras": param.get("classification_training") == "point_labels",
+		"resolved_predictor_variables": "pending",
+		"resolved_predictor_variables_status": "pending",
+		# classify_polygons exports here - it uses sharedAssetDir (falling
+		# back to assetDir) for all of its outputs, same as classified_fc,
+		# so this pointer has to match that, not assume assetDir.
+		"resolved_predictors_asset": (
+			f"{param.get('sharedAssetDir', param['assetDir'])}resolved_predictors_{param['target']}"
+		),
+
+		# 5. Fire-mask source
+		"fire_mask_source": "WFIGS",
+		"wfigs_fire_veto": bool(param.get("wfigs_fire_veto", False)),
+
+		# 6. Exclusion classes + how resolved
+		"exclusion_mode": mode,
+		"exclusion_classes": classes if classes is not None else [],
+
+		# 7. Run/revision identifier
+		"version": param["version"],
+		"shared_version": param["shared_version"],
+
+		# 8. GEE asset identifier
+		"assetDir": param["assetDir"],
+		"sharedAssetDir": param["sharedAssetDir"],
+
+		# 9. Full parameter-file reference
+		"parameter_file_asset": param["assetDir"] + param["parameter_file"],
+	}
+
+
+def print_run_manifest(manifest):
+	"""Print build_run_manifest()'s output as a scannable block for run logs."""
+	print("=== BugNet run manifest ===")
+	print(f"  stage                    : {manifest['manifest_stage']}")
+	print(f"  version / shared_version : {manifest['version']} / {manifest['shared_version']}")
+	print(
+		f"  historical profile       : {manifest['historical_profile']} "
+		f"({manifest['historical_profile_status']})"
+	)
+	print(f"  mag / wild_path          : {manifest['mag']} / {manifest['wild_path_on']}")
+	print(f"  decline_path / method    : {manifest['decline_path']} / {manifest['decline_method']}")
+	print(f"  classification_training  : {manifest['classification_training']}")
+	print(
+		"    -> wfigs_confidence_tiebreak="
+		f"{manifest['wfigs_confidence_tiebreak']}, "
+		f"probability_spatial_smoothing={manifest['probability_spatial_smoothing']}, "
+		f"review_flag_thresholds_set={manifest['review_flag_thresholds_set']}"
+	)
+	print(
+		f"  configured_predictors    : fit={manifest['configured_predictors_fit']}, "
+		f"extras={manifest['configured_predictors_extras']}"
+	)
+	print(
+		f"  resolved_predictor_variables: {manifest['resolved_predictor_variables']} "
+		f"({manifest['resolved_predictor_variables_status']})"
+	)
+	print(f"  fire_mask_source         : {manifest['fire_mask_source']} (wfigs_fire_veto={manifest['wfigs_fire_veto']})")
+	print(f"  exclusion_mode           : {manifest['exclusion_mode']} -> {manifest['exclusion_classes']}")
+	print(f"  assetDir                 : {manifest['assetDir']}")
+	print(f"  parameter_file asset     : {manifest['parameter_file_asset']}")
+	print("===========================")
+
+
 def resolve_exclusion_classes(param):
 	"""
 	Decide which real 'classification' codes on classified_fc should be

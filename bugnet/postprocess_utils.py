@@ -309,6 +309,14 @@ def merge_buffer_buckets_and_finish(param, asset_ids, asset_exists):
         result = ee.Feature(feature.geometry()).set(new_props)
         if has_confidence:
             result = result.set("confidence", feature.get("confidence"))
+        # Opt-in (default off, preserves the existing external schema
+        # unless a config explicitly asks otherwise): stamp the run's
+        # version string onto every final polygon so a single downloaded
+        # feature is traceable without the run_manifest asset. Kept to
+        # just this one field on purpose - the full methodological detail
+        # belongs in the run manifest, not duplicated onto every polygon.
+        if param.get("tag_run_provenance", False):
+            result = result.set("RUN_VERSION", param["version"])
         return result
 
     fc_attri = fc_bnet.map(rebuild_feature)
