@@ -1,15 +1,15 @@
 # Config layout
 
-Three gitignored directories under `bugnet/` hold parameter files (all
-Python source and its config trees moved under `bugnet/` on 2026-08-15 -
-see the repo-layout table in the root README). They're not peers — each
-has a different role:
+Three directories under `bugnet/` hold parameter files (all Python
+source and its config trees moved under `bugnet/` on 2026-08-15 - see
+the repo-layout table in the root README). They're not peers — each has
+a different role, and (as of 2026-09-03) a different git status to match:
 
-| Directory | Role | Hand-edited? |
-|---|---|---|
-| `bugnet/templates/` | Source of truth. One file per ecoregion (`bugnet/templates/v3/blue-mts-template.py`, etc.), with placeholder `target`/`ltendYear`/`version`/`configName` values. | Yes — edit these when something structural changes. |
-| `bugnet/run_configs/` | Generated output. `batch_bugnet.sh` reads a template and materializes real, run-ready parameter files here (one per year/region/version, plus one per mag/mmu variant). This is what you actually pass to `bugnet/main.py`. | No — regenerate via `batch_bugnet.sh`, don't hand-edit (edits get silently overwritten on the next generation pass since `OVERWRITE_BASE`/`OVERWRITE_VARIANTS` default to on). |
-| `bugnet/legacy_parameters/` | Retired. Hand-authored parameter files from before `batch_bugnet.sh` existed - one-off, no generation step. The oldest tier in here (`2024/v1/`) predates the current `main.py`/`cli_utils.py` schema entirely and will fail `cli_utils.validate_parameters()` if you try to run it - it's not a bug, it's genuinely incompatible. | Frozen history - don't add new files here. |
+| Directory | Role | Hand-edited? | Git status |
+|---|---|---|---|
+| `bugnet/templates/` | Source of truth. One file per ecoregion (`bugnet/templates/v3/blue-mts-template.py`, etc.), with placeholder `target`/`ltendYear`/`version`/`configName` values. | Yes — edit these when something structural changes. | **Tracked.** This is canonical source, not build output - no secrets, no generated content, no reason to keep it gitignored (see the 2026-09-03 assessment that led to this). |
+| `bugnet/run_configs/` | Generated output. `batch_bugnet.sh` reads a template and materializes real, run-ready parameter files here (one per year/region/version, plus one per mag/mmu variant). This is what you actually pass to `bugnet/main.py`. | No — regenerate via `batch_bugnet.sh`, don't hand-edit (edits get silently overwritten on the next generation pass since `OVERWRITE_BASE`/`OVERWRITE_VARIANTS` default to on). | Gitignored - this is derived build output (868+ files, regenerated wholesale), not source. |
+| `bugnet/legacy_parameters/` | Retired. Hand-authored parameter files from before `batch_bugnet.sh` existed - one-off, no generation step. The oldest tier in here (`2024/v1/`) predates the current `main.py`/`cli_utils.py` schema entirely and will fail `cli_utils.validate_parameters()` if you try to run it - it's not a bug, it's genuinely incompatible. | Frozen history - don't add new files here. | Gitignored - frozen archive, not source going forward. |
 
 Named `parameters/` and `params_new/` before 2026-08-15; renamed because
 neither name signaled which one was current, and `parameters/2024/v1/`'s

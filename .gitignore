@@ -5,4 +5,3 @@ logs/
 *.log
 legacy_parameters/
 run_configs/
-templates/
