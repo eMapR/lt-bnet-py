@@ -107,6 +107,65 @@ class TestBuildRunManifest:
         manifest = bnet.build_run_manifest(param)
         assert manifest["resolved_predictors_asset"] == "projects/p/assets/2025-v3/resolved_predictors_2025"
 
+    def test_explicit_mtbs_is_reported_as_mtbs(self):
+        # Real configs (e.g. columbia-mts-bugnet's 2026-v1/v4-testing/v5)
+        # set this explicitly - the manifest must preserve it, not
+        # normalize it to a hardcoded constant.
+        manifest = bnet.build_run_manifest(_base_manifest_param(fire_mask_source="mtbs"))
+        assert manifest["fire_mask_source"] == "mtbs"
+
+    def test_missing_fire_mask_source_uses_the_runtime_default(self):
+        # Must match get_fire_polygons'/rasterize_fire_polygons' own
+        # param.get('fire_mask_source', 'wfigs') default exactly.
+        manifest = bnet.build_run_manifest(_base_manifest_param())
+        assert manifest["fire_mask_source"] == "wfigs"
+
+
+class TestResolveHistoricalProfile:
+    """resolve_historical_profile cross-checks a run's actual mag/wild_path
+    against its HISTORICAL_PROFILES table entry before ever reporting
+    'verified' - a version-label match alone isn't sufficient, since
+    param['version'] is an arbitrary, overloaded string and real
+    collisions exist (e.g. columbia-mts-bugnet's real 2026 run labeled
+    version "1" collides with the archived historical V1 key but was
+    actually run with wild_path on, contradicting V1's real wild_path=off)."""
+
+    def test_true_historical_profile_match_reports_verified(self):
+        # north-cascades-bugnet/"3" is mag=350/wild_path_on=True in
+        # HISTORICAL_PROFILES - a real config with those same values.
+        param = _base_manifest_param()
+        profile, status = bnet.resolve_historical_profile(param)
+        assert profile == "V3"
+        assert status == "verified"
+
+    def test_unknown_version_key_reports_unverified(self):
+        param = _base_manifest_param(version="pointLabels_terrain_r2")
+        profile, status = bnet.resolve_historical_profile(param)
+        assert profile == "none"
+        assert status == "unverified"
+
+    def test_version_key_collision_with_mismatched_wild_path_reports_mismatch(self):
+        # Same (project, version) key as the true-match case, but
+        # wild_path disagrees with the table entry - must not be
+        # reported as verified.
+        param = _base_manifest_param(wild_path={"on": 0})
+        profile, status = bnet.resolve_historical_profile(param)
+        assert profile == "none"
+        assert status == "mismatch"
+
+    def test_version_key_collision_with_mismatched_mag_reports_mismatch(self):
+        param = _base_manifest_param(change_params={"mag": {"value": 250, "operator": ">"}})
+        profile, status = bnet.resolve_historical_profile(param)
+        assert profile == "none"
+        assert status == "mismatch"
+
+    def test_mismatch_never_infers_a_different_profile(self):
+        # A mismatch means "not the colliding key's profile", never
+        # "guess which other profile this might be".
+        param = _base_manifest_param(wild_path={"on": 0})
+        profile, _ = bnet.resolve_historical_profile(param)
+        assert profile not in {"V1", "V2", "V3"}
+
 
 class TestResolveExclusionClasses:
     """resolve_exclusion_classes decides which classified_fc 'classification'

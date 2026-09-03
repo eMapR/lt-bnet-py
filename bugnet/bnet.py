@@ -795,6 +795,40 @@ HISTORICAL_PROFILES = {
 }
 
 
+def resolve_historical_profile(param):
+	"""
+	Look up (param['project_name'], param['version']) against
+	HISTORICAL_PROFILES, then cross-check the run's actual
+	change_params['mag']['value']/wild_path['on'] against that table
+	entry before trusting the match - a version-label match alone isn't
+	sufficient. param['version'] is an arbitrary, overloaded string (see
+	project_lt_bnet_py_versioning_naming memory), and real collisions
+	exist: columbia-mts-bugnet's real 2026 run labeled version "1"
+	collides with the archived historical V1 key for that project, but
+	was actually run with wild_path on - contradicting V1's real
+	wild_path=off. Trusting the key alone would report a confident
+	"verified V1" for a run that isn't actually V1.
+
+	Returns (historical_profile, status):
+	- key absent from the table -> ('none', 'unverified')
+	- key present, mag AND wild_path_on both match the table entry ->
+	  (profile['profile'], 'verified')
+	- key present, but mag or wild_path_on disagree -> ('none',
+	  'mismatch') - never infer a *different* profile from the values;
+	  a mismatch only means this run isn't the profile its version label
+	  happens to collide with, not evidence for some other profile.
+	"""
+	profile = HISTORICAL_PROFILES.get((param["project_name"], param["version"]))
+	if profile is None:
+		return "none", "unverified"
+
+	actual_mag = param["change_params"]["mag"]["value"]
+	actual_wild_path_on = bool(param["wild_path"]["on"])
+	if actual_mag == profile["mag"] and actual_wild_path_on == profile["wild_path_on"]:
+		return profile["profile"], "verified"
+	return "none", "mismatch"
+
+
 def build_run_manifest(param):
 	"""
 	Assemble the small, curated set of facts needed to trace a real BugNet
@@ -819,17 +853,15 @@ def build_run_manifest(param):
 	final parameter_file export, which is the point a real run has (in
 	every current call site) already finished classify_polygons.
 	"""
-	profile_key = (param["project_name"], param["version"])
-	profile = HISTORICAL_PROFILES.get(profile_key)
-
+	historical_profile, historical_profile_status = resolve_historical_profile(param)
 	mode, classes = resolve_exclusion_classes(param)
 
 	return {
 		"manifest_stage": "startup",
 
 		# 1. Historical profile
-		"historical_profile": profile["profile"] if profile else "none",
-		"historical_profile_status": "verified" if profile else "unverified",
+		"historical_profile": historical_profile,
+		"historical_profile_status": historical_profile_status,
 		"mag": param["change_params"]["mag"]["value"],
 		"wild_path_on": bool(param["wild_path"]["on"]),
 
@@ -857,7 +889,7 @@ def build_run_manifest(param):
 		),
 
 		# 5. Fire-mask source
-		"fire_mask_source": "WFIGS",
+		"fire_mask_source": param.get("fire_mask_source", "wfigs"),
 		"wfigs_fire_veto": bool(param.get("wfigs_fire_veto", False)),
 
 		# 6. Exclusion classes + how resolved
