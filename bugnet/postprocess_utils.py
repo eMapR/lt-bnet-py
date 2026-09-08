@@ -233,12 +233,17 @@ def buffer_bnet_polygons(param, asset_exists):
     tasks = []
     asset_ids = []
     for bucket in range(buckets):
+        shard_id = f"{asset_dir}{base_name}_shard_{bucket:03d}"
+        asset_ids.append(shard_id)
+
+        if asset_exists(shard_id):
+            print(f"Shard already exists, reusing: {shard_id}")
+            continue
+
         sub = fc.filter(ee.Filter.eq("bucket", bucket)).map(
             lambda ft: ft.setGeometry(ft.geometry().buffer(buffer_m, max_err))
         )
         size = ee.Number(sub.size())
-        shard_id = f"{asset_dir}{base_name}_shard_{bucket:03d}"
-        asset_ids.append(shard_id)
         if size.getInfo() > 0:
             task = ee.batch.Export.table.toAsset(
                 collection=sub,
