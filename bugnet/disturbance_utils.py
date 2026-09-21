@@ -249,21 +249,32 @@ def CreatePredictorDisturbancePolygons(
         bucket_band = ee.Image.random(random_seed).multiply(buckets).toInt()
         staged = []  # (suffix, polys)
 
-        # Pass 1: preflight all buckets
+        # Pass 1: preflight all buckets - skip any bucket with zero features.
+        # Export.table.toAsset fails outright on an empty FeatureCollection
+        # ("Table is empty"), and a bucket having no qualifying disturbance
+        # pixels is a legitimate, expected outcome, not an error.
         for b in range(buckets):
             masked = change_img.updateMask(bucket_band.eq(b))
             polys = _vectorize(masked)
-            ee.Number(polys.size()).getInfo()    # <- preflight
+            size = ee.Number(polys.size()).getInfo()    # <- preflight
+            if size == 0:
+                print(f"bucket _b{b:02d} has no features, skipping export")
+                continue
             staged.append((f"_b{b:02d}", polys))
 
-        # Pass 2: start exports only if ALL preflights passed
+        # Pass 2: start exports only if ALL preflights passed. `paths` must
+        # include already-existing shards too (t is None but p is still a
+        # real, usable asset id - see _export) - a resumed run where every
+        # bucket is already exported has tasks=[] legitimately and is a
+        # success, not a failure, so the empty-check below is on paths
+        # (nothing usable at all) rather than tasks (nothing new to submit).
         tasks, paths = [], []
         for suffix, polys in staged:
             t, p = _export(polys, suffix)
+            paths.append(p)
             if t:
                 tasks.append(t)
-                paths.append(p)
-        if not tasks:
+        if not paths:
             raise RuntimeError("Bucket strategy produced no tasks.")
         return {"mode": "bucket", "tasks": tasks, "asset_paths": paths, "created_asset_paths": created_paths, "subregions": paths}
 
@@ -275,13 +286,21 @@ def CreatePredictorDisturbancePolygons(
         feats = split_fc.toList(count)
 
         staged = []  # (suffix, polys)
-        # Pass 1: preflight every cell
+        # Pass 1: preflight every cell - skip any cell with zero features.
+        # Export.table.toAsset fails outright on an empty FeatureCollection
+        # ("Table is empty"), and a grid cell having no qualifying
+        # disturbance pixels above the mag threshold is a legitimate,
+        # expected outcome (e.g. a low-disturbance sub-area, or a cell
+        # mostly outside the AOI), not an error.
         for i in range(count):
             fe = ee.Feature(feats.get(i))
             sid = fe.get('split_id')
             sid = (ee.String(sid).getInfo() if sid is not None else f"cell_{i}")
             polys = _vectorize(change_img.clip(fe))
-            ee.Number(polys.size()).getInfo()    # <- preflight
+            size = ee.Number(polys.size()).getInfo()    # <- preflight
+            if size == 0:
+                print(f"grid cell {sid} has no features, skipping export")
+                continue
             staged.append((f"_{sid}", polys))
 
         # Optional: export the grid itself after preflight succeeds
@@ -290,14 +309,20 @@ def CreatePredictorDisturbancePolygons(
         except Exception as e:
             print(f"Grid export failed (non-fatal): {e}")
 
-        # Pass 2: start exports
+        # Pass 2: start exports. `paths` must include already-existing
+        # shards too (t is None but p is still a real, usable asset id -
+        # see _export) - a resumed run where every cell is already exported
+        # (or legitimately empty and skipped above) has tasks=[]
+        # legitimately and is a success, not a failure, so the empty-check
+        # below is on paths (nothing usable at all) rather than tasks
+        # (nothing new to submit).
         tasks, paths = [], []
         for suffix, polys in staged:
             t, p = _export(polys, suffix)
+            paths.append(p)
             if t:
                 tasks.append(t)
-                paths.append(p)
-        if not tasks:
+        if not paths:
             raise RuntimeError("Grid strategy produced no tasks.")
         return {"mode": "grid", "tasks": tasks, "asset_paths": paths, "created_asset_paths": created_paths, "subregions": paths}
 
