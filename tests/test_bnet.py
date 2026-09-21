@@ -1,3 +1,8 @@
+import datetime
+from unittest.mock import patch
+
+import pytest
+
 import bnet
 
 
@@ -17,6 +22,7 @@ def _base_manifest_param(**overrides):
         "sharedAssetDir": "projects/north-cascades-bugnet/assets/2025-v3/",
         "target": 2025,
         "parameter_file": "parameter_file",
+        "agent_lookback": 5,
     }
     param.update(overrides)
     return param
@@ -119,6 +125,26 @@ class TestBuildRunManifest:
         # param.get('fire_mask_source', 'wfigs') default exactly.
         manifest = bnet.build_run_manifest(_base_manifest_param())
         assert manifest["fire_mask_source"] == "wfigs"
+
+    def test_combined_mtbs_wfigs_is_reported_verbatim(self):
+        manifest = bnet.build_run_manifest(_base_manifest_param(fire_mask_source="mtbs_wfigs"))
+        assert manifest["fire_mask_source"] == "mtbs_wfigs"
+
+    def test_fire_mask_window_reflects_default_agent_lookback(self):
+        # Every real config in this repo sets agent_lookback=5 and
+        # (independently) hardcodes targetPlus5=target-5 for
+        # maskStartTime - the manifest's window must match that existing
+        # de facto behavior exactly.
+        manifest = bnet.build_run_manifest(_base_manifest_param(target=2026, agent_lookback=5))
+        assert manifest["fire_mask_window_start_year"] == 2021
+        assert manifest["fire_mask_window_end_year"] == 2026
+        assert manifest["fire_mask_agent_lookback"] == 5
+
+    def test_fire_mask_window_follows_non_default_agent_lookback(self):
+        manifest = bnet.build_run_manifest(_base_manifest_param(target=2026, agent_lookback=3))
+        assert manifest["fire_mask_window_start_year"] == 2023
+        assert manifest["fire_mask_window_end_year"] == 2026
+        assert manifest["fire_mask_agent_lookback"] == 3
 
 
 class TestResolveHistoricalProfile:
@@ -237,3 +263,141 @@ class TestResolveExclusionClasses:
         classes.append(999)
         _, classes2 = bnet.resolve_exclusion_classes({"classification_training": "point_labels"})
         assert classes2 == [20, 21, 30, 40]
+
+
+class TestComputeFireMaskWindow:
+    """Pure Python - no live GEE credentials needed. Every real config in
+    this repo sets agent_lookback=5 and independently hardcodes
+    maskStartTime/maskEndTime from targetPlus5=target-5 - this function
+    replaces that hardcoding, and must reproduce it exactly at the
+    default before it can safely change behavior for anything else."""
+
+    def _years(self, target, agent_lookback):
+        param = {"target": target, "agent_lookback": agent_lookback}
+        start_ms, end_ms = bnet.compute_fire_mask_window(param)
+        start_year = datetime.datetime.fromtimestamp(start_ms / 1000, tz=datetime.timezone.utc).year
+        end_year = datetime.datetime.fromtimestamp(end_ms / 1000, tz=datetime.timezone.utc).year
+        return start_year, end_year
+
+    def test_default_agent_lookback_matches_every_real_configs_hardcoded_window(self):
+        # legacy/default compatibility: target-5 at agent_lookback=5.
+        start_year, end_year = self._years(target=2026, agent_lookback=5)
+        assert (start_year, end_year) == (2021, 2026)
+
+    def test_non_default_agent_lookback_changes_the_window(self):
+        start_year, end_year = self._years(target=2026, agent_lookback=2)
+        assert (start_year, end_year) == (2024, 2026)
+
+    def test_window_end_is_always_target_year(self):
+        for lookback in (1, 5, 10):
+            _, end_year = self._years(target=2030, agent_lookback=lookback)
+            assert end_year == 2030
+
+
+class TestGetAndRasterizeFirePolygons:
+    """Mocks bnet.ee (same pattern as test_postprocess_utils.py's
+    @patch("postprocess_utils.ee")) since constructing real ee.Image/
+    ee.FeatureCollection objects requires a live ee.Initialize() call -
+    these tests verify the branching/combination logic (which asset,
+    which date field, OR not AND) rather than real raster pixel values.
+    Real-data verification (a fire genuinely present in one source and
+    not the other) is done live against the real Swawilla fire, not
+    here - see the fire-exclusion investigation for that evidence."""
+
+    def _param(self, fire_mask_source, target=2026, agent_lookback=5):
+        return {"fire_mask_source": fire_mask_source, "target": target, "agent_lookback": agent_lookback}
+
+    @patch("bnet.ee")
+    def test_mtbs_only_queries_mtbs_asset_with_its_date_field(self, mock_ee):
+        param = self._param("mtbs")
+        bnet.get_fire_polygons(param)
+        mock_ee.FeatureCollection.assert_called_once_with("USFS/GTAC/MTBS/burned_area_boundaries/v1")
+        mock_ee.Filter.gte.assert_called_once()
+        assert mock_ee.Filter.gte.call_args.args[0] == "Ig_Date"
+
+    @patch("bnet.ee")
+    def test_wfigs_only_queries_wfigs_asset_with_its_date_field(self, mock_ee):
+        param = self._param("wfigs")
+        bnet.get_fire_polygons(param)
+        mock_ee.FeatureCollection.assert_called_once_with("projects/emaprlab-general/assets/WFIGS")
+        mock_ee.Filter.gte.assert_called_once()
+        assert mock_ee.Filter.gte.call_args.args[0] == "attr_Fir_7"
+
+    @patch("bnet.ee")
+    def test_combined_mode_queries_both_assets(self, mock_ee):
+        param = self._param("mtbs_wfigs")
+        bnet.get_fire_polygons(param)
+        called_ids = {c.args[0] for c in mock_ee.FeatureCollection.call_args_list}
+        assert called_ids == {
+            "USFS/GTAC/MTBS/burned_area_boundaries/v1",
+            "projects/emaprlab-general/assets/WFIGS",
+        }
+
+    @patch("bnet.ee")
+    def test_combined_mode_merges_the_two_tagged_collections(self, mock_ee):
+        param = self._param("mtbs_wfigs")
+        result = bnet.get_fire_polygons(param)
+        # mtbs_fires.merge(wfigs_fires): merge is called on the mapped
+        # mtbs collection, with the mapped wfigs collection as the arg.
+        mock_ee.FeatureCollection.return_value.filter.return_value.map.return_value.merge.assert_called_once()
+        assert result is mock_ee.FeatureCollection.return_value.filter.return_value.map.return_value.merge.return_value
+
+    @patch("bnet.ee")
+    def test_unknown_source_raises(self, mock_ee):
+        with pytest.raises(NotImplementedError):
+            bnet.get_fire_polygons(self._param("nasa_firms"))
+
+    @patch("bnet.ee")
+    def test_non_default_agent_lookback_changes_queried_window_bounds(self, mock_ee):
+        bnet.get_fire_polygons(self._param("mtbs", target=2026, agent_lookback=5))
+        default_start = mock_ee.Filter.gte.call_args.args[1]
+
+        mock_ee.reset_mock()
+        bnet.get_fire_polygons(self._param("mtbs", target=2026, agent_lookback=2))
+        narrower_start = mock_ee.Filter.gte.call_args.args[1]
+
+        assert narrower_start > default_start
+
+    @patch("bnet.ee")
+    def test_rasterize_mtbs_only_uses_reduce_to_image(self, mock_ee):
+        fires = mock_ee.FeatureCollection.return_value
+        bnet.rasterize_fire_polygons(self._param("mtbs"), fires)
+        fires.reduceToImage.assert_called_once_with(properties=["Map_ID"], reducer=mock_ee.Reducer.mean.return_value)
+
+    @patch("bnet.ee")
+    def test_rasterize_wfigs_only_uses_paint(self, mock_ee):
+        fires = mock_ee.FeatureCollection.return_value
+        bnet.rasterize_fire_polygons(self._param("wfigs"), fires)
+        mock_ee.Image.return_value.byte.return_value.paint.assert_called_once_with(fires, 1)
+
+    @patch("bnet.ee")
+    def test_combined_rasterize_ors_not_ands_the_two_sources(self, mock_ee):
+        # The core scientific requirement: fire_exclusion = MTBS OR WFIGS,
+        # never AND - a fire only needs one authoritative source.
+        fires = mock_ee.FeatureCollection.return_value
+        bnet.rasterize_fire_polygons(self._param("mtbs_wfigs"), fires)
+
+        mtbs_img = fires.filter.return_value.reduceToImage.return_value.gt.return_value.unmask.return_value
+        wfigs_img = mock_ee.Image.return_value.byte.return_value.paint.return_value.unmask.return_value
+        mtbs_img.Or.assert_called_once_with(wfigs_img)
+        # And never .And() anywhere in this path.
+        mtbs_img.And.assert_not_called()
+
+    @patch("bnet.ee")
+    def test_combined_rasterize_unmasks_each_source_before_combining(self, mock_ee):
+        # fire present only in MTBS, or only in WFIGS, must still exclude
+        # correctly - each subset is unmask(0)'d individually so an empty
+        # subset contributes real 0s, not a mask that would swallow the
+        # other source's real signal in Or().
+        fires = mock_ee.FeatureCollection.return_value
+        bnet.rasterize_fire_polygons(self._param("mtbs_wfigs"), fires)
+
+        mtbs_gt = fires.filter.return_value.reduceToImage.return_value.gt.return_value
+        mtbs_gt.unmask.assert_called_once_with(0)
+        wfigs_paint = mock_ee.Image.return_value.byte.return_value.paint.return_value
+        wfigs_paint.unmask.assert_called_once_with(0)
+
+    @patch("bnet.ee")
+    def test_rasterize_unknown_source_raises(self, mock_ee):
+        with pytest.raises(NotImplementedError):
+            bnet.rasterize_fire_polygons(self._param("nasa_firms"), mock_ee.FeatureCollection.return_value)

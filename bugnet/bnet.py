@@ -1,6 +1,7 @@
 import ee
 from ltgee import LandTrendr, LandsatComposite, LtCollection, Sentinel2Composite
 from datetime import date
+import datetime
 import json
 import os
 import rasterio
@@ -891,6 +892,14 @@ def build_run_manifest(param):
 		# 5. Fire-mask source
 		"fire_mask_source": param.get("fire_mask_source", "wfigs"),
 		"wfigs_fire_veto": bool(param.get("wfigs_fire_veto", False)),
+		# Effective fire-perimeter lookback window (see
+		# compute_fire_mask_window) - recorded so a run's real provenance
+		# shows the actual window used, not just the agent_lookback input,
+		# since a config could set agent_lookback without anyone checking
+		# what window that actually produced.
+		"fire_mask_agent_lookback": param["agent_lookback"],
+		"fire_mask_window_start_year": param["target"] - param["agent_lookback"],
+		"fire_mask_window_end_year": param["target"],
 
 		# 6. Exclusion classes + how resolved
 		"exclusion_mode": mode,
@@ -935,7 +944,12 @@ def print_run_manifest(manifest):
 		f"  resolved_predictor_variables: {manifest['resolved_predictor_variables']} "
 		f"({manifest['resolved_predictor_variables_status']})"
 	)
-	print(f"  fire_mask_source         : {manifest['fire_mask_source']} (wfigs_fire_veto={manifest['wfigs_fire_veto']})")
+	print(
+		f"  fire_mask_source         : {manifest['fire_mask_source']} "
+		f"(wfigs_fire_veto={manifest['wfigs_fire_veto']}, "
+		f"window={manifest['fire_mask_window_start_year']}-{manifest['fire_mask_window_end_year']}, "
+		f"agent_lookback={manifest['fire_mask_agent_lookback']})"
+	)
 	print(f"  exclusion_mode           : {manifest['exclusion_mode']} -> {manifest['exclusion_classes']}")
 	print(f"  assetDir                 : {manifest['assetDir']}")
 	print(f"  parameter_file asset     : {manifest['parameter_file_asset']}")
@@ -1038,10 +1052,61 @@ def remove_wfigs_fire_polygons(feature_collection, year_property='yod'):
     return no_fire_match.select(original_props)
 
 
+_FIRE_SOURCE_ASSETS = {
+    'wfigs': ("projects/emaprlab-general/assets/WFIGS", 'attr_Fir_7'),
+    'mtbs': ("USFS/GTAC/MTBS/burned_area_boundaries/v1", 'Ig_Date'),
+}
+
+
+def compute_fire_mask_window(param):
+    """
+    The [start_ms, end_ms] window get_fire_polygons filters fire
+    perimeters to: Jan 1 of (target - agent_lookback) through Dec 30 of
+    target. Derived from param['agent_lookback'] rather than each
+    config's own hardcoded `targetPlus5 = target - 5` computation (still
+    present in every real config/template as maskStartTime/maskEndTime,
+    now unused by get_fire_polygons - this function replaces that path
+    entirely and ignores param['maskStartTime']/['maskEndTime']).
+
+    agent_lookback's only other live-code use is bnet.decline_image,
+    which is dead code (see its docstring) and uses a different,
+    one-calendar-year-narrower formula (target-(agent_lookback-1) as the
+    start year, vs this function's target-agent_lookback) - agent_lookback
+    was never actually wired to anything before this change, so there
+    was no real prior "intended" window to match beyond the de facto
+    target-5 every config already hardcodes. This function reproduces
+    that exact target-5 boundary when agent_lookback=5 (the value every
+    real config in this repo sets), preserving existing behavior; a
+    differently-configured agent_lookback now actually changes the fire
+    window instead of being silently ignored.
+    """
+    target = param['target']
+    lookback = param['agent_lookback']
+    start_ms = int(datetime.datetime(target - lookback, 1, 1).timestamp() * 1000)
+    end_ms = int(datetime.datetime(target, 12, 30).timestamp() * 1000)
+    return start_ms, end_ms
+
+
+def _fire_features_for_source(source, start_ms, end_ms):
+    """One source's fire perimeters, date-filtered. Raises on an unknown
+    single source - 'mtbs_wfigs' is handled by the caller, not here."""
+    if source not in _FIRE_SOURCE_ASSETS:
+        raise NotImplementedError(
+            f"_fire_features_for_source: unsupported source = {source!r}. "
+            "Use 'wfigs' or 'mtbs'."
+        )
+    asset_id, date_field = _FIRE_SOURCE_ASSETS[source]
+    fc = ee.FeatureCollection(asset_id)
+    return fc.filter(ee.Filter.And(
+        ee.Filter.gte(date_field, start_ms),
+        ee.Filter.lte(date_field, end_ms),
+    ))
+
+
 def get_fire_polygons(param):
     """
-    Real fire perimeters within param['maskStartTime']/maskEndTime, from
-    the source selected by param.get('fire_mask_source', 'wfigs'):
+    Real fire perimeters within compute_fire_mask_window(param), from the
+    source selected by param.get('fire_mask_source', 'wfigs'):
     - 'wfigs' (default, current): projects/emaprlab-general/assets/WFIGS,
       ignition-date field 'attr_Fir_7' - empirically identified, not a
       literal name match (WFIGS field names are Esri-truncated/
@@ -1050,41 +1115,78 @@ def get_fire_polygons(param):
     - 'mtbs' (the original pre-2026-08-19 source):
       USFS/GTAC/MTBS/burned_area_boundaries/v1, ignition-date field
       'Ig_Date'.
+    - 'mtbs_wfigs': the union of both sources' qualifying fires in the
+      same window - a real fire only needs to appear in ONE authoritative
+      source to count (MTBS has real perimeters but a real multi-year
+      publication lag for recent fires; WFIGS is current but not every
+      config wants to switch to it wholesale). Added after a real,
+      confirmed leak: the 2024 "Swawilla I" fire (WA, ~53,723 acres) is
+      absent from MTBS entirely as of this window but present in WFIGS,
+      and was leaking into Bayesian/persistence decline detection under
+      both real Cell A (2026-v1) and Cell C (2026-legacy_bayesian) runs
+      as a result - confirmed via live asset inspection, not assumed.
+      Each returned feature carries a 'fire_source' property ('mtbs' or
+      'wfigs') since the two schemas don't share field names -
+      rasterize_fire_polygons needs it to rasterize each subset
+      correctly rather than assuming one schema across the whole set.
     Kept selectable via config, at explicit user request, so the
     pre-WFIGS forest-mask workflow can still be reproduced/compared
     against exactly, not just the current default.
     """
+    start_ms, end_ms = compute_fire_mask_window(param)
     source = param.get('fire_mask_source', 'wfigs')
-    if source == 'wfigs':
-        fc = ee.FeatureCollection("projects/emaprlab-general/assets/WFIGS")
-        date_field = 'attr_Fir_7'
-    elif source == 'mtbs':
-        fc = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
-        date_field = 'Ig_Date'
-    else:
-        raise NotImplementedError(
-            f"get_fire_polygons: unsupported param['fire_mask_source'] = {source!r}. "
-            "Use 'wfigs' (default) or 'mtbs'."
+    if source in _FIRE_SOURCE_ASSETS:
+        return _fire_features_for_source(source, start_ms, end_ms)
+    if source == 'mtbs_wfigs':
+        mtbs_fires = _fire_features_for_source('mtbs', start_ms, end_ms).map(
+            lambda f: f.set('fire_source', 'mtbs')
         )
-    return fc.filter(ee.Filter.And(
-        ee.Filter.gte(date_field, param["maskStartTime"]),
-        ee.Filter.lte(date_field, param["maskEndTime"]),
-    ))
+        wfigs_fires = _fire_features_for_source('wfigs', start_ms, end_ms).map(
+            lambda f: f.set('fire_source', 'wfigs')
+        )
+        return mtbs_fires.merge(wfigs_fires)
+    raise NotImplementedError(
+        f"get_fire_polygons: unsupported param['fire_mask_source'] = {source!r}. "
+        "Use 'wfigs' (default), 'mtbs', or 'mtbs_wfigs'."
+    )
 
 
 def rasterize_fire_polygons(param, fires):
     """
-    Rasterize fires (from get_fire_polygons) to an unmasked-where-absent
-    boolean fire-presence image, source-appropriate per
-    param.get('fire_mask_source', 'wfigs'): 'mtbs' uses
-    reduceToImage(properties=["Map_ID"], reducer=mean).gt(0) - kept
-    byte-for-byte identical to the pre-2026-08-19 original so that
-    workflow reproduces exactly - while 'wfigs' (default) uses paint(),
-    which needs no schema-specific numeric property at all.
+    Rasterize fires (from get_fire_polygons) to a boolean fire-presence
+    image, source-appropriate per param.get('fire_mask_source', 'wfigs'):
+    - 'mtbs': reduceToImage(properties=["Map_ID"], reducer=mean).gt(0) -
+      kept byte-for-byte identical to the pre-2026-08-19 original so that
+      workflow reproduces exactly, unmasked-where-absent.
+    - 'wfigs' (default): paint(), which needs no schema-specific numeric
+      property at all, unmasked-where-absent.
+    - 'mtbs_wfigs': splits fires by its 'fire_source' property, rasterizes
+      each subset with its own correct method above, then combines with
+      a pixelwise OR (never AND - a fire only needs one authoritative
+      source, per the independent-hard-exclusion design; requiring both
+      sources to agree would just reproduce the same leak whenever either
+      one alone is incomplete). Each subset is unmask(0)'d first so an
+      empty subset (neither source has a fire, or a fire is truly
+      present in only one) contributes real 0s to the Or() rather than
+      propagating a mask - returns a fully-defined 0/1 image (still
+      compatible with callers' own .unmask().Not() / .unmask(0), which
+      are no-ops on an already-unmasked image).
     """
-    if param.get('fire_mask_source', 'wfigs') == 'mtbs':
+    source = param.get('fire_mask_source', 'wfigs')
+    if source == 'mtbs':
         return fires.reduceToImage(properties=["Map_ID"], reducer=ee.Reducer.mean()).gt(0)
-    return ee.Image().byte().paint(fires, 1)
+    if source == 'wfigs':
+        return ee.Image().byte().paint(fires, 1)
+    if source == 'mtbs_wfigs':
+        mtbs_subset = fires.filter(ee.Filter.eq('fire_source', 'mtbs'))
+        wfigs_subset = fires.filter(ee.Filter.eq('fire_source', 'wfigs'))
+        mtbs_img = mtbs_subset.reduceToImage(properties=["Map_ID"], reducer=ee.Reducer.mean()).gt(0).unmask(0)
+        wfigs_img = ee.Image().byte().paint(wfigs_subset, 1).unmask(0)
+        return mtbs_img.Or(wfigs_img)
+    raise NotImplementedError(
+        f"rasterize_fire_polygons: unsupported param['fire_mask_source'] = {source!r}. "
+        "Use 'wfigs' (default), 'mtbs', or 'mtbs_wfigs'."
+    )
 
 
 def sample_predictor_bands_at_geometry(param, geometry, yod, fitted_img_asset, change_img_asset):
@@ -1386,14 +1488,28 @@ def wfigs_confidence_tiebreak(param, classified_fc, confidence_threshold=50, fir
 	least sure about with real ground truth, not to override confident
 	ones.
 	"""
+	# 'mtbs_wfigs' returns a merged FeatureCollection where features carry
+	# EITHER 'attr_Fir_7' (wfigs) or 'Ig_Date' (mtbs), not both - the
+	# single date_field lookup below can't handle that mix. Not
+	# implemented (no real config combines this with wfigs_confidence_
+	# tiebreak today - point_labels tiebreak configs use a single
+	# fire_mask_source), so fail loudly rather than silently compute the
+	# wrong fire_year for half the merged set.
+	if param.get('fire_mask_source', 'wfigs') == 'mtbs_wfigs':
+		raise NotImplementedError(
+			"wfigs_confidence_tiebreak: fire_mask_source='mtbs_wfigs' is not "
+			"supported here - this function needs a single per-feature date "
+			"field, which the merged mtbs_wfigs collection doesn't have."
+		)
+
 	fires = get_fire_polygons(param)
 
 	# get_fire_polygons returns raw fire features with no year-comparable
 	# property of their own - WFIGS carries 'attr_Fir_7', MTBS carries
 	# 'Ig_Date', both raw millisecond timestamps (get_fire_polygons's own
-	# maskStartTime/maskEndTime filter already relies on that). Comparing
-	# classified_fc's year_property directly against a property fires
-	# doesn't have would silently match nothing rather than error -
+	# compute_fire_mask_window-derived filter already relies on that).
+	# Comparing classified_fc's year_property directly against a property
+	# fires doesn't have would silently match nothing rather than error -
 	# caught live: an early version of this function did exactly that.
 	date_field = 'attr_Fir_7' if param.get('fire_mask_source', 'wfigs') == 'wfigs' else 'Ig_Date'
 
