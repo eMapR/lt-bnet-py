@@ -14,7 +14,9 @@ or anything else not meant for the public.
 | North Cascades, Columbia Mts, Eastern Cascades WA, William Sound | `mtbs` | Complete, verified |
 | Klamath Mts | `mtbs_wfigs` | All 75 buffer shards done; final merge task `bugnet_polygons_buffered_2026_mag50_10mmu` PENDING in GEE since 2026-10-02 |
 | Blue Mts, Cascades | `mtbs_wfigs` | `A_predictor_fitted_img_2021_2026` done; `A_predictor_change_img_2026` PENDING in GEE since 2026-10-01 |
-| Coast Range | `mtbs_wfigs` | `A_predictor_fitted_img_2021_2026` RUNNING since 2026-10-01; `A_predictor_change_img_2026` PENDING |
+| Coast Range | `mtbs_wfigs` | `A_predictor_fitted_img_2021_2026` RUNNING since 2026-10-01 (still heartbeating 2026-10-03 20:42 UTC); `A_predictor_change_img_2026` PENDING |
+
+Task states above re-checked 2026-10-03 ~20:45 UTC: unchanged since 10-02.
 
 - The local `main.py` processes for the last four **all died** on
   2026-10-01/02 from laptop network errors (DNS failure, dropped
@@ -22,7 +24,9 @@ or anything else not meant for the public.
 - Tasks sitting PENDING for ~2 days across all four projects most likely
   means the GEE **noncommercial quota "restricted mode"** (Klamath's
   project warned about it on 2026-10-01). This is unconfirmed for the
-  other three projects; check quota in the Cloud console.
+  other three projects; check quota in the Cloud console. The EE API
+  doesn't expose it: `ee.data.getProjectConfig()` only returns
+  `registrationState: REGISTERED_NOT_COMMERCIALLY` for all four.
 - The batch is mixed: four regions used `mtbs`, four use `mtbs_wfigs`. The
   user hasn't decided whether to re-check the first four (suggestion:
   count the WFIGS-only fire overlap first).
@@ -34,25 +38,36 @@ or anything else not meant for the public.
    a relaunch resubmits duplicate tasks. Check task state first (e.g.
    `ee.Initialize(project="<region>-bugnet"); ee.data.listOperations()`).
    Either wait for them to finish or cancel them, then relaunch.
-2. **Make `wait_for_task` (`bugnet/main.py`) survive network errors.** It
-   calls `task.status()` with no exception handling, so one failed
-   check kills a multi-day run. Retry with backoff on
-   `ConnectionError` / transient `EEException`. Proposed, not done yet.
-3. **Move long runs off the laptop.** The user wants runs on an always-on
-   server (lab server or small GCP VM, under `tmux`/`nohup`; a service
-   account avoids expiring user tokens). Not set up yet. When moving:
-   - `lt-bnet-py.yml` is pinned for Linux and builds as-is there. (On
-     macOS arm64 the env was rebuilt from conda-forge instead.)
-   - **Run configs are gitignored** (`bugnet/run_configs/`). Copy them
-     over separately, e.g.
-     `bugnet/run_configs/2026/r6/v2/<region>-bugnet-2026-v2/<region>-bugnet-2026-v2-config.py`.
-   - The server needs Earth Engine auth with access to every
-     `<region>-bugnet` GCP project.
+2. ~~Make `wait_for_task` survive network errors.~~ Done 2026-10-03:
+   `bnet.get_task_status()` retries transient errors (OSError/DNS,
+   EEException, google-auth/httplib2) with backoff (30s doubling to 15
+   min) and gives up after 6 h of continuous failure. Used by
+   `main.wait_for_task` and `modeling_utils._wait_for_task`.
+3. **Long runs now go on the lab server islay** (set up 2026-10-03), not
+   the laptop. Run under `tmux`. Nothing has been launched there yet.
+   - Repo checkout: `/vol/v1/Bugnet/lt-bnet-py`; Python:
+     `~/.conda/envs/lt-bnet-py/bin/python` (built from `lt-bnet-py.yml`,
+     which is pinned for Linux).
+   - Earth Engine user credentials work for every `<region>-bugnet`
+     project (no service account yet).
+   - **Run configs are gitignored** and were copied over separately. On
+     islay they use a flat layout:
+     `bugnet/run_configs/<region>-bugnet-2026-v2/<region>-bugnet-2026-v2-config.py`
+     (the laptop has an extra `2026/r6/v2/` level).
+   - `logs/` must be created before the first launch.
+4. **Relaunch watcher running on islay** since 2026-10-04 02:40 UTC (tmux
+   session `bugnet-watcher`, log `logs/relaunch_watcher.log`). Every 15 min
+   it checks Klamath, Blue Mts, Cascades and Coast Range. When a region has
+   no PENDING/RUNNING tasks, it launches `main.py` mode 2 for it once,
+   detached, writing `logs/<region>-2026-v2-stakeholder.{log,pid}`. A `.pid`
+   file means "already launched": the watcher never relaunches it, so check
+   that region's log if its run dies. The watcher exits once all four are
+   launched. Script: `tools/relaunch_watcher.py`.
 
 ## How runs are launched / resumed
 
 ```bash
-echo 2 | python bugnet/main.py <path-to-config>   # mode 2 = run_mode_2
+echo 2 | python bugnet/main.py <path-to-config> 2>&1 | tee logs/<region>-2026-v2-stakeholder.log   # mode 2 = run_mode_2
 ```
 
 Logs and pids go to `logs/<region>-2026-v2-stakeholder.{log,pid}`
@@ -62,10 +77,11 @@ if the config changed in a way the manifest should record (e.g. fire mask).
 
 ## Tests
 
-`python -m pytest -q` from the repo root (105 passing as of 2026-10-03).
+`python -m pytest -q` from the repo root (108 passing as of 2026-10-03).
 
 ## Untracked files (intentionally not committed)
 
 - `docs/*.pdf`: scope-of-work / task documents. Public repo, ask first.
+- `tools/relaunch_watcher.py`: one-off ops script for the V2 batch.
 - `tools/abc_disagreement_viewer.js`: GEE Code Editor script, not yet
   smoke-tested.

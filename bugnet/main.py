@@ -61,15 +61,18 @@ def wait_for_task(task):
     counter = 0
     if not task:
         return 0
-    while task.status()['state'] in ['READY', 'RUNNING']:
+    # get_task_status retries network/EE errors so one failed check doesn't kill a multi-day run
+    status = bnet.get_task_status(task)
+    while status['state'] in ['READY', 'RUNNING']:
         print(f"\rTask {task.id} is still running...{counter} min", end='', flush=True)
-        time.sleep(60)  # Wait for 30 seconds before checking again
+        time.sleep(60)  # Wait 60 seconds before checking again
         counter+=1
-    if task.status()['state'] == 'COMPLETED':
+        status = bnet.get_task_status(task)
+    if status['state'] == 'COMPLETED':
         print(f"Task {task.id} completed successfully!")
         return 1
     else:
-        error_message = task.status().get('error_message', 'Unknown Earth Engine task error')
+        error_message = status.get('error_message', 'Unknown Earth Engine task error')
         print(f"Task {task.id} failed with error: {error_message}")
         raise RuntimeError(f"Task {task.id} failed: {error_message}")
 

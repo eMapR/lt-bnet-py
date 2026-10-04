@@ -401,3 +401,49 @@ class TestGetAndRasterizeFirePolygons:
     def test_rasterize_unknown_source_raises(self, mock_ee):
         with pytest.raises(NotImplementedError):
             bnet.rasterize_fire_polygons(self._param("nasa_firms"), mock_ee.FeatureCollection.return_value)
+
+
+class _FlakyTask:
+    """Fake ee.batch.Task whose status() raises the queued errors first."""
+
+    id = "TASK1"
+
+    def __init__(self, errors, status=None):
+        self.errors = list(errors)
+        self.final = status or {"state": "COMPLETED"}
+        self.calls = 0
+
+    def status(self):
+        self.calls += 1
+        if self.errors:
+            raise self.errors.pop(0)
+        return self.final
+
+
+def test_get_task_status_retries_transient_errors_with_backoff():
+    import ee
+    import requests
+
+    task = _FlakyTask([requests.ConnectionError("dns"), ee.EEException("503"), OSError("reset")])
+    sleeps = []
+    status = bnet.get_task_status(task, initial_delay=10, max_delay=25, sleep=sleeps.append)
+    assert status == {"state": "COMPLETED"}
+    assert task.calls == 4
+    assert sleeps == [10, 20, 25]
+
+
+def test_get_task_status_raises_non_transient_errors_immediately():
+    task = _FlakyTask([KeyError("state")])
+    sleeps = []
+    with pytest.raises(KeyError):
+        bnet.get_task_status(task, sleep=sleeps.append)
+    assert sleeps == []
+
+
+def test_get_task_status_gives_up_after_window():
+    task = _FlakyTask([OSError("down")] * 5)
+    clock = iter([0, 100, 200, 300])
+    with patch.object(bnet.time, "time", lambda: next(clock)):
+        with pytest.raises(OSError):
+            bnet.get_task_status(task, give_up_after=250, sleep=lambda s: None)
+    assert task.calls == 4

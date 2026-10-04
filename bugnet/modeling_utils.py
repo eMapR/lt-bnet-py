@@ -167,7 +167,7 @@ def _wait_for_task(task: ee.batch.Task, poll_seconds=20, timeout_minutes=180, on
     start = time.time()
     last_state = None
     while True:
-        status = task.status()
+        status = bnet.get_task_status(task)
         state = status.get("state")
         if state != last_state and on_update:
             on_update(f"[GEE task {task.id}] state={state}")

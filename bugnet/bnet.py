@@ -648,7 +648,56 @@ def feature_collection_to_geojson(fc, src_epsg, target_epsg):
 
 
 ###########################################################################################################################
-## 
+##
+###########################################################################################################################
+def _is_transient_status_error(exc):
+	"""
+	True for errors a later task.status() call can plausibly recover from:
+	dropped connections/DNS failures (OSError, which covers
+	requests.ConnectionError and socket errors), httplib2/google-auth
+	transport and token-refresh failures, and ee.EEException (which the
+	EE client raises for server-side 5xx/quota hiccups). Programming
+	errors (TypeError, KeyError, ...) are not transient.
+	"""
+	if isinstance(exc, (OSError, ee.EEException)):
+		return True
+	module = type(exc).__module__ or ""
+	return module.startswith(("httplib2", "google.auth", "googleapiclient"))
+
+
+def get_task_status(task, initial_delay=30, max_delay=900, give_up_after=6 * 3600, sleep=time.sleep):
+	"""
+	Return task.status(), retrying transient network/EE errors with
+	exponential backoff (initial_delay doubling up to max_delay seconds).
+	Gives up and re-raises once failures have persisted for give_up_after
+	seconds, so a long outage still surfaces instead of hanging forever.
+	A multi-day run should not die because one status check hit a DNS
+	failure or a token refresh.
+	"""
+	delay = initial_delay
+	failing_since = None
+	while True:
+		try:
+			return task.status()
+		except Exception as exc:
+			if not _is_transient_status_error(exc):
+				raise
+			now = time.time()
+			if failing_since is None:
+				failing_since = now
+			elif now - failing_since >= give_up_after:
+				raise
+			print(
+				f"\nStatus check for task {task.id} failed ({type(exc).__name__}: {exc}); "
+				f"retrying in {delay}s",
+				flush=True,
+			)
+			sleep(delay)
+			delay = min(delay * 2, max_delay)
+
+
+###########################################################################################################################
+##
 ###########################################################################################################################
 # Function to monitor the status of multiple tasks and update in place
 def monitor_tasks(tasks):
