@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest
+
 import postprocess_utils as pu
 
 
@@ -68,3 +70,34 @@ class TestBufferBnetPolygonsResume:
         assert f"reusing: {shard_ids[0]}" in out
         assert f"reusing: {shard_ids[2]}" in out
         assert f"reusing: {shard_ids[1]}" not in out
+
+
+class TestCalcAttriFields:
+    def make_param(self, study_region, **extra):
+        return {"study_region": study_region, "target": 2026, **extra}
+
+    def test_conus_uses_ids_values(self):
+        fields = pu.calc_attri_fields(self.make_param("CONUS"))
+        assert fields["US_AREA"] == "CONUS"
+        assert fields["REGION_ID"] == 6
+
+    def test_alaska_uses_ids_values(self):
+        fields = pu.calc_attri_fields(self.make_param("AK"))
+        assert fields["US_AREA"] == "Alaska"
+        assert fields["REGION_ID"] == 10
+        assert pu.EQUAL_AREA_CRS[fields["US_AREA"]] == "EPSG:3338"
+
+    def test_explicit_usfs_region_id_wins(self):
+        fields = pu.calc_attri_fields(self.make_param("CONUS", usfs_region_id=5))
+        assert fields["REGION_ID"] == 5
+
+    def test_feature_user_id_is_not_personal(self):
+        fields = pu.calc_attri_fields(self.make_param("CONUS"))
+        assert fields["FEATURE_USER_ID"] == pu.DEFAULT_FEATURE_USER_ID
+        assert "@" not in fields["FEATURE_USER_ID"]
+        fields = pu.calc_attri_fields(self.make_param("CONUS", feature_user_id="lab"))
+        assert fields["FEATURE_USER_ID"] == "lab"
+
+    def test_unknown_study_region_raises(self):
+        with pytest.raises(KeyError):
+            pu.calc_attri_fields(self.make_param("HI"))

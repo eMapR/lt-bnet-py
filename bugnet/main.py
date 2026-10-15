@@ -36,7 +36,6 @@ from modeling_utils import (
 )
 from pipeline_modes import apply_public_read_acl, run_mode_1, run_mode_2
 from postprocess_utils import (
-	add_area_and_pct_affected_by_pixel_count,
 	buffer_bnet_polygons,
 	calc_attri_fields,
 	extract_zonal_stats,

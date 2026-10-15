@@ -146,6 +146,35 @@ def split_multi_polygon_ss(feature):
     )
 
 
+ACRES_PER_SQ_M = 0.00024710538146717
+
+# Field values follow the USFS Insect and Disease Survey (IDS) damage-areas
+# schema: US_AREA is "CONUS"/"Alaska"/"Hawaii" and REGION_ID is the integer
+# USFS region. study_region is the config's "CONUS"/"AK" switch.
+US_AREA_BY_STUDY_REGION = {"CONUS": "CONUS", "AK": "Alaska"}
+# Every CONUS region BugNet runs today is in Region 6; set
+# param["usfs_region_id"] explicitly for anything else.
+USFS_REGION_BY_STUDY_REGION = {"CONUS": 6, "AK": 10}
+
+# Equal-area projections on the GRS80 ellipsoid (WGS84 to <1e-4 m), keyed by
+# US_AREA. Earth Engine's default geodesic area() assumes a spherical earth and
+# reads ~0.3% low at these latitudes; areas in these projections match the
+# ellipsoid, and are how IDS computes its own ACRES.
+EQUAL_AREA_CRS = {"CONUS": "EPSG:5070", "Alaska": "EPSG:3338"}
+
+DEFAULT_FEATURE_USER_ID = "BugNet"
+
+
+def us_area(param):
+    """Return the IDS US_AREA value for the run's study region."""
+    return US_AREA_BY_STUDY_REGION[param["study_region"]]
+
+
+def usfs_region_id(param):
+    """Return the integer USFS region (IDS REGION_ID) for the run."""
+    return int(param.get("usfs_region_id", USFS_REGION_BY_STUDY_REGION[param["study_region"]]))
+
+
 def calc_attri_fields(param):
     """Build the standard output attribute fields for buffered polygons."""
     today = datetime.datetime.today()
@@ -157,14 +186,14 @@ def calc_attri_fields(param):
         "DAMAGE_TYPE_CODE": 0,
         "DCA": "null",
         "DCA_CODE": 0,
-        "FEATURE_USER_ID": "clarype@oregonstate.edu",
+        "FEATURE_USER_ID": param.get("feature_user_id", DEFAULT_FEATURE_USER_ID),
         "HOST": "null",
         "HOST_CODE": 0,
         "HOST_GROUP": "null",
         "HOST_GROUP_CODE": 0,
         "NOTES": "null",
-        "REGION_ID": param["study_region"],
-        "US_AREA": "CONUS",
+        "REGION_ID": usfs_region_id(param),
+        "US_AREA": us_area(param),
         "MODIFIED_DATE": "na",
         "SURVEY_YEAR": param["target"],
         "buffered_acres": 0,
@@ -173,28 +202,25 @@ def calc_attri_fields(param):
     }
 
 
-def add_area_and_pct_affected_by_pixel_count(
-    fc_buffered,
-    fc_unbuffered,
-    count_field="count",
-    pixel_size_meters=30,
-):
-    """Add buffered/unbuffered acres and percent affected to buffered polygons."""
-    acres_per_sq_m = 0.00024710538146717
-    acres_per_pixel = ee.Number(pixel_size_meters).multiply(pixel_size_meters).multiply(acres_per_sq_m)
+def add_area_and_pct_affected(fc_buffered, fc_unbuffered, crs, max_error=1):
+    """Add ACRES, buffered/unbuffered acres and percent affected to buffered polygons.
 
-    join = ee.Join.saveAll(matchesKey="matches")
+    Areas are the polygons' own geometry areas in the equal-area ``crs``.
+    unbuffered_acres sums the unbuffered polygons each buffered polygon
+    contains; ACRES equals buffered_acres (IDS ACRES is gross polygon area).
+    """
+    join = ee.Join.saveAll(matchesKey="matches", outer=True)
     filt = ee.Filter.contains(leftField=".geo", rightField=".geo")
     joined = ee.FeatureCollection(join.apply(fc_buffered, fc_unbuffered, filt))
 
+    def area_acres(feature):
+        return ee.Number(ee.Feature(feature).geometry().area(max_error, crs)).multiply(ACRES_PER_SQ_M)
+
     def per_buffer(buf):
         buf = ee.Feature(buf)
-        buffer_area_acres = ee.Number(buf.geometry().area(1)).multiply(acres_per_sq_m)
-        matches = ee.FeatureCollection(ee.List(buf.get("matches")))
-        pixel_count_sum = ee.Number(
-            ee.Algorithms.If(matches.size().gt(0), matches.aggregate_sum(count_field), 0)
-        )
-        affected_acres = pixel_count_sum.multiply(acres_per_pixel)
+        buffer_area_acres = area_acres(buf)
+        matches = ee.List(ee.Algorithms.If(buf.get("matches"), buf.get("matches"), []))
+        affected_acres = ee.Number(matches.map(area_acres).reduce(ee.Reducer.sum()))
         pct_affected = ee.Number(
             ee.Algorithms.If(
                 buffer_area_acres.gt(0),
@@ -203,7 +229,8 @@ def add_area_and_pct_affected_by_pixel_count(
             )
         )
         return (
-            buf.set("buffered_acres", buffer_area_acres)
+            buf.set("ACRES", buffer_area_acres)
+            .set("buffered_acres", buffer_area_acres)
             .set("unbuffered_acres", affected_acres)
             .set("pct_affected", pct_affected)
             .set("matches", None)
@@ -325,11 +352,10 @@ def merge_buffer_buckets_and_finish(param, asset_ids, asset_exists):
         return result
 
     fc_attri = fc_bnet.map(rebuild_feature)
-    result = add_area_and_pct_affected_by_pixel_count(
+    result = add_area_and_pct_affected(
         fc_buffered=fc_attri,
-        fc_unbuffered=param["assetDir"] + param["bnet_polygonized"],
-        count_field="count",
-        pixel_size_meters=param["pixel_scale"],
+        fc_unbuffered=ee.FeatureCollection(param["assetDir"] + param["bnet_polygonized"]),
+        crs=EQUAL_AREA_CRS[us_area(param)],
     )
 
     task = ee.batch.Export.table.toAsset(
