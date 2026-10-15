@@ -338,7 +338,7 @@ def merge_buffer_buckets_and_finish(param, asset_ids, asset_exists):
     def rebuild_feature(feature):
         feature = ee.Feature(feature)
         new_props = ee.Dictionary(calc_attri_fields(param))
-        result = ee.Feature(feature.geometry()).set(new_props)
+        result = ee.Feature(feature.geometry()).set(new_props).set("bnet_label", feature.get("bnet_label"))
         if has_confidence:
             result = result.set("confidence", feature.get("confidence"))
         # Opt-in (default off, preserves the existing external schema
