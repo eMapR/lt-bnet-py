@@ -124,8 +124,8 @@ def _stats(fc, field):
     return fc.aggregate_stats(field)
 
 
-def validate(param):
-    """Compare a corrected asset against its original; print a JSON report."""
+def validation_report(param):
+    """Compare a corrected asset against its original; return a report dict."""
     src, dst = asset_ids(param)
     before = ee.FeatureCollection(src)
     after = ee.FeatureCollection(dst)
@@ -195,7 +195,12 @@ def validate(param):
     report["fields_only_before"] = sorted(props_before - props_after)
     report["fields_only_after"] = sorted(props_after - props_before)
     report["unchanged_fields_checked"] = unchanged
-    print(json.dumps(report, indent=2, sort_keys=True, default=str))
+    return report
+
+
+def validate(param):
+    """Compare a corrected asset against its original; print a JSON report."""
+    print(json.dumps(validation_report(param), indent=2, sort_keys=True, default=str))
 
 
 def main():
