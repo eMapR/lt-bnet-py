@@ -110,3 +110,21 @@ class TestValidateParameters:
                 ads=object(),
             )
         )
+
+
+class TestComputeProject:
+    """compute_project only moves where Earth Engine runs the work; the
+    region's project_name (asset paths, parameter profile) is untouched."""
+
+    def test_defaults_to_project_name(self):
+        assert cli_utils.compute_project({"project_name": "blue-mts-bugnet"}) == "blue-mts-bugnet"
+
+    @pytest.mark.parametrize("value", [None, ""])
+    def test_unset_values_default_to_project_name(self, value):
+        param = {"project_name": "blue-mts-bugnet", "compute_project": value}
+        assert cli_utils.compute_project(param) == "blue-mts-bugnet"
+
+    def test_override(self):
+        param = {"project_name": "blue-mts-bugnet", "compute_project": "cascades-bugnet"}
+        assert cli_utils.compute_project(param) == "cascades-bugnet"
+        assert param["project_name"] == "blue-mts-bugnet"

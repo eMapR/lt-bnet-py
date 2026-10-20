@@ -3,7 +3,7 @@ import json
 import sys
 import time
 import bnet as bnet
-from cli_utils import gui, load_parameters, walk_assets
+from cli_utils import compute_project, gui, load_parameters, walk_assets
 from disturbance_utils import (
 	CreatePredictorChangeImagery,
 	CreatePredictorDisturbancePolygons,
@@ -316,7 +316,10 @@ def main():
 		print(f"Error loading parameters: {e}")
 		sys.exit(1)
 
-	ee.Initialize(project=param["project_name"])
+	project = compute_project(param)
+	if project != param["project_name"]:
+		print(f"Earth Engine compute project: {project} (assets in {param['project_name']})")
+	ee.Initialize(project=project)
 	ensure_output_asset_folders(param)
 	validate_or_stamp_shared_assets(param, asset_exists)
 

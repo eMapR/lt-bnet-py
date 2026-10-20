@@ -126,6 +126,17 @@ def normalize_parameters(param):
     return param
 
 
+def compute_project(param):
+    """Cloud project Earth Engine runs (and bills/applies quota to) the work in.
+
+    An optional param['compute_project'] separates computation from the
+    region's own project. project_name still sets the region's parameters
+    and asset paths, so outputs land in the region's project either way.
+    Defaults to project_name, which is how every run behaved before.
+    """
+    return param.get("compute_project") or param["project_name"]
+
+
 def walk_assets(parent_id):
     """Yield every child asset below a parent asset, recursively."""
     info = ee.data.getAsset(parent_id)
