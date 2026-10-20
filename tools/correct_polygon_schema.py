@@ -29,7 +29,7 @@ import ee
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bugnet"))
 
 import postprocess_utils as pu  # noqa: E402
-from cli_utils import load_parameters  # noqa: E402
+from cli_utils import compute_project, load_parameters  # noqa: E402
 
 SUFFIX = "_corrected"
 RECOMPUTED = ["ACRES", "buffered_acres", "unbuffered_acres", "pct_affected"]
@@ -209,7 +209,7 @@ def main():
         print(__doc__)
         sys.exit(1)
     param = load_parameters(sys.argv[1])
-    ee.Initialize(project=param["project_name"])
+    ee.Initialize(project=compute_project(param))
     commands[sys.argv[2]](param)
 
 

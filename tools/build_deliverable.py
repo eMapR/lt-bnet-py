@@ -70,7 +70,7 @@ import bnet  # noqa: E402
 import correct_polygon_schema as cps  # noqa: E402
 import deliverable_readme as text  # noqa: E402
 import postprocess_utils as pu  # noqa: E402
-from cli_utils import load_parameters  # noqa: E402
+from cli_utils import compute_project, load_parameters  # noqa: E402
 
 DEFAULT_STAGING = "/vol/v1/Bugnet/deliverables/box_staging"
 DEFAULT_WORK_ROOT = "/vol/v1/Bugnet/deliverables/work"
@@ -246,7 +246,7 @@ class Region:
         self.config = config
         self.options = {"staging": None if staging == DEFAULT_STAGING else staging, "work": work, "notes": notes}
         self.param = p = load_parameters(config)
-        ee.Initialize(project=p["project_name"])
+        ee.Initialize(project=compute_project(p))
         self.name = name
         self.target = int(p["target"])
         self.version = str(p["version"])
@@ -593,13 +593,15 @@ def step_rasters(R):
             print(f"== download {asset} -> {tif}", flush=True)
             rc = subprocess.run([sys.executable, str(TOOLS / "download_ee_raster.py"), asset, str(tif),
                                  "--dtype", spec["dtype"], "--nodata", str(spec["nodata"]),
-                                 "--block", str(spec["block"]), "--workers", "4"]).returncode
+                                 "--block", str(spec["block"]), "--workers", "4",
+                                 "--project", compute_project(R.param)]).returncode
             if rc:
                 raise StepFailed(f"download of {asset} stopped (exit {rc}); rerun to resume")
         if tif.name not in results:
             print(f"== validate {tif.name}", flush=True)
             out = subprocess.run([sys.executable, str(TOOLS / "validate_ee_raster.py"), asset, str(tif),
-                                  "--points", "1000", "--counts"], capture_output=True, text=True)
+                                  "--points", "1000", "--counts", "--project", compute_project(R.param)],
+                                 capture_output=True, text=True)
             if out.returncode:
                 raise StepFailed(f"validate_ee_raster failed for {tif.name}:\n{out.stderr[-2000:]}")
             r = json.loads(out.stdout[out.stdout.index("{"):])

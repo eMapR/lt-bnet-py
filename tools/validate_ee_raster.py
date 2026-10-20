@@ -48,8 +48,9 @@ def main():
     ap.add_argument("--points", type=int, default=1000)
     ap.add_argument("--counts", action="store_true")
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--project", default=None)
     args = ap.parse_args()
-    ee.Initialize(project=args.asset.split("/")[1])
+    ee.Initialize(project=args.project or args.asset.split("/")[1])
 
     crs, t, width, height, band_names = asset_grid(args.asset)
     report = {"file": args.file.rsplit("/", 1)[-1], "asset": args.asset}
