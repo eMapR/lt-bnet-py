@@ -15,6 +15,7 @@ from shapely.geometry import shape, mapping
 from rasterio.mask import mask
 from pyproj import Transformer
 import time
+from cli_utils import compute_project
 from collections import Counter
 import ee
 import sys
@@ -958,7 +959,11 @@ def build_run_manifest(param):
 		"version": param["version"],
 		"shared_version": param["shared_version"],
 
-		# 8. GEE asset identifier
+		# 8. GEE asset identifier, plus which Cloud project held the assets
+		# and which one Earth Engine ran (and billed) the work in - these
+		# differ when a run sets compute_project.
+		"project_name": param["project_name"],
+		"compute_project": compute_project(param),
 		"assetDir": param["assetDir"],
 		"sharedAssetDir": param["sharedAssetDir"],
 
@@ -1000,6 +1005,7 @@ def print_run_manifest(manifest):
 		f"agent_lookback={manifest['fire_mask_agent_lookback']})"
 	)
 	print(f"  exclusion_mode           : {manifest['exclusion_mode']} -> {manifest['exclusion_classes']}")
+	print(f"  project / compute project: {manifest['project_name']} / {manifest['compute_project']}")
 	print(f"  assetDir                 : {manifest['assetDir']}")
 	print(f"  parameter_file asset     : {manifest['parameter_file_asset']}")
 	print("===========================")

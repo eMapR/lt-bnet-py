@@ -38,6 +38,18 @@ class TestBuildRunManifest:
         manifest = bnet.build_run_manifest(_base_manifest_param())
         assert manifest["manifest_stage"] == "startup"
 
+    def test_compute_project_defaults_to_project_name(self):
+        manifest = bnet.build_run_manifest(_base_manifest_param())
+        assert manifest["project_name"] == manifest["compute_project"] == "north-cascades-bugnet"
+
+    def test_compute_project_is_recorded_without_changing_the_profile(self):
+        manifest = bnet.build_run_manifest(_base_manifest_param(compute_project="cascades-bugnet"))
+        assert manifest["project_name"] == "north-cascades-bugnet"
+        assert manifest["compute_project"] == "cascades-bugnet"
+        # the parameter profile is still keyed by the region's project
+        assert manifest["historical_profile"] == "V3"
+        assert manifest["assetDir"].startswith("projects/north-cascades-bugnet/")
+
     def test_verified_historical_profile_is_matched(self):
         # north-cascades-bugnet/"3" is a real transcribed row in
         # bnet.HISTORICAL_PROFILES (see project_lt_bnet_py_versioning_naming).
