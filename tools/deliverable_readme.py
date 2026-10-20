@@ -228,6 +228,11 @@ def render_region(f):
            else "The run did not record a git commit.")
     code = f["code"]
     exp = f"(contains {fit['first']}-{fit['last']})" if asset_note else ""
+    compute = p.get("compute_project") or p["project_name"]
+    compute_note = ("" if compute == p["project_name"] else "\n" + wrap(
+        f"The Earth Engine processing ran in project {compute} (compute_project in the "
+        f"parameters); every asset was written to {p['project_name']}. Results do not "
+        "depend on the compute project.", indent="  ") + "\n")
     fits = [s.strip() for s in str(p["fit"]).split(",")]
 
     title = f"BugNet {t} - {f['display']} - version {f['tag']}"
@@ -465,7 +470,7 @@ use this version's acreage and pct_affected.
   Forest mask              {p['forestMaskName']}
   Parameters               {p['parameter_file']}
   Full path prefix: {p['assetDir']}
-
+{compute_note}
 Code (lt-bnet-py, branch {code['branch']}, {code['url']}):
   - tools/correct_polygon_schema.py: polygon attribute correction
     ({code['correction']}).
