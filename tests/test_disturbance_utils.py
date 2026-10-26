@@ -1,0 +1,71 @@
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+import disturbance_utils as du
+
+ASSET_DIR = "projects/x-bugnet/assets/2026-v2/"
+BASE = "B1_predictor_disturbance_polygons_2026"
+GRID = f"{ASSET_DIR}{BASE}_grid_40000m"
+
+
+def _param():
+    return {
+        "assetDir": ASSET_DIR,
+        "disturbance_polygons_predictor": BASE,
+        "predictor_change_img": "A_predictor_change_img_2026",
+        "aoi": "aoi",
+    }
+
+
+def _task(state="COMPLETED"):
+    task = MagicMock()
+    task.status.return_value = {"state": state}
+    return task
+
+
+def _run_grid(existing, grid_state="COMPLETED"):
+    """Run the grid strategy with EE mocked; return (result, export mock, ee mock)."""
+    ee = MagicMock()
+    ee.FeatureCollection.return_value.size.return_value.getInfo.return_value = 2
+    ee.String.return_value.getInfo.side_effect = ["cell_0", "cell_1"]
+    ee.Number.return_value.getInfo.return_value = 5
+    tasks = iter([_task(grid_state), _task(), _task()])
+    export = MagicMock(side_effect=lambda fc, desc, d: next(tasks))
+    with patch.object(du, "ee", ee), \
+            patch.object(du.bnet, "export_feature_collection", export), \
+            patch.object(du.bnet, "vectorize_disturbance", return_value=MagicMock()), \
+            patch.object(du, "split_collection_covering_grid", return_value="lazy_grid"), \
+            patch.object(du.time, "sleep"):
+        res = du.CreatePredictorDisturbancePolygons(
+            _param(), lambda a: a in existing, strategy="grid", grid_cell_m=40000)
+    return res, export, ee
+
+
+def test_grid_is_exported_once_then_read_from_the_asset():
+    res, export, ee = _run_grid(existing=set())
+    grid_exports = [c for c in export.call_args_list if c.args[1] == f"{BASE}_grid_40000m"]
+    assert len(grid_exports) == 1
+    assert grid_exports[0].args[0] == "lazy_grid"
+    ee.FeatureCollection.assert_any_call(GRID)
+    assert res["asset_paths"] == [f"{ASSET_DIR}{BASE}_cell_0", f"{ASSET_DIR}{BASE}_cell_1"]
+    assert GRID in res["created_asset_paths"]
+
+
+def test_existing_grid_asset_is_reused():
+    res, export, _ = _run_grid(existing={GRID})
+    assert [c.args[1] for c in export.call_args_list] == [f"{BASE}_cell_0", f"{BASE}_cell_1"]
+    assert GRID not in res["created_asset_paths"]
+
+
+def test_failed_grid_export_fails_the_strategy():
+    with pytest.raises(RuntimeError, match="ended FAILED"):
+        _run_grid(existing=set(), grid_state="FAILED")
+
+
+def test_wait_for_export_polls_until_terminal():
+    task = MagicMock()
+    task.status.side_effect = [{"state": "READY"}, {"state": "RUNNING"}, {"state": "COMPLETED"}]
+    sleep = MagicMock()
+    assert du._wait_for_export(task, sleep=sleep) == "COMPLETED"
+    assert sleep.call_count == 2

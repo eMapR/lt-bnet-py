@@ -1,6 +1,17 @@
+import time
+
 import ee
 
 import bnet
+
+
+def _wait_for_export(task, poll_seconds=60, sleep=time.sleep):
+    """Block until an export task ends; return its final state."""
+    while True:
+        state = bnet.get_task_status(task).get("state")
+        if state in ("COMPLETED", "FAILED", "CANCELLED"):
+            return state
+        sleep(poll_seconds)
 
 
 # ----------------------------------------------------------------------------
@@ -281,7 +292,25 @@ def CreatePredictorDisturbancePolygons(
     # ---------- Attempt 3: SPATIAL GRID (last resort) ----------
     def attempt_grid():
         print('grid')
-        split_fc = split_collection_covering_grid(param["aoi"], int(grid_cell_m))
+        # Build the grid once, as an asset. The grid is lazy: used directly,
+        # every per-cell preflight below re-clips the whole covering grid to
+        # the AOI inside its own interactive request. For a large AOI with a
+        # detailed boundary (e.g. Tanana River, Alaska-clipped: ~3 min at
+        # 40 km, ~6.5 min at 20 km) that alone pushes each request to the
+        # interactive time limit. A batch export has no such limit.
+        grid_path = _asset_path(f"_grid_{int(grid_cell_m)}m")
+        if not asset_exists(grid_path):
+            grid_task = bnet.export_feature_collection(
+                split_collection_covering_grid(param["aoi"], int(grid_cell_m)),
+                param['disturbance_polygons_predictor'] + f"_grid_{int(grid_cell_m)}m",
+                asset_dir,
+            )
+            created_paths.append(grid_path)
+            print(f"exporting grid {grid_path} (task {grid_task.id})")
+            state = _wait_for_export(grid_task)
+            if state != "COMPLETED":
+                raise RuntimeError(f"Grid export {grid_path} ended {state}")
+        split_fc = ee.FeatureCollection(grid_path)
         count = split_fc.size().getInfo()
         feats = split_fc.toList(count)
 
@@ -302,12 +331,6 @@ def CreatePredictorDisturbancePolygons(
                 print(f"grid cell {sid} has no features, skipping export")
                 continue
             staged.append((f"_{sid}", polys))
-
-        # Optional: export the grid itself after preflight succeeds
-        try:
-            _export(split_fc, f"_grid_{int(grid_cell_m)}m")
-        except Exception as e:
-            print(f"Grid export failed (non-fatal): {e}")
 
         # Pass 2: start exports. `paths` must include already-existing
         # shards too (t is None but p is still a real, usable asset id -
