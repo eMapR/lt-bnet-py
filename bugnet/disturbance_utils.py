@@ -3,6 +3,7 @@ import time
 import ee
 
 import bnet
+import exclusion_evidence
 
 
 def _wait_for_export(task, poll_seconds=60, sleep=time.sleep):
@@ -651,8 +652,10 @@ def exportReviewFlaggedPolygons(param, asset_exists):
 # ----------------------------------------------------------------------------
 def filter_classes(param, asset_exists):
     asset_dir = param.get("sharedAssetDir", param["assetDir"])
+    gate = exclusion_evidence.resolve_evidence_gate(param)
     exists = asset_exists(asset_dir + param['filtered_classes'])
-    if exists:
+    qa_missing = gate is not None and not asset_exists(asset_dir + gate['released_name'])
+    if exists and not qa_missing:
         return
 
     classified_fc = ee.FeatureCollection(asset_dir + param['classified_fc'])
@@ -670,7 +673,24 @@ def filter_classes(param, asset_exists):
         print(f"filter_classes: {mode} exclusion_classes={exclusion_classes}")
         fc1 = classified_fc.filter(ee.Filter.inList('classification', exclusion_classes))
 
-    task = bnet.export_feature_collection(fc1, param['filtered_classes'], asset_dir)
+    if gate is None:
+        return bnet.export_feature_collection(fc1, param['filtered_classes'], asset_dir)
+
+    # Evidence gate (exclusion_evidence.py): fc1 holds candidates; only the
+    # evidence-backed ones are masked, the rest are exported as a QA layer.
+    print(f"filter_classes: evidence gate on, released patches -> {gate['released_name']}")
+    masked, released = exclusion_evidence.split_by_evidence(
+        exclusion_evidence.tag_evidence(fc1, param, gate))
+    qa_task = None
+    if qa_missing:
+        qa_task = bnet.export_feature_collection(released, gate['released_name'], asset_dir)
+    task = None
+    if not exists:
+        task = bnet.export_feature_collection(masked, param['filtered_classes'], asset_dir)
+    if qa_task is not None:
+        state = _wait_for_export(qa_task)
+        if state != "COMPLETED":
+            raise RuntimeError(f"Released-patch QA export {gate['released_name']} ended {state}")
     return task
 
 

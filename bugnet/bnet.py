@@ -904,8 +904,10 @@ def build_run_manifest(param):
 	final parameter_file export, which is the point a real run has (in
 	every current call site) already finished classify_polygons.
 	"""
+	import exclusion_evidence  # local: exclusion_evidence imports bnet
 	historical_profile, historical_profile_status = resolve_historical_profile(param)
 	mode, classes = resolve_exclusion_classes(param)
+	gate = exclusion_evidence.resolve_evidence_gate(param)
 
 	return {
 		"manifest_stage": "startup",
@@ -954,6 +956,13 @@ def build_run_manifest(param):
 		# 6. Exclusion classes + how resolved
 		"exclusion_mode": mode,
 		"exclusion_classes": classes if classes is not None else [],
+		# Evidence gate on the exclusion (exclusion_evidence.py); off = legacy behavior.
+		"exclusion_evidence_on": gate is not None,
+		"exclusion_evidence_released_asset": (
+			f"{param.get('sharedAssetDir', param['assetDir'])}{gate['released_name']}" if gate else ""
+		),
+		"exclusion_evidence_gfc_asset": gate["gfc_asset"] if gate else "",
+		"exclusion_evidence_facts_path": gate["facts_path"] if gate else "",
 
 		# 7. Run/revision identifier
 		"version": param["version"],
@@ -1005,6 +1014,11 @@ def print_run_manifest(manifest):
 		f"agent_lookback={manifest['fire_mask_agent_lookback']})"
 	)
 	print(f"  exclusion_mode           : {manifest['exclusion_mode']} -> {manifest['exclusion_classes']}")
+	if manifest.get("exclusion_evidence_on"):
+		print(
+			f"    -> evidence gate on: released QA={manifest['exclusion_evidence_released_asset']}, "
+			f"gfc={manifest['exclusion_evidence_gfc_asset']}, facts={manifest['exclusion_evidence_facts_path'] or 'none'}"
+		)
 	print(f"  project / compute project: {manifest['project_name']} / {manifest['compute_project']}")
 	print(f"  assetDir                 : {manifest['assetDir']}")
 	print(f"  parameter_file asset     : {manifest['parameter_file_asset']}")
