@@ -888,7 +888,7 @@ def readme_facts(R):
     f["fitted"]["asset_years"] = asset_years
     if p.get("platform", "LS") != "LS":
         f["notes"]["region"] += " " + text.review(f"platform {p['platform']!r}: README assumes Landsat")
-    if p.get("run_manifest_exclusion_mode", "legacy_range") != "legacy_range":
+    if p.get("run_manifest_exclusion_mode", "legacy_range") != "legacy_range" and not text.no_exclusion(p):
         f["notes"]["region"] += " " + text.review("exclusion_mode is not legacy_range; check section 9b")
     return f
 
