@@ -123,3 +123,40 @@ def test_buffer_with_wilderness_applies_rule_to_buffered_patches():
     assert wild.call_args.args[0] == "buffered"
     assert wild.call_args.args[1] is ee.FeatureCollection.return_value.merge.return_value
     assert export.call_args.args[:2] == ("kept", "C3")
+
+
+def _empty_exclusion_param():
+    return {"assetDir": ASSET_DIR, "exclusion_classes": [], "classified_fc": "C1",
+            "filtered_classes": "C2", "buffered_classes": "C3", "rasterize_classes": "C4",
+            "pixel_scale": 30, "aoi": MagicMock(), "wild_path": {"on": 1}}
+
+
+def test_empty_exclusion_skips_table_stages():
+    param = _empty_exclusion_param()
+    with patch.object(du, "ee"), patch.object(du.bnet, "export_feature_collection") as export:
+        assert du.filter_classes(param, lambda a: False) is None
+        assert du.buffer_classed_polygons(param, lambda a: False) is None
+    export.assert_not_called()
+
+
+def test_empty_exclusion_writes_zero_classed_image():
+    param = _empty_exclusion_param()
+    with patch.object(du, "ee") as ee, \
+            patch.object(du.bnet, "rasterize_polygons") as rasterize, \
+            patch.object(du.bnet, "export_image") as export:
+        du.rasterize_classed_polygons(param, lambda a: False)
+    rasterize.assert_not_called()
+    ee.Image.constant.assert_called_once_with(0)
+    zero = ee.Image.constant.return_value.toInt32.return_value.rename.return_value
+    ee.Image.constant.return_value.toInt32.return_value.rename.assert_called_once_with('first')
+    assert export.call_args.args[0] is zero
+    assert export.call_args.args[3] == "C4"
+
+
+def test_nonempty_exclusion_still_rasterizes_c3():
+    param = dict(_empty_exclusion_param(), exclusion_classes=[20, 21])
+    with patch.object(du, "ee"), \
+            patch.object(du.bnet, "rasterize_polygons") as rasterize, \
+            patch.object(du.bnet, "export_image"):
+        du.rasterize_classed_polygons(param, lambda a: False)
+    rasterize.assert_called_once()

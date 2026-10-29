@@ -650,8 +650,20 @@ def exportReviewFlaggedPolygons(param, asset_exists):
 # ----------------------------------------------------------------------------
 # Create high-disturbance mask from classified polygons
 # ----------------------------------------------------------------------------
+def excludes_nothing(param):
+    """
+    True when exclusion_classes is an explicit empty list. C2 and C3 would be
+    empty tables, which Earth Engine refuses to export ("Table is empty"), so
+    those stages are skipped and C4 is written as an all-zero image.
+    """
+    return bnet.resolve_exclusion_classes(param) == ('explicit', [])
+
+
 def filter_classes(param, asset_exists):
     asset_dir = param.get("sharedAssetDir", param["assetDir"])
+    if excludes_nothing(param):
+        print("filter_classes: exclusion_classes=[], nothing to exclude, skipping C2")
+        return None
     gate = exclusion_evidence.resolve_evidence_gate(param)
     exists = asset_exists(asset_dir + param['filtered_classes'])
     qa_missing = gate is not None and not asset_exists(asset_dir + gate['released_name'])
@@ -718,6 +730,9 @@ def drop_nonfire_in_wilderness(buffered, wilderness):
 
 def buffer_classed_polygons(param, asset_exists):
     asset_dir = param.get("sharedAssetDir", param["assetDir"])
+    if excludes_nothing(param):
+        print("buffer_classed_polygons: exclusion_classes=[], skipping C3")
+        return None
     exists = asset_exists(asset_dir + param['buffered_classes'])
     if exists:
         return
@@ -741,7 +756,12 @@ def rasterize_classed_polygons(param, asset_exists):
     if exists:
         return
 
-    fc2 = ee.FeatureCollection(asset_dir + param['buffered_classes'])
-    img = bnet.rasterize_polygons(fc2, 'classification', param['pixel_scale'], region=param['aoi'])
+    if excludes_nothing(param):
+        # Same band name and type as a rasterized C3, so C4 consumers don't change.
+        print("rasterize_classed_polygons: exclusion_classes=[], C4 is all zeros")
+        img = ee.Image.constant(0).toInt32().rename('first')
+    else:
+        fc2 = ee.FeatureCollection(asset_dir + param['buffered_classes'])
+        img = bnet.rasterize_polygons(fc2, 'classification', param['pixel_scale'], region=param['aoi'])
     task = bnet.export_image(img, param, asset_dir, param['rasterize_classes'])
     return task
