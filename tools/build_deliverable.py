@@ -847,11 +847,15 @@ def readme_facts(R):
     elif not is_pushed(build_rev):
         build_rev = text.review(f"commit {build_rev} is not pushed to GitHub yet")
     files = {w: R.file_name(w) for w in ["polygons", "parameters", *RASTERS]}
+    notes = read_notes(R.notes_path)
+    # composite_params_end_date is the date of the launch that wrote the parameter file; a resumed run
+    # reuses composites built by an earlier launch, so the notes can give the real window.
+    composite_window = notes.get("composite_window") or f"{start:%B} {start.day} - {end:%B} {end.day}"
     f = {
         **stats,
         "display": R.name.replace("_", " "), "prefix": R.prefix, "tag": R.tag, "target": target,
         "version": R.version, "variant": R.variant, "region_id": R.region_id, "us_area": R.us_area,
-        "equal_area_crs": pu.EQUAL_AREA_CRS[R.us_area], "notes": read_notes(R.notes_path), "run": p,
+        "equal_area_crs": pu.EQUAL_AREA_CRS[R.us_area], "notes": notes, "run": p,
         "run_date": end.isoformat(), "correction_date": poly["correction_date"],
         "export_date": rast["export_date"], "files": files,
         "sizes": {name: (R.dir / name).stat().st_size for name in files.values()},
@@ -867,7 +871,7 @@ def readme_facts(R):
         "class_years": class_years,
         "sub_mmu_share": align["class_pixels_not_in_any_detection"] / align["class_pixels_total"],
         "jrc_share": rast["valid_counts"]["fitted"] / rast["valid_counts"]["classed"],
-        "composite_window": f"{start:%B} {start.day} - {end:%B} {end.day}",
+        "composite_window": composite_window,
         "profile": (p.get("run_manifest_historical_profile", "unrecorded"),
                     p.get("run_manifest_historical_profile_status", "unrecorded")),
         "pipeline_revision": ", ".join(f"{key} {p[key]}" for key in git_keys),

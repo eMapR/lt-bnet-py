@@ -156,3 +156,27 @@ class TestAlignment:
         r = self.setup(tmp_path, (-119.995, 44.9945, -119.9945, 44.9985))
         assert r["detection_pixels_outside_all_polygons"] > 0
         assert bd.alignment_failures(r)
+
+
+@pytest.mark.parametrize("params,expected", [
+    ({"run_manifest_exclusion_mode": "explicit", "exclusion_classes": ""}, True),
+    ({"run_manifest_exclusion_mode": "explicit", "exclusion_classes": "[]"}, True),
+    ({"run_manifest_exclusion_mode": "explicit", "exclusion_classes": "20, 21"}, False),
+    ({"run_manifest_exclusion_mode": "legacy_range", "exclusion_classes": ""}, False),
+    ({}, False),
+])
+def test_no_exclusion_reads_the_parameter_file(params, expected):
+    assert text.no_exclusion(params) is expected
+
+
+def _vs(unb_before, buf_before, only_before=()):
+    return {"sum_unbuffered_acres_before": unb_before, "sum_unbuffered_acres_after": 100.0,
+            "sum_buffered_acres_before": buf_before, "sum_buffered_acres_after": 200.0,
+            "fields_only_before": list(only_before), "fields_only_after": []}
+
+
+def test_attributes_already_corrected_only_when_nothing_changed():
+    assert text.attributes_already_corrected(_vs(100.0, 200.0))
+    assert not text.attributes_already_corrected(_vs(150.0, 200.0))     # pixel-count acreage
+    assert not text.attributes_already_corrected(_vs(100.0, 210.0))
+    assert not text.attributes_already_corrected(_vs(100.0, 200.0, ["old_field"]))

@@ -39,6 +39,19 @@ def review(what):
     return REVIEW.format(what)
 
 
+def no_exclusion(p):
+    """True when the run masked no high-magnitude disturbances (exclusion_classes=[])."""
+    return (p.get("run_manifest_exclusion_mode") == "explicit"
+            and str(p.get("exclusion_classes", "x")) in ("", "[]"))
+
+
+def attributes_already_corrected(v):
+    """True when the run itself wrote the corrected attributes, so the correction step changed none of them."""
+    unb = v["sum_unbuffered_acres_before"] / v["sum_unbuffered_acres_after"]
+    buf = v["sum_buffered_acres_after"] / v["sum_buffered_acres_before"]
+    return not v["fields_only_before"] and not v["fields_only_after"] and abs(unb - 1) < 1e-3 and abs(buf - 1) < 1e-3
+
+
 def wrap(text, width=77, indent="", first=None):
     text = re.sub(r"[ \t\n]+", " ", text).strip()  # not str.split(): it would split at NBSP too
     out = textwrap.fill(text, width=width,
@@ -81,7 +94,9 @@ def _files(f):
             (f["files"]["fitted"], f"LandTrendr-fitted spectral values, {f['fitted']['n_bands']} bands "
                                    f"({len(f['fitted']['indices'])} indices x {f['fitted']['first']}-{f['fitted']['last']}),\n"
                                    "      for forest pixels."),
-            (f["files"]["classed"], "High-magnitude disturbances excluded from the analysis (fire,\n"
+            (f["files"]["classed"], "All 0: this version excludes no high-magnitude disturbances\n"
+                                    "      (section 6)." if no_exclusion(f["run"]) else
+                                    "High-magnitude disturbances excluded from the analysis (fire,\n"
                                     "      harvest, development)."),
             (f["files"]["forest_mask"], "Forest pixels that were analysed for decline."),
             (f["files"]["parameters"], f"Every setting used by the run (one row, {f['parameters']['n_columns']} columns).")]
@@ -234,6 +249,65 @@ def render_region(f):
         f"parameters); every asset was written to {p['project_name']}. Results do not "
         "depend on the compute project.", indent="  ") + "\n")
     fits = [s.strip() for s in str(p["fit"]).split(",")]
+    noex = no_exclusion(p)
+    intro = ("insects and disease) from the Landsat time series. BugNet normally also\n"
+             "excludes abrupt, high-magnitude disturbances classified as fire, harvest\n"
+             "or development; THIS VERSION EXCLUDES NONE (sections 6 and 9b)." if noex else
+             "insects and disease) from the Landsat time series. It excludes abrupt,\n"
+             "high-magnitude disturbances such as fire, harvest and development.")
+    version_note = ("\n\n" + wrap(f["notes"]["version_note"])) if f["notes"].get("version_note") else ""
+    if f["notes"].get("composite_note"):
+        window_lines = wrap(f"imagery, {p['ltstartYear']}-{p['ltendYear']} ({f['notes']['composite_note']}).", indent="      ")
+    else:
+        window_lines = (f"      imagery, {p['ltstartYear']}-{p['ltendYear']} (the {t} window ended on the run date,\n"
+                        f"      {f['run_date']}).")
+    if noex:
+        classed_heading = "6. CLASSED IMAGE (ALL ZERO IN THIS VERSION)"
+        classed_text = wrap(
+            f"What it is: in other BugNet versions, abrupt high-magnitude disturbances detected in "
+            f"{p['change_params_years_start']}-{p['change_params_years_end']}, classified by a random forest, "
+            f"buffered by 100{NBSP}m and excluded from decline detection. This version applies no "
+            "classifier-based exclusion (exclusion_classes is empty in the parameters), so every pixel is 0 "
+            "and nothing was excluded by this image. It is delivered so the file set matches other regions.",
+            width=78)
+        step_b = wrap(
+            f"{p['change_params_sort'].capitalize()} {p['change_params_delta']} in {p['change_params_years_start']}-"
+            f"{p['change_params_years_end']} with magnitude {p['change_params_mag_operator']} {p['change_params_mag_value']} "
+            f"were detected and classified by a random forest ({p['num_trees']} trees, trained on "
+            f"{f['training_year']} reference polygons), as in other versions, but NO class was excluded: "
+            "the classifier output is not used by this version.", indent="      ") + "\n        -> classed image (section 6, all 0)"
+        mask_bullet = "  - no excluded high-magnitude disturbance (always true here: none are\n    excluded, section 6);"
+    else:
+        classed_heading = "6. CLASSED IMAGE (EXCLUDED DISTURBANCES)"
+        classed_text = None
+        step_b = None
+        mask_bullet = "  - no excluded high-magnitude disturbance (classed image = 0);"
+    if attributes_already_corrected(v):
+        attributes_block = wrap(
+            f"This run wrote the corrected IDS attributes itself (equal-area acreage, ACRES, REGION_ID, "
+            f"US_AREA, FEATURE_USER_ID, bnet_label). The {f['correction_date']} correction step "
+            "recalculated them and found the same values; it only set MODIFIED_DATE.")
+    else:
+        attributes_block = f"""On {f['correction_date']} the polygon ATTRIBUTES were recalculated:
+  - unbuffered_acres was overstated by about {unb_ratio:.1f}x: it was computed as pixel
+    count x {int(p['pixel_scale']) ** 2} m2, but pixels here are about {f['pixel_area_m2']} m2. It is now measured from
+    geometry.
+  - pct_affected followed (mean {v['pct_affected_before']['mean']:.1f} -> {v['pct_affected_after']['mean']:.1f}; none now exceed 100).
+  - ACRES was 0; it is now the polygon area.
+  - buffered_acres is now computed in an equal-area projection ({buf_change * 100:+.1f}%).
+  - REGION_ID, US_AREA, FEATURE_USER_ID and MODIFIED_DATE now use the IDS
+    values in section 3.
+  - bnet_label had been dropped; it was restored by recomputing it the way
+    the run did. The classification was not rerun.
+If you used an earlier copy of these polygons, the geometries are the same;
+use this version's acreage and pct_affected."""
+    step_b_block = (" b) High-magnitude disturbances (NOT excluded in this version)\n" + step_b if noex else
+                    f""" b) High-magnitude disturbances to exclude
+      {p['change_params_sort'].capitalize()} {p['change_params_delta']} in {p['change_params_years_start']}-{p['change_params_years_end']} with magnitude {p['change_params_mag_operator']} {p['change_params_mag_value']}, duration {p['change_params_dur_operator']} {p['change_params_dur_value']} years,
+      pre-disturbance value {p['change_params_preval_operator']} {p['change_params_preval_value']}, at least {p['change_params_mmu_value']} pixels. Classified by a random
+      forest ({p['num_trees']} trees, trained on {f['training_year']} reference polygons). Classes 20-40
+      excluded and buffered 100 m.{wild_b}
+        -> classed image (section 6)""")
 
     title = f"BugNet {t} - {f['display']} - version {f['tag']}"
     return f"""{heading(title, "=")}
@@ -248,8 +322,7 @@ Rasters and parameters exported: {f['export_date']}
 Contact:         {f['notes']['contact']}
 
 BugNet maps gradual forest decline (the kind of slow canopy loss caused by
-insects and disease) from the Landsat time series. It excludes abrupt,
-high-magnitude disturbances such as fire, harvest and development.
+{intro}{version_note}
 
 
 {heading("1. FILES")}
@@ -365,12 +438,12 @@ Values:  LandTrendr "fitted-to-vertex" (ftv) values: each pixel's annual
          {fit['n_bands']}, {fit['last_band']}) or build pyramids/overviews in QGIS or ArcGIS.
 
 
-{heading(f"6. CLASSED IMAGE (EXCLUDED DISTURBANCES) - {files['classed']}")}
+{heading(f"{classed_heading} - {files['classed']}")}
 Bands:   1, "{f['band_names']['classed']}"
 Type:    unsigned 8-bit integer
 Values:  {chr(10).join((' ' * 9 if i else '') + f'{c:<3} = {d}' for i, (c, d) in enumerate(CLASSED_CODES))}
          255 = NoData (outside the region)
-{wrap(f"What it is: abrupt, high-magnitude disturbances detected in {p['change_params_years_start']}-{p['change_params_years_end']} and classified by a random forest. They were buffered by 100{NBSP}m and EXCLUDED from decline detection.{wild_sentence} This is a mask of what BugNet ignored, not a product of BugNet decline.", width=78)}
+{classed_text or wrap(f"What it is: abrupt, high-magnitude disturbances detected in {p['change_params_years_start']}-{p['change_params_years_end']} and classified by a random forest. They were buffered by 100{NBSP}m and EXCLUDED from decline detection.{wild_sentence} This is a mask of what BugNet ignored, not a product of BugNet decline.", width=78)}
 {classed_note}
 
 {heading(f"7. FOREST MASK - {files['forest_mask']}")}
@@ -383,7 +456,7 @@ Values:  1   = forest analysed for decline
 A pixel is 1 only if ALL of these hold:
   - forest in USFS LCMS (Landscape Change Monitoring System) land use, {f['lcms_year']};
   - forest in JRC Global Forest Cover 2020;
-  - no excluded high-magnitude disturbance (classed image = 0);
+{mask_bullet}
   - outside {fire} fire perimeters, {fy0}-{fy1};
   - {t} fitted Tasseled Cap Brightness <= {p['brightness_value']} (removes bright, non-canopy
     pixels).
@@ -405,20 +478,14 @@ summarised in section 9.
 
  a) Landsat time series and fitting
       Annual Landsat ({p['pixel_scale']} m) medoid composites of {f['composite_window']}
-      imagery, {p['ltstartYear']}-{p['ltendYear']} (the {t} window ended on the run date,
-      {f['run_date']}).
+{window_lines}
       LandTrendr {p['ltstartYear']}-{p['ltendYear']}, segmentation index {p['index']}; fitted bands {', '.join(fits[:2])},
       {', '.join(fits[2:])}. Settings: maxSegments {ltb('maxSegments')}, spikeThreshold {ltb('spikeThreshold')},
       vertexCountOvershoot {ltb('vertexCountOvershoot')}, preventOneYearRecovery {ltb('preventOneYearRecovery')},
       recoveryThreshold {ltb('recoveryThreshold')}, pvalThreshold {ltb('pvalThreshold')}, bestModelProportion {ltb('bestModelProportion')},
       minObservationsNeeded {ltb('minObservationsNeeded')}.  -> fitted image (section 5)
 
- b) High-magnitude disturbances to exclude
-      {p['change_params_sort'].capitalize()} {p['change_params_delta']} in {p['change_params_years_start']}-{p['change_params_years_end']} with magnitude {p['change_params_mag_operator']} {p['change_params_mag_value']}, duration {p['change_params_dur_operator']} {p['change_params_dur_value']} years,
-      pre-disturbance value {p['change_params_preval_operator']} {p['change_params_preval_value']}, at least {p['change_params_mmu_value']} pixels. Classified by a random
-      forest ({p['num_trees']} trees, trained on {f['training_year']} reference polygons). Classes 20-40
-      excluded and buffered 100 m.{wild_b}
-        -> classed image (section 6)
+{step_b_block}
 
  c) Forest mask (criteria in section 7). Fire perimeters: {fire}, {fy0}-{fy1}.
         -> forest mask (section 7)
@@ -442,19 +509,7 @@ The BugNet detection and classification results are UNCHANGED from the
 {f['run_date']} run: the declining pixels, all rasters, the polygon geometries,
 the polygon count ({f['n_polygons']:,}) and each polygon's class.
 
-On {f['correction_date']} the polygon ATTRIBUTES were recalculated:
-  - unbuffered_acres was overstated by about {unb_ratio:.1f}x: it was computed as pixel
-    count x {int(p['pixel_scale']) ** 2} m2, but pixels here are about {f['pixel_area_m2']} m2. It is now measured from
-    geometry.
-  - pct_affected followed (mean {v['pct_affected_before']['mean']:.1f} -> {v['pct_affected_after']['mean']:.1f}; none now exceed 100).
-  - ACRES was 0; it is now the polygon area.
-  - buffered_acres is now computed in an equal-area projection ({buf_change * 100:+.1f}%).
-  - REGION_ID, US_AREA, FEATURE_USER_ID and MODIFIED_DATE now use the IDS
-    values in section 3.
-  - bnet_label had been dropped; it was restored by recomputing it the way
-    the run did. The classification was not rerun.
-If you used an earlier copy of these polygons, the geometries are the same;
-use this version's acreage and pct_affected.
+{attributes_block}
 
 
 {heading(f"12. SOURCE EARTH ENGINE ASSETS (project {p['project_name']}, folder {f['asset_folder']})")}
