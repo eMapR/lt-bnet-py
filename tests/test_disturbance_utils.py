@@ -69,3 +69,57 @@ def test_wait_for_export_polls_until_terminal():
     sleep = MagicMock()
     assert du._wait_for_export(task, sleep=sleep) == "COMPLETED"
     assert sleep.call_count == 2
+
+
+def _fc(name):
+    """Mock collection whose filter() returns a distinct child per filter."""
+    fc = MagicMock(name=name)
+    children = {}
+    fc.filter.side_effect = lambda f: children.setdefault(f, MagicMock(name=f"{name}[{f}]"))
+    return fc
+
+
+def _wild_ee():
+    ee = MagicMock()
+    ee.Filter.eq.side_effect = lambda prop, v: f"{prop}=={v}"
+    ee.Filter.neq.side_effect = lambda prop, v: f"{prop}!={v}"
+    return ee
+
+
+def test_wilderness_rule_keeps_each_patch_once():
+    ee = _wild_ee()
+    buffered, wilderness = _fc("buffered"), MagicMock(name="wild")
+    with patch.object(du, "ee", ee):
+        out = du.drop_nonfire_in_wilderness(buffered, wilderness)
+    fire, non_fire = buffered.filter("classification==40"), buffered.filter("classification!=40")
+    join_kwargs = ee.Join.inverted.return_value.apply.call_args.kwargs
+    # Only non-fire patches go through the join, so fire isn't merged in twice.
+    assert join_kwargs["primary"] is non_fire
+    assert join_kwargs["secondary"] is wilderness
+    fire.merge.assert_called_once_with(ee.Join.inverted.return_value.apply.return_value)
+    assert out is fire.merge.return_value
+
+
+def _run_buffer(wild_on):
+    param = {"assetDir": ASSET_DIR, "filtered_classes": "C2", "buffered_classes": "C3",
+             "wild_path": {"on": wild_on, "path": "wild1", "path2": "wild2"}}
+    with patch.object(du, "ee") as ee, \
+            patch.object(du.bnet, "buffer_features", return_value="buffered") as buf, \
+            patch.object(du, "drop_nonfire_in_wilderness", return_value="kept") as wild, \
+            patch.object(du.bnet, "export_feature_collection") as export:
+        du.buffer_classed_polygons(param, lambda a: False)
+    return ee, buf, wild, export
+
+
+def test_buffer_without_wilderness_exports_buffered_patches():
+    _, buf, wild, export = _run_buffer(0)
+    buf.assert_called_once()
+    wild.assert_not_called()
+    assert export.call_args.args[:2] == ("buffered", "C3")
+
+
+def test_buffer_with_wilderness_applies_rule_to_buffered_patches():
+    ee, _, wild, export = _run_buffer(1)
+    assert wild.call_args.args[0] == "buffered"
+    assert wild.call_args.args[1] is ee.FeatureCollection.return_value.merge.return_value
+    assert export.call_args.args[:2] == ("kept", "C3")

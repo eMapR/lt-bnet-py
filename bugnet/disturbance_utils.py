@@ -694,6 +694,28 @@ def filter_classes(param, asset_exists):
     return task
 
 
+FIRE_CLASS = 40
+
+
+def drop_nonfire_in_wilderness(buffered, wilderness):
+    """
+    Wilderness rule for the exclusion mask: harvest and development can't
+    occur in wilderness/park land, so non-fire patches that touch it are
+    treated as misclassified and left out of the mask. Fire patches are kept
+    everywhere. Each patch appears once (fire used to be merged with the
+    join output, which already held the fire patches outside wilderness).
+    """
+    fire = buffered.filter(ee.Filter.eq('classification', FIRE_CLASS))
+    non_fire = buffered.filter(ee.Filter.neq('classification', FIRE_CLASS))
+    # Inverted join: keep non-fire patches that do NOT intersect wilderness.
+    outside = ee.Join.inverted().apply(
+        primary=non_fire,
+        secondary=wilderness,
+        condition=ee.Filter.intersects(leftField='.geo', rightField='.geo'),
+    )
+    return fire.merge(outside)
+
+
 def buffer_classed_polygons(param, asset_exists):
     asset_dir = param.get("sharedAssetDir", param["assetDir"])
     exists = asset_exists(asset_dir + param['buffered_classes'])
@@ -701,27 +723,13 @@ def buffer_classed_polygons(param, asset_exists):
         return
 
     fc1 = ee.FeatureCollection(asset_dir + param['filtered_classes'])
-    fc2 = bnet.buffer_features(fc1, 100)
+    out = bnet.buffer_features(fc1, 100)
 
     # High Magnitude -- makes a raster mask from vector layer of clear cuts fire etc
     if param['wild_path']["on"]:
-        # Build an "intersects" condition using geometry fields
-        cond = ee.Filter.intersects(
-            leftField='.geo',   # geometry of 'many'
-            rightField='.geo'   # geometry of 'few'
-        )
-        # Inverted join: keep features from 'many' that do NOT intersect anything in 'few'
-        many_without_few = ee.Join.inverted().apply(
-            primary=fc2,
-            secondary=ee.FeatureCollection(param['wild_path']['path']).merge(ee.FeatureCollection(param['wild_path']['path2'])),
-            condition=cond
-        )
-
-        # Filter to class 40 (fire) and merge with the non-intersecting features
-        fire = fc2.filter(ee.Filter.eq('classification', 40))
-        out = fire.merge(many_without_few)
-    else:
-        out = bnet.buffer_features(fc1, 100)
+        wilderness = ee.FeatureCollection(param['wild_path']['path']).merge(
+            ee.FeatureCollection(param['wild_path']['path2']))
+        out = drop_nonfire_in_wilderness(out, wilderness)
 
     task = bnet.export_feature_collection(out, param['buffered_classes'], asset_dir)
     return task
