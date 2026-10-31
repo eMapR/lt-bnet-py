@@ -11,6 +11,11 @@ a different role, and (as of 2026-09-03) a different git status to match:
 | `bugnet/run_configs/` | Generated output. `batch_bugnet.sh` reads a template and materializes real, run-ready parameter files here (one per year/region/version, plus one per mag/mmu variant). This is what you actually pass to `bugnet/main.py`. | No — regenerate via `batch_bugnet.sh`, don't hand-edit (edits get silently overwritten on the next generation pass since `OVERWRITE_BASE`/`OVERWRITE_VARIANTS` default to on). | Gitignored - this is derived build output (868+ files, regenerated wholesale), not source. |
 | `bugnet/legacy_parameters/` | Retired. Hand-authored parameter files from before `batch_bugnet.sh` existed - one-off, no generation step. The oldest tier in here (`2024/v1/`) predates the current `main.py`/`cli_utils.py` schema entirely and will fail `cli_utils.validate_parameters()` if you try to run it - it's not a bug, it's genuinely incompatible. | Frozen history - don't add new files here. | Gitignored - frozen archive, not source going forward. |
 
+**`bugnet/templates/v2/region-template.py` (added 2026-10-30)** is
+different: it is the config the 2026 products (v2026-2) were made with,
+meant to be copied by hand into `bugnet/run_configs/<region>-bugnet-<year>-v2/`
+and edited (see the root README), not materialized by `batch_bugnet.sh`.
+
 Named `parameters/` and `params_new/` before 2026-08-15; renamed because
 neither name signaled which one was current, and `parameters/2024/v1/`'s
 "v1" collided in meaning with `run_configs/.../v1/`'s "v1" (see below).

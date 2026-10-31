@@ -1,174 +1,222 @@
 # BugNet (lt-bnet-py)
 
-BugNet is a Google Earth Engine (GEE) pipeline that maps forest disturbance
-caused by insects and disease. It combines Landsat time series, LandTrendr
-temporal segmentation (via the `ltgee` package), and a Random Forest
-classifier to distinguish subtle, non-stand-replacing decline (bugs/disease)
-from stand-replacing disturbance (fire, harvest) across a set of Pacific
-Northwest ecoregions.
+BugNet maps gradual forest decline, the slow canopy loss caused by insects
+and disease, from the Landsat time series in Google Earth Engine (GEE). It
+fits each pixel's history with LandTrendr (via the `ltgee` package), finds
+pixels whose condition has been declining over recent years, groups them
+into classes, and turns them into polygons. Abrupt, high-magnitude
+disturbances such as fire, harvest and development are identified by a
+Random Forest classifier and kept out of the decline map.
 
-For each ecoregion/year/version run, the pipeline builds fitted spectral
-imagery, detects change, attributes disturbance polygons against reference
-data, classifies and filters them, derives a forest mask, computes a decline
-score, clusters it (SNIC + KMeans), samples training points against ADS
-(Aerial Detection Survey) data, trains/​applies a classifier, and exports
-final polygons — all as GEE assets.
+The products are made per region and survey year: polygons that follow the
+USFS Insect and Disease Survey (IDS) schema, plus rasters of the fitted
+time series, the forest mask and the decline classes. The 2026 products
+(v2026-2) cover eight USFS Region 6 ecoregions (Oregon and Washington) and
+nine Region 10 (Alaska) basins.
+
+- [How it works](#how-it-works)
+- [Requirements](#requirements)
+- [Install](#install)
+- [Configure a run](#configure-a-run)
+- [Run and resume](#run-and-resume)
+- [Make a deliverable](#make-a-deliverable)
+- [Earth Engine inputs](#earth-engine-inputs)
+- [Tests](#tests)
+- [Repo layout](#repo-layout)
+
+## How it works
+
+Every stage writes a GEE asset into the run's folder,
+`projects/<project>/assets/<target>-v<version>/`. Asset names start with
+the stage letter:
+
+| Stage | Assets | What it does |
+|---|---|---|
+| A | `A_predictor_fitted_img_*`, `A_predictor_change_img_*` | Annual Landsat composites (July 1 to the composite end date), LandTrendr fit, and the greatest recent loss per pixel |
+| B | `B1_*`, `B2_*` | Polygons of abrupt, high-magnitude change, with the attributes the classifier uses |
+| C | `C1_*` to `C4_*` | Random Forest labels for those polygons (fire, harvest, insect, ...); the labels to exclude are buffered and rasterized |
+| D | `D_bugnet_forest_mask_*` | Forest mask: forest land, minus the excluded patches and fire perimeters (MTBS, optionally WFIGS) |
+| Decline | `Decline_*` | Forest pixels whose condition declines persistently over recent years |
+| KMeans | `KMeans_*` | Declining pixels grouped into classes (3 by default) |
+| Final | `labeled_*`, `bugnet_polygons_*`, `bugnet_polygons_buffered_*` | The class raster, the detected patches, and the buffered polygons with IDS attributes |
+| Records | `_run_manifest`, `*_parameter_file` | The run's settings, stamped at startup and at the end |
+
+## Requirements
+
+- A Google Earth Engine account and a Cloud project registered for Earth
+  Engine. Noncommercial projects get a monthly compute quota. A whole region
+  takes from a few hours to several days, and most of that is stage A.
+- Read access to the Earth Engine inputs listed under
+  [Earth Engine inputs](#earth-engine-inputs). Some are lab assets that
+  aren't public.
+- Conda. `lt-bnet-py.yml` is pinned for Linux x86-64; on other platforms,
+  install the same packages without the build strings.
+
+## Install
+
+```bash
+git clone https://github.com/eMapR/lt-bnet-py.git
+cd lt-bnet-py
+conda env create -f lt-bnet-py.yml
+conda activate lt-bnet-py
+earthengine authenticate          # once per machine
+python -m pytest -q               # optional check that the install works
+```
+
+## Configure a run
+
+A run is described by a Python file that defines a `param` dict. Start from
+the template used for the 2026 products:
+
+```bash
+mkdir -p bugnet/run_configs/my-region-bugnet-2026-v2
+cp bugnet/templates/v2/region-template.py \
+   bugnet/run_configs/my-region-bugnet-2026-v2/my-region-bugnet-2026-v2-config.py
+```
+
+Then edit every line marked `CHANGE ME`: the Earth Engine project, the
+years, the area of interest, the composite end date, `study_region`
+(`"CONUS"` or `"AK"`) and the training polygons. `bugnet/run_configs/` is
+gitignored, so your configs stay local.
+
+Settings you are most likely to change:
+
+| Key | Meaning |
+|---|---|
+| `project_name` | Project that holds the assets; also names the run |
+| `compute_project` | Optional: project whose Earth Engine quota does the work (assets still go to `project_name`) |
+| `aoi` | Area of interest (an `ee.FeatureCollection`) |
+| `composite_params['end_date']` | End of each year's July 1 composite window |
+| `change_params['mag']` | Minimum loss magnitude for an abrupt disturbance (250 in 2026) |
+| `fire_mask_source` | `'mtbs'` or `'mtbs_wfigs'` (WFIGS adds recent fires MTBS hasn't published) |
+| `exclusion_classes` | Classifier labels masked before decline detection; unset = fire, harvest and development; `[]` = none |
+| `bnet_polygon_mmu`, `bnet_buffer` | Minimum polygon size (pixels) and buffer (meters) |
+
+Every key is documented in `docs/parameter_reference_template.py`.
+`docs/config-layout.md` explains the older `v1`/`v3` templates and the
+`batch_bugnet.sh` sweep tool, which were used for the 2025 products.
+
+## Run and resume
+
+```bash
+mkdir -p logs
+echo 2 | python bugnet/main.py bugnet/run_configs/my-region-bugnet-2026-v2/my-region-bugnet-2026-v2-config.py \
+  2>&1 | tee logs/my-region-2026-v2.log
+```
+
+`main.py` asks for a mode; `echo 2` answers it:
+
+1. Full run, including building training polygons (needs the cMonster
+   labeling raster; see below).
+2. Run without building training (uses existing training polygons). All
+   2026 products were made this way.
+3. Export assets to Google Drive or Cloud Storage (older export path; see
+   [Make a deliverable](#make-a-deliverable) for the current one).
+4. Delete the assets in the run's folder.
+
+When a run finishes, every asset in its folder is made publicly readable.
+
+**Resuming.** Each stage skips its output if the asset already exists, so
+rerunning the same command picks up where a run stopped. It only sees
+*finished* assets, though: if the run's Earth Engine tasks are still
+pending or running, relaunching submits duplicates. Check first:
+
+```bash
+python tools/active_tasks.py <config>
+```
+
+Long runs should go on a server under `tmux`, not a laptop; a dropped
+connection kills the local process (the Earth Engine tasks keep running).
+
+## Make a deliverable
+
+After a run, three steps turn its assets into a delivery folder:
+
+1. **Correct the polygon attributes.** Writes
+   `<bnet_buffered_polygons>_corrected` next to the original, which is never
+   modified. It recalculates acreage in an equal-area projection, sets the
+   IDS field values and restores `bnet_label`.
+
+   ```bash
+   python tools/correct_polygon_schema.py <config> submit     # starts the export
+   python tools/correct_polygon_schema.py <config> validate   # after it finishes
+   python tools/correct_polygon_schema.py <config> annotate   # records provenance on the asset
+   ```
+
+2. **Build the folder.** Downloads and checks the GeoPackage, the four
+   GeoTIFFs and the parameter CSV, then writes a README with a data
+   dictionary and validation reports. Each step checks its own output, and
+   nothing is overwritten.
+
+   ```bash
+   python tools/build_deliverable.py <config> --name My_Region \
+       --staging <output dir> --work <cache dir> all
+   ```
+
+   Text that needs a person (contact, region description, what each class
+   looks like) goes in `<work>/readme_notes.ini`; until it's filled in the
+   README contains `[[REVIEW: ...]]` markers and the build fails its final
+   check. Steps can also be run one at a time: `plan`, `polygons`,
+   `parameters`, `rasters`, `align`, `readme`, `check`.
+
+3. **Upload.** `build_deliverable.py` prints the `rclone` commands for the
+   lab's Box folder but doesn't run them. Do a dry run first, then
+   `copy` and `check`.
+
+The raster tools can also be used on their own:
+`tools/download_ee_raster.py` (resumable download on the asset's own grid)
+and `tools/validate_ee_raster.py`.
+
+## Earth Engine inputs
+
+Public datasets used directly: Landsat Collection 2 surface reflectance,
+EPA Level III ecoregions, USGS WBD HUC06, TIGER states, MTBS burned areas,
+JRC Global Forest Cover 2020, USFS LCMS, and (optional evidence gate)
+WRI drivers of forest loss, FIRMS and Hansen Global Forest Change.
+
+Not public. Ask the lab, or supply your own and change the config:
+
+| Asset | Used for | Without it |
+|---|---|---|
+| `projects/<project>/assets/attributed_training_polygons_2012` | Training the high-magnitude classifier (mode 2) | Build training polygons with mode 1, or copy another project's set, as the 2026 Alaska runs did with Coast Range's |
+| cMonster labeling raster (a local file, `cMonster_img_path`) | Labeling training polygons in mode 1 | Mode 2 with existing training polygons. The raster covers only the Pacific Northwest and California |
+| `projects/bnet-main/assets/BdyDesg_LSRS_Wilderness`, `projects/north-cascades-bugnet/assets/nps_boundary` | Wilderness and National Park rule (`wild_path`) | Set `wild_path['on'] = 0` |
+| `projects/emaprlab-general/assets/WFIGS` | WFIGS fire perimeters | Use `fire_mask_source = 'mtbs'` |
+
+The Alaska runs use a classifier trained on Pacific Northwest polygons,
+because no Alaska reference labels exist. Each product's README states
+this.
+
+## Tests
+
+```bash
+python -m pytest -q
+```
+
+The tests cover the code that runs without Earth Engine: parameter
+handling, polygon filtering and exclusion rules, acreage and IDS fields,
+the evidence gate, and the deliverable and README builders. Anything that
+builds an `ee.*` computation is checked by running a real job.
 
 ## Repo layout
 
-All Python source lives under `bugnet/` (added 2026-08-15 - previously
-flat at repo root; `batch_bugnet.sh`'s HPC defaults already assumed this
-layout, so this brings the checkout in line with where it actually runs).
-`tests/`, `docs/`, `batch_bugnet.sh`, and the env spec stay at repo root.
-
 | Path | Purpose |
 |---|---|
-| `bugnet/main.py` | CLI entry point. Loads a parameter file, initializes EE, presents the mode menu, and wires the stage functions (from `disturbance_utils.py`/`modeling_utils.py`/`postprocess_utils.py`) into `build_mode_dependencies()` for `pipeline_modes.py` to call. |
-| `bugnet/disturbance_utils.py` | Fitted-imagery and change-imagery creation (training + predictor), disturbance-polygon vectorization (with grid/bucket fallback splitting for large AOIs), attribution, and the classify → filter → buffer → rasterize chain. |
-| `bugnet/pipeline_modes.py` | Orchestrates the stage functions into `run_mode_1` (full training + predictor run) and `run_mode_2` (predictor-only run against an existing trained classifier), plus `apply_public_read_acl`. |
-| `bugnet/bnet.py` | Core GEE logic: fitted-stack construction, change vectorization, attribution against reference/cMonster data, classifier training/inference, decline scoring (LTSD/SNIC), masks, geometry helpers, asset cleanup. |
-| `bugnet/modeling_utils.py` | Forest mask, SNIC/decline image, KMeans sampling/clustering, proportion calc, and final `predict()` (Random Forest classify) stage functions. |
-| `bugnet/postprocess_utils.py` | Polygonizing the predicted raster, zonal stats, area/percent-affected fields, buffering bnet polygons (with bucketed reclassification fallback), reclassification prompts. |
-| `bugnet/export_utils.py` | Interactive/​default export of finished assets to Google Drive or Cloud Storage; SHP-safe field-name sanitizing. |
-| `bugnet/cli_utils.py` | Parameter-file loading (`load_parameters`), `normalize_parameters` (derives `assetDir`/`sharedAssetDir`/versioning from a param file), the mode-selection prompt (`gui`), and `walk_assets`. |
-| `batch_bugnet.sh` | Batch-generates per-year/per-variant parameter files from a template and runs `bugnet/main.py` across an ecoregion × region × year × magnitude × MMU sweep, with bounded parallelism. |
-| `bugnet/file-manager.py` | Standalone post-export script: organizes downloaded/exported files into a folder structure, merges chunked GeoTIFFs with `gdal_merge.py`, and writes metadata sidecars. |
-| `bugnet/trashGEE.py` | Standalone CLI to recursively delete a GEE asset subtree (dry-run by default). |
-| `bugnet/templates/v3/`, `bugnet/templates/v1/` | Canonical per-ecoregion parameter templates used by `batch_bugnet.sh` to materialize run configs. `v3/` is the LTSD decline path; `v1/` (coast-range, williams-sound, columbia-mts) is the SNIC path - see `docs/config-layout.md`. |
-| `bugnet/run_configs/` | Generated, run-specific parameter files (by year/region/version) - what `batch_bugnet.sh` writes and `bugnet/main.py` actually runs. Was named `params_new/` before 2026-08-15. |
-| `bugnet/legacy_parameters/` | Retired, hand-authored parameter files from before `batch_bugnet.sh` existed - some predate the current schema and won't load. Was named `parameters/` before 2026-08-15. See `docs/config-layout.md`. |
-| `logs/` | Historical run logs (text dumps of stdout). |
-| `lt-bnet-py.yml` | Conda environment spec (Python 3.12, Earth Engine API, geopandas, rasterio, scikit-learn, etc.). |
+| `bugnet/main.py` | Entry point: loads a config, starts Earth Engine, asks for a mode and runs it |
+| `bugnet/pipeline_modes.py` | The order of stages for each mode |
+| `bugnet/disturbance_utils.py` | Stages A–C: composites, change, polygons, classification and exclusion |
+| `bugnet/modeling_utils.py` | Forest mask, decline, KMeans and the class raster |
+| `bugnet/postprocess_utils.py` | Final polygons: polygonizing, buffering, acreage and IDS attributes |
+| `bugnet/bnet.py` | Shared Earth Engine helpers, fire masks and the run manifest |
+| `bugnet/exclusion_evidence.py` | Optional evidence gate: keep a fire/harvest exclusion only where outside data supports it |
+| `bugnet/cli_utils.py`, `bugnet/export_utils.py` | Config loading and validation; Drive/Cloud Storage export |
+| `bugnet/templates/v2/` | Config template for the 2026 (v2026-2) method |
+| `bugnet/templates/v1/`, `bugnet/templates/v3/` | Older templates used with `batch_bugnet.sh` for the 2025 products |
+| `tools/` | Deliverable workflow (above) and `active_tasks.py` |
+| `docs/` | Parameter reference and config layout |
+| `tests/` | Unit tests |
 
-## Setup
-
-```bash
-conda env create -f lt-bnet-py.yml
-conda activate lt-bnet-py
-python -c "import ee; ee.Authenticate()"   # one-time GEE auth
-```
-
-## Parameter reference
-
-`docs/parameter_reference_template.py` documents every key a parameter
-file's `param` dict can/must define - what it controls, which pipeline
-stage reads it, and how it interacts with `configName` (which picks
-between the SNIC-based and LTSD-based decline paths). This file is
-documentation, not a runnable config - see `docs/config-layout.md` for
-where the templates/configs you actually run from live
-(`bugnet/templates/`/`bugnet/run_configs/`, gitignored) and how they relate.
-
-## Running a single job
-
-```bash
-python bugnet/main.py <path-to-parameter-file.py>
-```
-
-The parameter file must define a module-level `param` dict (see
-`bugnet/templates/v3/*-template.py` for the schema). `main.py` normalizes it via
-`cli_utils.normalize_parameters`, which derives:
-
-- `assetDir` — run-specific output folder: `projects/<project>/assets/<target>-v<version>/`
-- `sharedAssetDir` — folder for assets reused across variants of the same
-  ecoregion/year (fitted predictor imagery, change image, forest mask, etc.),
-  keyed off `shared_version` instead of `version`
-- `logic_version`, `configName`
-
-After parameters load, you're prompted for a mode:
-
-1. **Run bugnet** — full pipeline (`run_mode_1`): builds training *and*
-   predictor assets, trains the classifier from scratch.
-2. **Run bugnet no training** — predictor-only pipeline (`run_mode_2`):
-   reuses an already-trained classifier's shared assets, useful for
-   sweeping magnitude/MMU variants without rebuilding training data.
-3. **Export** — push finished assets to Drive/Cloud Storage
-   (`export_utils.export_assets`).
-4. **Clean** — delete all assets under `assetDir`.
-5. **Apply public ACL** — recursively mark assets under `assetDir` as
-   publicly readable.
-
-Every stage function checks whether its output asset already exists before
-recomputing, so re-running a param file resumes from where it left off.
-
-## Batch sweeps
-
-`batch_bugnet.sh` drives many runs at once — ecoregions × regions × years ×
-disturbance-magnitude thresholds (`MAGS`) × minimum-mapping-units (`MMUS`) —
-by materializing parameter files from a template and invoking `main.py`
-(feeding `2` to stdin to select predictor-only mode). It seeds the shared
-predictor assets once per ecoregion/year (`ensure_shared_predictor_assets`)
-before fanning out the MAG/MMU variants in parallel, bounded by `--jobs`.
-
-```bash
-./batch_bugnet.sh --ecos williams-sound --regions r6 --years 2025 --dry-run
-```
-
-See the flags block at the top of the script for all overrides
-(`--version`, `--shared-version`, `--templates-dir`, `--param-root`, etc.).
-`--decline-path {snic,ltsd}` picks the decline algorithm explicitly,
-independent of `--version` (which then only labels the run-variant) -
-omit it to keep the legacy behavior of deriving the decline path from
-`--version`'s logic-version digit. See `docs/config-layout.md`.
-
-## Post-processing
-
-- `bugnet/file-manager.py --src <exported_dir> --dest <organized_dir>` sorts
-  a raw export dump into a per-run folder tree, merges chunked GeoTIFFs, and
-  writes `METADATA.txt` sidecars.
-- `bugnet/trashGEE.py --root <asset_path> [--delete] [--delete-containers]`
-  removes a GEE asset subtree; dry-run unless `--delete` is passed.
-
-## Testing
-
-`tests/` covers the pure, non-GEE helper functions — string/regex parsing
-in `export_utils.py` (`remove_duplicate_substrings`,
-`_sanitize_shapefile_field_name`) and `file-manager.py` (stem parsing,
-chunk-suffix detection, `unique_path`'s collision handling). Anything that
-builds an `ee.*` object (e.g. `disturbance_utils.grid_over_feature`) is out
-of scope here — it's a server-side computation graph, not a pure function,
-and would need live GEE credentials or heavy mocking to exercise for real.
-
-```bash
-conda activate lt-bnet-py
-pip install pytest   # not in lt-bnet-py.yml yet
-pytest
-```
-
-## Cleanup notes (for the upcoming pass)
-
-Observations from the initial review, to work through incrementally:
-
-- **Git hygiene**: `__pycache__/*.pyc` (4 files) and the legacy
-  `legacy_parameters/` tree (477 files, named `parameters/` before
-  2026-08-15) were tracked in git despite being covered by `.gitignore` —
-  they were committed before the ignore rules existed. Already untracked
-  via `git rm --cached` (see `docs/config-layout.md` for how this tree
-  relates to `run_configs/`). `logs/` (8 files) is tracked too and is pure
-  run output.
-- **Untracked root-level `.log` files** (`case_study*.log`,
-  `coast_range_2025_v1.log`, `williams_sound.log`) are batch-run output
-  redirected to the repo root instead of `logs/`. `.gitignore` doesn't
-  currently exclude `*.log`, so these show up as untracked clutter.
-- **`main.py` is thinned out** (758 → ~227 lines): the per-stage pipeline
-  functions now live in `disturbance_utils.py`, `modeling_utils.py`, and
-  `postprocess_utils.py`; `main.py` is down to `wait_for_task`, the
-  asset-folder/asset-exists/delete helpers, `build_mode_dependencies()`,
-  and `main()`.
-- **Mixed indentation**: `bnet.py` still mixes tabs and spaces
-  between functions (visible as inconsistent indent width when viewing
-  diffs) — worth a pass with a formatter.
-- **`bnet.py` scope**: at ~1000 lines it mixes GEE compositing, ADS/agent
-  filtering, classifier training, geometry helpers, and image renaming —
-  a good next target for splitting once `main.py` is thinned out.
-- **Duplicate asset-deletion logic**: `main.py:delete_assets` and
-  `bnet.list_and_delete_assets` overlap with `trashGEE.py`; worth picking
-  one implementation.
-- **No automated tests** — all validation today is running an actual GEE
-  job end-to-end. Even lightweight unit tests around the pure-Python
-  helpers (`cli_utils.normalize_parameters`, filename/regex helpers in
-  `export_utils.py`, `file-manager.py` filename parsing) would help catch
-  regressions like the ones the `sharedAssetDir` consistency pass and the
-  `main.py` extraction just fixed by hand.
-- **`file-manager.py`** uses a hyphenated filename (not importable as a
-  module) — fine as a standalone script, but worth renaming to
-  `file_manager.py` if it's ever imported elsewhere.
+Older scripts kept for reference: `batch_bugnet.sh` (parameter sweeps on
+the 2025 cluster setup), `bugnet/file-manager.py` (organizing Drive
+exports; replaced by `tools/build_deliverable.py`) and `bugnet/trashGEE.py`
+(deleting an asset tree; dry run unless `--delete`).

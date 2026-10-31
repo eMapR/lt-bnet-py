@@ -20,10 +20,12 @@ or anything else not meant for the public.
   record, so the classifier's fire/harvest labels were misclassified
   budworm. It was rerun from C1 on 2026-10-30 under the standard asset
   names; the earlier (exclusions on) outputs were deleted.
-- **Known issue:** the Tanana README (and possibly other regions resumed
-  after a relaunch) has a misleading section 11 and gives the relaunch date
-  as the composite end date (`composite_params_end_date` is `date.today()`
-  at the launch that wrote the parameter file).
+- **Composite dates in READMEs:** `composite_params_end_date` is
+  `date.today()` at the launch that wrote the parameter file, so for a
+  resumed run it is the last relaunch date, not when the composites were
+  built. Set `composite_window` / `composite_note` in the region's
+  `readme_notes.ini` (done 2026-10-30 for Tanana, Central SE Alaska, Blue
+  Mts, Cascades, Coast Range, Klamath and PWS).
 - **Not done:** Gulf of Alaska and `r10-bugnet` (EE projects not
   registered).
 
