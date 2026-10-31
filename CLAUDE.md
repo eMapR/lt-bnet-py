@@ -5,64 +5,42 @@ context that isn't obvious from the code. The repo is **public**: never
 commit credentials, contract/scope documents (e.g. the PDFs in `docs/`),
 or anything else not meant for the public.
 
-## Current state (updated 2026-10-03)
+## Current state (updated 2026-10-30)
 
-### Legacy V2 stakeholder batch (8 regions, `version=2`, target year 2026)
+- **Branches:** `master` is the only branch. The former `bulc-d` branch
+  (deliverable tools, equal-area acreage, `compute_project`, evidence gate,
+  no-exclusion support) was fast-forwarded into it and deleted on
+  2026-10-30, along with `add-sentinel2` and `refactor-bugnet-cleanup`.
+  No BULC-D change-detection code was ever written.
+- **2026 products (v2026-2) are delivered** for all 8 Region 6 ecoregions
+  and 9 Region 10 (Alaska) regions, in OSU Box under
+  `Bugnet Products/Bugnet_Region_{6,10}/Data/2026/Bugnet_<Region>_v2026-2/`.
+- **Prince William Sound** uses no classifier-based exclusions
+  (`param['exclusion_classes'] = []`): it has no harvest and no fire on
+  record, so the classifier's fire/harvest labels were misclassified
+  budworm. It was rerun from C1 on 2026-10-30 under the standard asset
+  names; the earlier (exclusions on) outputs were deleted.
+- **Known issue:** the Tanana README (and possibly other regions resumed
+  after a relaunch) has a misleading section 11 and gives the relaunch date
+  as the composite end date (`composite_params_end_date` is `date.today()`
+  at the launch that wrote the parameter file).
+- **Not done:** Gulf of Alaska and `r10-bugnet` (EE projects not
+  registered).
 
-| Region | Fire mask | Status |
-|---|---|---|
-| North Cascades, Columbia Mts, Eastern Cascades WA, William Sound | `mtbs` | Complete, verified |
-| Klamath Mts | `mtbs_wfigs` | All 75 buffer shards done; final merge task `bugnet_polygons_buffered_2026_mag50_10mmu` PENDING in GEE since 2026-10-02 |
-| Blue Mts, Cascades | `mtbs_wfigs` | `A_predictor_fitted_img_2021_2026` done; `A_predictor_change_img_2026` PENDING in GEE since 2026-10-01 |
-| Coast Range | `mtbs_wfigs` | `A_predictor_fitted_img_2021_2026` RUNNING since 2026-10-01 (still heartbeating 2026-10-03 20:42 UTC); `A_predictor_change_img_2026` PENDING |
+## Where runs happen
 
-Task states above re-checked 2026-10-03 ~20:45 UTC: unchanged since 10-02.
-
-- The local `main.py` processes for the last four **all died** on
-  2026-10-01/02 from laptop network errors (DNS failure, dropped
-  connections, a token refresh). The GEE tasks kept going server-side.
-- Tasks sitting PENDING for ~2 days across all four projects most likely
-  means the GEE **noncommercial quota "restricted mode"** (Klamath's
-  project warned about it on 2026-10-01). This is unconfirmed for the
-  other three projects; check quota in the Cloud console. The EE API
-  doesn't expose it: `ee.data.getProjectConfig()` only returns
-  `registrationState: REGISTERED_NOT_COMMERCIALLY` for all four.
-- The batch is mixed: four regions used `mtbs`, four use `mtbs_wfigs`. The
-  user hasn't decided whether to re-check the first four (suggestion:
-  count the WFIGS-only fire overlap first).
-
-### Next steps
-
-1. **Don't relaunch while a region's GEE tasks are PENDING/RUNNING.**
-   Resume works by `asset_exists()`, which only sees *finished* assets, so
-   a relaunch resubmits duplicate tasks. Check task state first (e.g.
-   `ee.Initialize(project="<region>-bugnet"); ee.data.listOperations()`).
-   Either wait for them to finish or cancel them, then relaunch.
-2. ~~Make `wait_for_task` survive network errors.~~ Done 2026-10-03:
-   `bnet.get_task_status()` retries transient errors (OSError/DNS,
-   EEException, google-auth/httplib2) with backoff (30s doubling to 15
-   min) and gives up after 6 h of continuous failure. Used by
-   `main.wait_for_task` and `modeling_utils._wait_for_task`.
-3. **Long runs now go on the lab server islay** (set up 2026-10-03), not
-   the laptop. Run under `tmux`. Nothing has been launched there yet.
-   - Repo checkout: `/vol/v1/Bugnet/lt-bnet-py`; Python:
-     `~/.conda/envs/lt-bnet-py/bin/python` (built from `lt-bnet-py.yml`,
-     which is pinned for Linux).
-   - Earth Engine user credentials work for every `<region>-bugnet`
-     project (no service account yet).
-   - **Run configs are gitignored** and were copied over separately. On
-     islay they use a flat layout:
-     `bugnet/run_configs/<region>-bugnet-2026-v2/<region>-bugnet-2026-v2-config.py`
-     (the laptop has an extra `2026/r6/v2/` level).
-   - `logs/` must be created before the first launch.
-4. **Relaunch watcher running on islay** since 2026-10-04 02:40 UTC (tmux
-   session `bugnet-watcher`, log `logs/relaunch_watcher.log`). Every 15 min
-   it checks Klamath, Blue Mts, Cascades and Coast Range. When a region has
-   no PENDING/RUNNING tasks, it launches `main.py` mode 2 for it once,
-   detached, writing `logs/<region>-2026-v2-stakeholder.{log,pid}`. A `.pid`
-   file means "already launched": the watcher never relaunches it, so check
-   that region's log if its run dies. The watcher exits once all four are
-   launched. Script: `tools/relaunch_watcher.py`.
+Long runs go on the lab server islay, under `tmux` or detached.
+- Repo: `/vol/v1/Bugnet/lt-bnet-py`; Python:
+  `~/.conda/envs/lt-bnet-py/bin/python` (built from `lt-bnet-py.yml`, plus
+  pytest).
+- Earth Engine user credentials work for every `<region>-bugnet` project.
+- **Run configs are gitignored**, flat layout:
+  `bugnet/run_configs/<region>-bugnet-2026-v2/<region>-bugnet-2026-v2-config.py`.
+- `param['compute_project']` runs Earth Engine in another project (for its
+  quota) while assets stay in `project_name`. Only `cascades-bugnet` and
+  `eastern-cascades-wa-bugnet` have the Partner tier (100k EECU-h/month);
+  most others have 1,000 h, Klamath 150 h. Check tasks in the compute
+  project: `python tools/active_tasks.py CONFIG`.
 
 ## How runs are launched / resumed
 
@@ -70,18 +48,34 @@ Task states above re-checked 2026-10-03 ~20:45 UTC: unchanged since 10-02.
 echo 2 | python bugnet/main.py <path-to-config> 2>&1 | tee logs/<region>-2026-v2-stakeholder.log   # mode 2 = run_mode_2
 ```
 
-Logs and pids go to `logs/<region>-2026-v2-stakeholder.{log,pid}`
-(gitignored). When relaunching, rename the old log to `.runN.log` first.
-`main.py` never re-stamps an existing `_run_manifest` asset, so delete it
-if the config changed in a way the manifest should record (e.g. fire mask).
+- **Don't relaunch while a region's GEE tasks are PENDING/RUNNING.** Resume
+  works by `asset_exists()`, which only sees finished assets, so a relaunch
+  resubmits duplicate tasks.
+- When relaunching, rename the old log to `.runN.log` first.
+- `main.py` never re-stamps an existing `_run_manifest`; delete it if the
+  config changed in a way the manifest should record.
+- Keep one version per asset folder under the standard names: to change a
+  delivered region, edit its standard config, delete the superseded assets
+  (with approval) and rerun. Don't leave suffixed side-by-side versions.
+
+## Deliverables (per region, after a run)
+
+1. `python tools/correct_polygon_schema.py CONFIG submit|validate|annotate`
+   writes `<bnet_buffered_polygons>_corrected` (equal-area acreage, IDS
+   fields, `bnet_label`). Original assets are never modified.
+2. `python tools/build_deliverable.py CONFIG --name <Region> all` builds
+   `/vol/v1/Bugnet/deliverables/box_staging/...` (GeoPackage, 4 GeoTIFFs,
+   parameter CSV, README, validation/). Hand-written README text goes in
+   `/vol/v1/Bugnet/deliverables/work/<region>-2026-v2/readme_notes.ini`.
+3. Upload with rclone (remote `osu_box`): `copy --dry-run` first, then
+   `copy`, then `check`. Never `sync`, `mount` or delete; never print the
+   rclone config or tokens.
 
 ## Tests
 
-`python -m pytest -q` from the repo root (108 passing as of 2026-10-03).
+`python -m pytest -q` from the repo root (185 passing as of 2026-10-30).
 
 ## Untracked files (intentionally not committed)
 
 - `docs/*.pdf`: scope-of-work / task documents. Public repo, ask first.
-- `tools/relaunch_watcher.py`: one-off ops script for the V2 batch.
-- `tools/abc_disagreement_viewer.js`: GEE Code Editor script, not yet
-  smoke-tested.
+- `tools/relaunch_watcher.py`: one-off ops script from the V2 batch.
