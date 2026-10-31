@@ -220,3 +220,8 @@ Older scripts kept for reference: `batch_bugnet.sh` (parameter sweeps on
 the 2025 cluster setup), `bugnet/file-manager.py` (organizing Drive
 exports; replaced by `tools/build_deliverable.py`) and `bugnet/trashGEE.py`
 (deleting an asset tree; dry run unless `--delete`).
+
+## License
+
+MIT; see [LICENSE](LICENSE). The license covers this code, not the
+Earth Engine datasets or the lab's private assets it reads.
